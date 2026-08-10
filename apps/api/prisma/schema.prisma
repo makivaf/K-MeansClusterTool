@@ -1,0 +1,19 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model ClusteringRun {
+  id        String   @id @default(cuid())
+  runId     String   @unique
+  axis      String
+  title     String
+  payload   Json
+  createdAt DateTime @default(now())
+
+  @@index([axis])
+}

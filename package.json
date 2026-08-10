@@ -1,0 +1,21 @@
+{
+  "name": "ad-clustering-thesis-dashboard",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "dev": "concurrently \"npm run dev -w @ad-clustering/api\" \"npm run dev -w @ad-clustering/web\"",
+    "build": "npm run build -w @ad-clustering/shared && npm run build -w @ad-clustering/api && npm run build -w @ad-clustering/web",
+    "typecheck": "npm run typecheck -w @ad-clustering/shared && npm run typecheck -w @ad-clustering/api && npm run typecheck -w @ad-clustering/web",
+    "prisma:generate": "npm run prisma:generate -w @ad-clustering/api",
+    "prisma:seed": "npm run prisma:seed -w @ad-clustering/api"
+  },
+  "devDependencies": {
+    "concurrently": "^9.0.1",
+    "typescript": "^5.5.4"
+  }
+}
