@@ -10,3 +10,17 @@ apps/api/dist
 apps/api/uploads
 packages/shared/dist
 *.log
+
+# ADNI/raw research data — never commit
+data/raw/*
+!data/raw/.gitkeep
+!data/raw/adni/
+data/raw/adni/*
+!data/raw/adni/.gitkeep
+
+# Generated research data — never commit
+data/interim/*
+!data/interim/.gitkeep
+
+data/processed/*
+!data/processed/.gitkeep
