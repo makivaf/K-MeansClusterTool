@@ -135,6 +135,7 @@ export const axisBDevelopmentFixture = AxisBClusteringRunSchema.parse({
     feature: "beta1_slope_points_per_year",
     feature_label: "Participant-level ADAS-Cog13 slope",
     participant_count: 3,
+    observation_count: 6,
     input_dimensions: 1,
     unit: "ADAS-Cog13 points per year"
   },

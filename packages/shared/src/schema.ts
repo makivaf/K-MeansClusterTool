@@ -272,6 +272,7 @@ export const AxisBSlopeConstructionSchema = z
     feature: z.literal("beta1_slope_points_per_year"),
     feature_label: z.literal("Participant-level ADAS-Cog13 slope"),
     participant_count: z.number().int().positive(),
+    observation_count: z.number().int().positive(),
     input_dimensions: z.literal(1),
     unit: z.literal("ADAS-Cog13 points per year")
   })
