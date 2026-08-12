@@ -29,16 +29,26 @@ export default function App() {
         <Route
           path="/runs/:runId/comparison"
           element={
-            <RunLinkedPage run={runState.selectedRun} selectRunById={runState.selectRunById}>
-              <ComparisonPage run={runState.selectedRun} />
+            <RunLinkedPage
+              runs={runState.runs}
+              isLoading={runState.isLoading}
+              error={runState.error}
+              selectRunById={runState.selectRunById}
+            >
+              {(run) => <ComparisonPage run={run} />}
             </RunLinkedPage>
           }
         />
         <Route
           path="/runs/:runId/cluster-profiles"
           element={
-            <RunLinkedPage run={runState.selectedRun} selectRunById={runState.selectRunById}>
-              <ClusterProfilesPage run={runState.selectedRun} />
+            <RunLinkedPage
+              runs={runState.runs}
+              isLoading={runState.isLoading}
+              error={runState.error}
+              selectRunById={runState.selectRunById}
+            >
+              {(run) => <ClusterProfilesPage run={run} />}
             </RunLinkedPage>
           }
         />
