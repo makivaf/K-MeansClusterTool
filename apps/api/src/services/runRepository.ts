@@ -3,6 +3,7 @@ import { dummyRuns } from "../../../../packages/shared/src/dummyRuns";
 import { ClusteringRunSchema, type ClusteringRun } from "../../../../packages/shared/src/schema";
 
 let prisma: PrismaClient | null = null;
+const isProduction = () => process.env.NODE_ENV === "production";
 
 const getPrisma = () => {
   if (!process.env.DATABASE_URL) {
@@ -17,6 +18,9 @@ export const listRuns = async (): Promise<ClusteringRun[]> => {
 
   // TODO: Replace dummy fallback with persisted Python pipeline outputs once the thesis pipeline writes finalized JSON/Postgres records.
   if (!client) {
+    if (isProduction()) {
+      throw new Error("DATABASE_URL is required in production; refusing to serve dummy clustering runs.");
+    }
     return dummyRuns;
   }
 
@@ -26,6 +30,9 @@ export const listRuns = async (): Promise<ClusteringRun[]> => {
     });
     return rows.map((row: { payload: unknown }) => ClusteringRunSchema.parse(row.payload));
   } catch (error) {
+    if (isProduction()) {
+      throw error;
+    }
     console.warn("Falling back to validated dummy runs because Prisma could not read PostgreSQL.", error);
     return dummyRuns;
   }
