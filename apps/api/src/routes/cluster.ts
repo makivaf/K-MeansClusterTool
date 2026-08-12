@@ -12,6 +12,7 @@ import {
   ClusterRunResponseSchema,
   UploadResponseSchema
 } from "../../../../packages/shared/src/schema";
+import { AnalysisInputError, validateAnalysisInputManifest } from "../services/analysisInputManifest";
 
 type UploadRequest = Request & {
   uploadBatchId?: string;
@@ -56,7 +57,7 @@ const storage = multer.diskStorage({
     callback(null, getUploadDir(request.uploadBatchId ?? ""));
   },
   filename: (_request, file, callback) => {
-    callback(null, `${Date.now()}-${sanitizeFilename(file.originalname)}`);
+    callback(null, sanitizeFilename(file.originalname));
   }
 });
 
@@ -64,7 +65,7 @@ const csvUpload = multer({
   storage,
   limits: {
     fileSize: maxCsvBytes,
-    files: 12
+    files: 7
   },
   fileFilter: (_request, file, callback) => {
     if (path.extname(file.originalname).toLowerCase() !== ".csv") {
@@ -94,11 +95,16 @@ clusterRouter.post("/api/upload", (request: UploadRequest, response) => {
     return;
   }
 
-  const payload = UploadResponseSchema.parse({
-    upload_ref: request.uploadBatchId,
-    filenames: files.map((file) => file.originalname),
-    file_count: files.length
-  });
+  try {
+    validateAnalysisInputManifest(getUploadDir(request.uploadBatchId));
+  } catch (error) {
+    fs.rmSync(getUploadDir(request.uploadBatchId), { recursive: true, force: true });
+    const message = error instanceof AnalysisInputError ? error.message : "Unable to validate the analysis input manifest.";
+    response.status(400).json({ error: message });
+    return;
+  }
+
+  const payload = UploadResponseSchema.parse({ upload_ref: request.uploadBatchId, filenames: files.map((file) => file.originalname), file_count: files.length });
 
   response.status(201).json(payload);
 });
