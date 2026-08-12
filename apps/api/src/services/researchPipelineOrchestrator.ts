@@ -13,6 +13,7 @@ export type ExecutionContext = {
   workspace: string;
   pythonExecutable: string;
   timeoutMs: number;
+  environment: NodeJS.ProcessEnv;
 };
 
 export type ResearchExecution = {
@@ -55,6 +56,17 @@ const stages: readonly ResearchStage[] = [
 
 const approvedScripts = new Set(stages.map((stage) => stage.script));
 
+const buildResearchEnvironment = (): NodeJS.ProcessEnv => {
+  const environment: NodeJS.ProcessEnv = { ...process.env, PYTHONUNBUFFERED: "1" };
+  const rHome = process.env.RESEARCH_R_HOME ?? process.env.R_HOME;
+  if (rHome) {
+    environment.R_HOME = rHome;
+    const rPaths = process.platform === "win32" ? [path.join(rHome, "bin", "x64"), path.join(rHome, "bin")] : [path.join(rHome, "bin")];
+    environment.PATH = [...rPaths, environment.PATH ?? ""].join(path.delimiter);
+  }
+  return environment;
+};
+
 export class ResearchExecutionError extends Error {
   constructor(readonly code: "ENVIRONMENT_FAILURE" | "EXECUTION_FAILURE" | "EXECUTION_TIMEOUT" | "MISSING_ARTIFACT", message: string) {
     super(message);
@@ -83,7 +95,7 @@ const defaultStageRunner: StageRunner = (stage, context) => new Promise((resolve
     cwd: context.workspace,
     windowsHide: true,
     stdio: ["ignore", "pipe", "pipe"],
-    env: { ...process.env, PYTHONUNBUFFERED: "1" },
+    env: context.environment,
     shell: false
   });
   let diagnostic = "";
@@ -125,10 +137,19 @@ const prepareWorkspace = (uploadDirectory: string, executionId: string, pythonEx
   }
   const environmentRoot = path.resolve(pythonExecutable, "..", "..");
   const workspaceEnvironment = path.join(workspace, ".venv");
-  if (fs.existsSync(environmentRoot) && !fs.existsSync(workspaceEnvironment)) {
+  if (fs.existsSync(path.join(environmentRoot, "pyvenv.cfg")) && !fs.existsSync(workspaceEnvironment)) {
     try {
-      fs.symlinkSync(environmentRoot, workspaceEnvironment, process.platform === "win32" ? "junction" : "dir");
+      if (process.platform === "win32" && fs.existsSync(path.join(environmentRoot, "pyvenv.cfg"))) {
+        fs.mkdirSync(path.join(workspaceEnvironment, "Scripts"), { recursive: true });
+        fs.mkdirSync(path.join(workspaceEnvironment, "Lib"), { recursive: true });
+        fs.copyFileSync(path.join(environmentRoot, "pyvenv.cfg"), path.join(workspaceEnvironment, "pyvenv.cfg"));
+        fs.copyFileSync(pythonExecutable, path.join(workspaceEnvironment, "Scripts", "python.exe"));
+        fs.symlinkSync(path.join(environmentRoot, "Lib", "site-packages"), path.join(workspaceEnvironment, "Lib", "site-packages"), "junction");
+      } else {
+        fs.symlinkSync(environmentRoot, workspaceEnvironment, "dir");
+      }
     } catch {
+      fs.rmSync(workspace, { recursive: true, force: true });
       throw new ResearchExecutionError("ENVIRONMENT_FAILURE", "The isolated workspace could not link the local research environment.");
     }
   }
@@ -142,7 +163,10 @@ export const runResearchPipelines = async (
   const executionId = `analysis-${Date.now()}-${crypto.randomBytes(6).toString("hex")}`;
   const pythonExecutable = options.pythonExecutable ?? resolvePython();
   const workspace = prepareWorkspace(uploadDirectory, executionId, pythonExecutable);
-  const context: ExecutionContext = { workspace, pythonExecutable, timeoutMs: options.timeoutMs ?? 60 * 60 * 1000 };
+  const workspacePython = options.pythonExecutable || process.platform !== "win32"
+    ? pythonExecutable
+    : path.join(workspace, ".venv", "Scripts", "python.exe");
+  const context: ExecutionContext = { workspace, pythonExecutable: workspacePython, timeoutMs: options.timeoutMs ?? 60 * 60 * 1000, environment: buildResearchEnvironment() };
   const runner = options.runner ?? defaultStageRunner;
   try {
     for (const stage of stages) {
