@@ -85,28 +85,13 @@ export const NbClustSummarySchema = z
     index_votes: z.array(IndexVoteSchema),
     vote_summary: z.array(VoteSummarySchema)
   })
-  .strict();
-
-const AxisANbClustSummarySchema = NbClustSummarySchema.extend({
-  selected_k: z.literal(2)
-}).superRefine((summary, context) => {
-  if (!summary.candidate_k.includes(2)) {
+  .strict()
+  .superRefine((summary, context) => {
+  if (!summary.candidate_k.includes(summary.selected_k)) {
     context.addIssue({
       code: z.ZodIssueCode.custom,
       path: ["candidate_k"],
-      message: "Axis A candidate k values must include the selected k=2."
-    });
-  }
-});
-
-const AxisBNbClustSummarySchema = NbClustSummarySchema.extend({
-  selected_k: z.literal(2)
-}).superRefine((summary, context) => {
-  if (!summary.candidate_k.includes(2)) {
-    context.addIssue({
-      code: z.ZodIssueCode.custom,
-      path: ["candidate_k"],
-      message: "Axis B candidate k values must include the selected k=2."
+      message: "Candidate k values must include the selected k."
     });
   }
 });
@@ -136,7 +121,7 @@ export const SelectedCentroidSchema = z
 export const DpcInitSummarySchema = z
   .object({
     gamma_values: z.array(GammaValueSchema).min(2),
-    selected_centroids: z.tuple([SelectedCentroidSchema, SelectedCentroidSchema])
+    selected_centroids: z.array(SelectedCentroidSchema).min(1)
   })
   .strict();
 
@@ -190,7 +175,7 @@ const AxisABaselineConditionSchema = z
       })
       .strict(),
     metrics: ClusteringMetricsSchema,
-    cluster_profiles: z.array(AxisAClusterProfileSchema).length(2)
+    cluster_profiles: z.array(AxisAClusterProfileSchema).min(1)
   })
   .strict();
 
@@ -204,7 +189,7 @@ const AxisAEnhancedConditionSchema = z
       })
       .strict(),
     metrics: ClusteringMetricsSchema,
-    cluster_profiles: z.array(AxisAClusterProfileSchema).length(2)
+    cluster_profiles: z.array(AxisAClusterProfileSchema).min(1)
   })
   .strict();
 
@@ -218,20 +203,18 @@ const AxisADatasetSummarySchema = DatasetSummarySchema.extend({
 });
 
 const AxisAPreprocessingSummarySchema = PreprocessingSummarySchema.extend({
-  retained_sample_size: z.literal(2437),
+  missingness_threshold: z.literal(0.2),
   imputation_strategy: z.literal("Median imputation"),
   scaling_strategy: z.literal("Z-score standardization"),
   npiq_excluded: z.literal(true)
 });
 
-const AxisAPcaSummarySchema = PcaSummarySchema.extend({
-  n_components_selected: z.literal(6)
-}).superRefine((summary, context) => {
-  if (summary.scree_data.length < 6) {
+const AxisAPcaSummarySchema = PcaSummarySchema.superRefine((summary, context) => {
+  if (summary.scree_data.length < summary.n_components_selected) {
     context.addIssue({
       code: z.ZodIssueCode.custom,
       path: ["scree_data"],
-      message: "Axis A PCA must report at least PC1 through PC6."
+      message: "Axis A PCA must report every selected component."
     });
   }
 });
@@ -251,11 +234,28 @@ export const AxisAClusteringRunSchema = z
     dataset: AxisADatasetSummarySchema,
     preprocessing: AxisAPreprocessingSummarySchema,
     pca: AxisAPcaSummarySchema,
-    nbclust: AxisANbClustSummarySchema,
+    nbclust: NbClustSummarySchema,
     dpc_init: DpcInitSummarySchema,
     conditions: z.tuple([AxisABaselineConditionSchema, AxisAEnhancedConditionSchema])
   })
-  .strict();
+  .strict()
+  .superRefine((run, context) => {
+    if (run.preprocessing.retained_sample_size > run.preprocessing.initial_sample_size) {
+      context.addIssue({ code: z.ZodIssueCode.custom, path: ["preprocessing", "retained_sample_size"], message: "Retained sample size cannot exceed the initial sample size." });
+    }
+    if (run.dpc_init.selected_centroids.length !== run.nbclust.selected_k) {
+      context.addIssue({ code: z.ZodIssueCode.custom, path: ["dpc_init", "selected_centroids"], message: "DPC must provide one initial centroid per selected cluster." });
+    }
+    run.conditions.forEach((condition, index) => {
+      if (condition.cluster_profiles.length !== run.nbclust.selected_k) {
+        context.addIssue({ code: z.ZodIssueCode.custom, path: ["conditions", index, "cluster_profiles"], message: "Cluster profile count must equal the selected k." });
+      }
+      const members = condition.cluster_profiles.reduce((sum, profile) => sum + profile.n_members, 0);
+      if (members !== run.preprocessing.retained_sample_size) {
+        context.addIssue({ code: z.ZodIssueCode.custom, path: ["conditions", index, "cluster_profiles"], message: "Aggregate cluster sizes must equal the retained sample size." });
+      }
+    });
+  });
 
 const AxisBDatasetSummarySchema = DatasetSummarySchema.extend({
   feature_count: z.literal(1)
@@ -263,7 +263,6 @@ const AxisBDatasetSummarySchema = DatasetSummarySchema.extend({
 
 const AxisBPreprocessingSummarySchema = PreprocessingSummarySchema.extend({
   missingness_threshold: z.literal(0),
-  retained_sample_size: z.literal(1917),
   imputation_strategy: z.literal("Not applicable"),
   scaling_strategy: z.literal("None; raw slopes used")
 });
@@ -272,7 +271,7 @@ export const AxisBSlopeConstructionSchema = z
   .object({
     feature: z.literal("beta1_slope_points_per_year"),
     feature_label: z.literal("Participant-level ADAS-Cog13 slope"),
-    participant_count: z.literal(1917),
+    participant_count: z.number().int().positive(),
     input_dimensions: z.literal(1),
     unit: z.literal("ADAS-Cog13 points per year")
   })
@@ -287,21 +286,11 @@ export const AxisBDpcSuitabilitySchema = z
   })
   .strict();
 
-const AxisBFirstClusterProfileSchema = AxisBClusterProfileSchema.extend({
-  cluster_id: z.literal(1),
-  n_members: z.literal(1675)
-});
-
-const AxisBSecondClusterProfileSchema = AxisBClusterProfileSchema.extend({
-  cluster_id: z.literal(2),
-  n_members: z.literal(242)
-});
-
 export const AxisBFinalClusteringSchema = z
   .object({
     algorithm: z.literal("lloyd_kmeans"),
     algorithm_label: z.string().min(1),
-    selected_k: z.literal(2),
+    selected_k: z.number().int().positive(),
     initialization: z
       .object({
         method: z.literal("fixed_seed_random"),
@@ -310,7 +299,7 @@ export const AxisBFinalClusteringSchema = z
       })
       .strict(),
     metrics: ClusteringMetricsSchema,
-    cluster_profiles: z.tuple([AxisBFirstClusterProfileSchema, AxisBSecondClusterProfileSchema])
+    cluster_profiles: z.array(AxisBClusterProfileSchema).min(1)
   })
   .strict();
 
@@ -321,13 +310,45 @@ export const AxisBClusteringRunSchema = z
     dataset: AxisBDatasetSummarySchema,
     preprocessing: AxisBPreprocessingSummarySchema,
     slope_construction: AxisBSlopeConstructionSchema,
-    nbclust: AxisBNbClustSummarySchema,
+    nbclust: NbClustSummarySchema,
     dpc_suitability: AxisBDpcSuitabilitySchema,
     final_clustering: AxisBFinalClusteringSchema
   })
-  .strict();
+  .strict()
+  .superRefine((run, context) => {
+    if (run.preprocessing.retained_sample_size > run.preprocessing.initial_sample_size) {
+      context.addIssue({ code: z.ZodIssueCode.custom, path: ["preprocessing", "retained_sample_size"], message: "Retained sample size cannot exceed the initial sample size." });
+    }
+    if (run.slope_construction.participant_count !== run.preprocessing.retained_sample_size) {
+      context.addIssue({ code: z.ZodIssueCode.custom, path: ["slope_construction", "participant_count"], message: "Slope participant count must equal the retained sample size." });
+    }
+    if (run.final_clustering.selected_k !== run.nbclust.selected_k) {
+      context.addIssue({ code: z.ZodIssueCode.custom, path: ["final_clustering", "selected_k"], message: "Final Axis B k must match the NbClust selection." });
+    }
+    if (run.final_clustering.cluster_profiles.length !== run.final_clustering.selected_k) {
+      context.addIssue({ code: z.ZodIssueCode.custom, path: ["final_clustering", "cluster_profiles"], message: "Cluster profile count must equal the selected k." });
+    }
+    const members = run.final_clustering.cluster_profiles.reduce((sum, profile) => sum + profile.n_members, 0);
+    if (members !== run.preprocessing.retained_sample_size) {
+      context.addIssue({ code: z.ZodIssueCode.custom, path: ["final_clustering", "cluster_profiles"], message: "Aggregate cluster sizes must equal the retained sample size." });
+    }
+  });
 
-export const ClusteringRunSchema = z.discriminatedUnion("axis", [
+/** Frozen thesis cardinalities belong at artifact validation, not the reusable run contract. */
+export const FrozenAxisAStudyResultSchema = AxisAClusteringRunSchema.superRefine((run, context) => {
+  if (run.preprocessing.retained_sample_size !== 2437) context.addIssue({ code: z.ZodIssueCode.custom, path: ["preprocessing", "retained_sample_size"], message: "Frozen Axis A study retained 2,437 participants." });
+  if (run.pca.n_components_selected !== 6) context.addIssue({ code: z.ZodIssueCode.custom, path: ["pca", "n_components_selected"], message: "Frozen Axis A study selected six PCs." });
+  if (run.nbclust.selected_k !== 2) context.addIssue({ code: z.ZodIssueCode.custom, path: ["nbclust", "selected_k"], message: "Frozen Axis A study selected k=2." });
+});
+
+export const FrozenAxisBStudyResultSchema = AxisBClusteringRunSchema.superRefine((run, context) => {
+  if (run.preprocessing.retained_sample_size !== 1917) context.addIssue({ code: z.ZodIssueCode.custom, path: ["preprocessing", "retained_sample_size"], message: "Frozen Axis B study retained 1,917 participants." });
+  if (run.nbclust.selected_k !== 2) context.addIssue({ code: z.ZodIssueCode.custom, path: ["nbclust", "selected_k"], message: "Frozen Axis B study selected k=2." });
+  const sizes = run.final_clustering.cluster_profiles.map((profile) => profile.n_members).sort((a, b) => b - a);
+  if (sizes.length !== 2 || sizes[0] !== 1675 || sizes[1] !== 242) context.addIssue({ code: z.ZodIssueCode.custom, path: ["final_clustering", "cluster_profiles"], message: "Frozen Axis B study cluster sizes were 1,675 and 242." });
+});
+
+export const ClusteringRunSchema = z.union([
   AxisAClusteringRunSchema,
   AxisBClusteringRunSchema
 ]);

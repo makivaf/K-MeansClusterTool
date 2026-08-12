@@ -1,5 +1,10 @@
 import { axisADevelopmentFixture, axisBDevelopmentFixture } from "./dummyRuns.js";
-import { ClusteringRunSchema, ClusterRunResponseSchema } from "./schema.js";
+import {
+  ClusteringRunSchema,
+  ClusterRunResponseSchema,
+  FrozenAxisAStudyResultSchema,
+  FrozenAxisBStudyResultSchema
+} from "./schema.js";
 
 type MutablePayload = Record<string, any>;
 
@@ -22,6 +27,29 @@ const expectRejected = (name: string, payload: unknown) => {
 
 expectAccepted("methodologically valid Axis A aggregate", axisADevelopmentFixture);
 expectAccepted("methodologically valid Axis B aggregate", axisBDevelopmentFixture);
+
+if (FrozenAxisAStudyResultSchema.safeParse(axisADevelopmentFixture).success) {
+  throw new Error("A reusable Axis A fixture must not masquerade as the frozen thesis result");
+}
+console.log("PASS rejected: general Axis A fixture as frozen thesis cardinalities");
+
+if (FrozenAxisBStudyResultSchema.safeParse(axisBDevelopmentFixture).success) {
+  throw new Error("A reusable Axis B fixture must not masquerade as the frozen thesis result");
+}
+console.log("PASS rejected: general Axis B fixture as frozen thesis cardinalities");
+
+const axisBWithOneSelectedCluster = clonePayload(axisBDevelopmentFixture);
+axisBWithOneSelectedCluster.nbclust = {
+  candidate_k: [1, 2],
+  selected_k: 1,
+  index_votes: [{ optimal_k: 1, votes: 1 }],
+  vote_summary: []
+};
+axisBWithOneSelectedCluster.final_clustering.selected_k = 1;
+axisBWithOneSelectedCluster.final_clustering.cluster_profiles = [
+  { cluster_id: 1, n_members: 3, variable_means: {} }
+];
+expectAccepted("Axis B contract with a data-derived non-frozen k", axisBWithOneSelectedCluster);
 
 const axisBWithPca = clonePayload(axisBDevelopmentFixture);
 axisBWithPca.pca = axisADevelopmentFixture.pca;

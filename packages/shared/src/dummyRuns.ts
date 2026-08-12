@@ -58,8 +58,8 @@ export const axisADevelopmentFixture = AxisAClusteringRunSchema.parse({
   },
   preprocessing: {
     missingness_threshold: 0.2,
-    initial_sample_size: 2437,
-    retained_sample_size: 2437,
+    initial_sample_size: 2,
+    retained_sample_size: 2,
     imputation_strategy: "Median imputation",
     scaling_strategy: "Z-score standardization",
     npiq_excluded: true,
@@ -69,15 +69,11 @@ export const axisADevelopmentFixture = AxisAClusteringRunSchema.parse({
     ]
   },
   pca: {
-    n_components_selected: 6,
+    n_components_selected: 2,
     cumulative_explained_variance: 1,
     scree_data: [
-      { component: 1, eigenvalue: 1, individual_variance: 1 / 6, cumulative_variance: 1 / 6 },
-      { component: 2, eigenvalue: 1, individual_variance: 1 / 6, cumulative_variance: 2 / 6 },
-      { component: 3, eigenvalue: 1, individual_variance: 1 / 6, cumulative_variance: 3 / 6 },
-      { component: 4, eigenvalue: 1, individual_variance: 1 / 6, cumulative_variance: 4 / 6 },
-      { component: 5, eigenvalue: 1, individual_variance: 1 / 6, cumulative_variance: 5 / 6 },
-      { component: 6, eigenvalue: 1, individual_variance: 1 / 6, cumulative_variance: 1 }
+      { component: 1, eigenvalue: 1, individual_variance: 0.6, cumulative_variance: 0.6 },
+      { component: 2, eigenvalue: 1, individual_variance: 0.4, cumulative_variance: 1 }
     ]
   },
   nbclust: selectedKFixture,
@@ -129,8 +125,8 @@ export const axisBDevelopmentFixture = AxisBClusteringRunSchema.parse({
   },
   preprocessing: {
     missingness_threshold: 0,
-    initial_sample_size: 1917,
-    retained_sample_size: 1917,
+    initial_sample_size: 3,
+    retained_sample_size: 3,
     imputation_strategy: "Not applicable",
     scaling_strategy: "None; raw slopes used",
     excluded_variables: []
@@ -138,7 +134,7 @@ export const axisBDevelopmentFixture = AxisBClusteringRunSchema.parse({
   slope_construction: {
     feature: "beta1_slope_points_per_year",
     feature_label: "Participant-level ADAS-Cog13 slope",
-    participant_count: 1917,
+    participant_count: 3,
     input_dimensions: 1,
     unit: "ADAS-Cog13 points per year"
   },
@@ -161,8 +157,8 @@ export const axisBDevelopmentFixture = AxisBClusteringRunSchema.parse({
     },
     metrics: fixtureMetrics,
     cluster_profiles: [
-      { cluster_id: 1, n_members: 1675, variable_means: {} },
-      { cluster_id: 2, n_members: 242, variable_means: {} }
+      { cluster_id: 1, n_members: 2, variable_means: {} },
+      { cluster_id: 2, n_members: 1, variable_means: {} }
     ]
   }
 });
