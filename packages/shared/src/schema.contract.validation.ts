@@ -81,6 +81,7 @@ expectRejected("participant identifier used as DPC candidate ID", axisAWithParti
 
 const coordinatedResponse = {
   status: "complete",
+  persistence: "memory_only",
   axis_a_run_id: axisADevelopmentFixture.run_id,
   axis_b_run_id: axisBDevelopmentFixture.run_id
 };

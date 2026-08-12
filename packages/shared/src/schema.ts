@@ -384,6 +384,7 @@ export const ClusterRunRequestSchema = z
 export const ClusterRunResponseSchema = z
   .object({
     status: z.literal("complete"),
+    persistence: z.enum(["durable", "memory_only"]),
     axis_a_run_id: z.string().min(1),
     axis_b_run_id: z.string().min(1)
   })
