@@ -11,6 +11,7 @@
     "test:axis-a-adapter": "tsx src/services/axisAResultAdapter.validation.ts",
     "test:axis-b-adapter": "tsx src/services/axisBResultAdapter.validation.ts",
     "test:repository": "tsx src/services/runRepository.validation.ts",
+    "test:execution": "tsx src/services/executeAnalysis.validation.ts",
     "start": "tsx src/server.ts",
     "prisma:generate": "prisma generate",
     "prisma:seed": "tsx prisma/seed.ts"

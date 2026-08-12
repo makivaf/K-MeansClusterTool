@@ -3,7 +3,6 @@
 import crypto from "node:crypto";
 import fs from "node:fs";
 import path from "node:path";
-import { setTimeout as delay } from "node:timers/promises";
 import { fileURLToPath } from "node:url";
 import express, { type Request } from "express";
 import multer from "multer";
@@ -13,6 +12,10 @@ import {
   UploadResponseSchema
 } from "../../../../packages/shared/src/schema";
 import { AnalysisInputError, validateAnalysisInputManifest } from "../services/analysisInputManifest";
+import { ArtifactValidationError } from "../services/artifactReaders";
+import { executeAnalysis } from "../services/executeAnalysis";
+import { ResearchExecutionError } from "../services/researchPipelineOrchestrator";
+import { ZodError } from "zod";
 
 type UploadRequest = Request & {
   uploadBatchId?: string;
@@ -111,34 +114,29 @@ clusterRouter.post("/api/upload", (request: UploadRequest, response) => {
 
 clusterRouter.post("/api/cluster/run", async (request, response, next) => {
   try {
-    const { upload_ref } = ClusterRunRequestSchema.parse(request.body);
+    const { upload_ref, run_label } = ClusterRunRequestSchema.parse(request.body);
     const uploadDir = getUploadDir(upload_ref);
     if (!fs.existsSync(uploadDir)) {
       response.status(404).json({ error: "Upload reference was not found on local disk." });
       return;
     }
 
-    const runIds = await runLocalPipelinePlaceholder(upload_ref);
-    response.json(ClusterRunResponseSchema.parse({ status: "complete", ...runIds }));
+    const result = await executeAnalysis(uploadDir, run_label);
+    response.json(ClusterRunResponseSchema.parse(result));
   } catch (error) {
+    if (error instanceof ZodError || error instanceof AnalysisInputError) {
+      response.status(400).json({ error: "The analysis request or uploaded input manifest is invalid." });
+      return;
+    }
+    if (error instanceof ArtifactValidationError) {
+      response.status(422).json({ error: "Research artifacts failed aggregate validation." });
+      return;
+    }
+    if (error instanceof ResearchExecutionError) {
+      const status = error.code === "EXECUTION_TIMEOUT" ? 504 : error.code === "ENVIRONMENT_FAILURE" ? 503 : 422;
+      response.status(status).json({ error: error.message });
+      return;
+    }
     next(error);
   }
 });
-
-const runLocalPipelinePlaceholder = async (
-  uploadReference: string
-): Promise<{ axis_a_run_id: string; axis_b_run_id: string }> => {
-  void uploadReference;
-  await delay(1500);
-
-  /*
-   * TODO (later integration phases): replace this development fixture response
-   * with a thin orchestrator that invokes separate Axis A and Axis B adapters,
-   * validates two aggregate result records, imports each record independently,
-   * and returns their distinct run IDs. Never persist raw participant rows.
-   */
-  return {
-    axis_a_run_id: "dev-fixture-axis-a",
-    axis_b_run_id: "dev-fixture-axis-b"
-  };
-};
