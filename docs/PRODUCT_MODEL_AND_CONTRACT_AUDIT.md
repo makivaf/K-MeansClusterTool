@@ -14,6 +14,10 @@ Evidence:
 
 The exact input manifest is documented separately in `docs/ANALYSIS_INPUT_CONTRACT.md` after auditing all research entry points.
 
+### Intended model versus current executable capability
+
+The product requirements are hybrid, but the currently frozen research implementation contains exact-shape and hash gates for the validated thesis artifacts (for example Axis A `(2437, 6)` PCA inputs and Axis B frozen hashes/1,917 rows). Consequently, the integrated execution path can currently reproduce the authorized 10Aug2026 thesis snapshot; it is not yet a research-approved engine for a materially different compatible cohort. Supporting new empirical cohorts would require explicit research-method parameterization and revalidation, which this integration correctly does not perform. The reusable application schema remains data-derived so it does not falsely universalize thesis outcomes.
+
 ## Methodological invariants
 
 The reusable application contract enforces properties that must remain true for every compatible run:

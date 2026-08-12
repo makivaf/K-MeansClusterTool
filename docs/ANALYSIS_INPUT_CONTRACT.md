@@ -4,6 +4,8 @@
 
 Upload & Run accepts one **seven-file ADNI export batch** for a coordinated local Axis A and Axis B analysis. It does not accept a prepared feature matrix, one arbitrary CSV, renamed exports, or a generic dataset. Raw input remains on the local API filesystem and is never persisted to PostgreSQL or returned by a result endpoint.
 
+The frozen scripts additionally verify thesis-run shapes and, in later Axis B stages, content hashes of generated artifacts. Therefore the current executable contract is an authorized local copy of the **10Aug2026 thesis source snapshot**, not a newer export merely renamed to match. A different cohort may pass the header gate but will fail research validation; such failure is intentional until the scientific pipeline is explicitly generalized and revalidated.
+
 The same batch feeds both axes. Axis A uses all seven tables. Axis B uses longitudinal `TOTAL13` and actual `VISDATE` from the ADAS table, restricted through the Axis A study-entry roster produced earlier in the coordinated workflow.
 
 ## Required files and headers
