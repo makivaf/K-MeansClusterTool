@@ -157,7 +157,7 @@ const ClusterProfileCoreShape = {
 export const AxisAClusterProfileSchema = z
   .object({
     ...ClusterProfileCoreShape,
-    post_hoc_summary: PostHocSummarySchema
+    post_hoc_summary: PostHocSummarySchema.optional()
   })
   .strict();
 
@@ -175,7 +175,7 @@ const AxisABaselineConditionSchema = z
       })
       .strict(),
     metrics: ClusteringMetricsSchema,
-    cluster_profiles: z.array(AxisAClusterProfileSchema).min(1)
+    cluster_profiles: z.array(AxisAClusterProfileSchema)
   })
   .strict();
 
@@ -247,11 +247,11 @@ export const AxisAClusteringRunSchema = z
       context.addIssue({ code: z.ZodIssueCode.custom, path: ["dpc_init", "selected_centroids"], message: "DPC must provide one initial centroid per selected cluster." });
     }
     run.conditions.forEach((condition, index) => {
-      if (condition.cluster_profiles.length !== run.nbclust.selected_k) {
+      if (condition.condition === "enhanced" && condition.cluster_profiles.length !== run.nbclust.selected_k) {
         context.addIssue({ code: z.ZodIssueCode.custom, path: ["conditions", index, "cluster_profiles"], message: "Cluster profile count must equal the selected k." });
       }
       const members = condition.cluster_profiles.reduce((sum, profile) => sum + profile.n_members, 0);
-      if (members !== run.preprocessing.retained_sample_size) {
+      if (condition.cluster_profiles.length > 0 && members !== run.preprocessing.retained_sample_size) {
         context.addIssue({ code: z.ZodIssueCode.custom, path: ["conditions", index, "cluster_profiles"], message: "Aggregate cluster sizes must equal the retained sample size." });
       }
     });
