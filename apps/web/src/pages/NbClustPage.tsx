@@ -15,7 +15,11 @@ export const NbClustPage = ({ run }: NbClustPageProps) => {
     <>
       <PageHeading
         title="NbClust"
-        description="Candidate cluster counts and index vote summary used to select k before enhanced K-Means."
+        description={
+          run.axis === "Axis A"
+            ? "Candidate cluster counts and index vote summary used to select k before enhanced K-Means."
+            : "Candidate cluster counts and index vote summary used to select k for final fixed-seed standard K-Means."
+        }
       />
       <div className="grid grid-cols-12 gap-4">
         <Panel title="Index Votes by k" className="col-span-7" action={<span className="text-sm font-semibold text-teal-700">Selected k = {run.nbclust.selected_k}</span>}>

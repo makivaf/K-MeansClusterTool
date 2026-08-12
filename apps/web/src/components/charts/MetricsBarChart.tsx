@@ -1,9 +1,9 @@
 import { Bar, BarChart, CartesianGrid, Legend, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
-import type { ClusteringRun } from "../../../../../packages/shared/src";
+import type { AxisAClusteringRun } from "../../../../../packages/shared/src";
 import { getConditions, metricLabels } from "../../utils/metrics";
 
 type MetricsBarChartProps = {
-  run: ClusteringRun;
+  run: AxisAClusteringRun;
 };
 
 export const MetricsBarChart = ({ run }: MetricsBarChartProps) => {

@@ -3,7 +3,7 @@ import { PcaScreeChart } from "../components/charts/PcaScreeChart";
 import { MetricsTable } from "../components/tables/MetricsTable";
 import { DeltaBadge } from "../components/ui/DeltaBadge";
 import { Panel } from "../components/ui/Panel";
-import { getConditions, metricDelta, metricLabels } from "../utils/metrics";
+import { formatMetric, getConditions, metricDelta, metricLabels } from "../utils/metrics";
 import { PageHeading } from "./PageHeading";
 
 type DashboardPageProps = {
@@ -12,6 +12,41 @@ type DashboardPageProps = {
 
 export const DashboardPage = ({ run }: DashboardPageProps) => {
   if (!run) return null;
+
+  if (run.axis === "Axis B") {
+    const finalMetrics = run.final_clustering.metrics;
+
+    return (
+      <>
+        <PageHeading title="Dashboard" description={run.description} />
+        <div className="grid grid-cols-5 gap-3">
+          <Panel title="Selected k">
+            <div className="text-4xl font-semibold">{run.nbclust.selected_k}</div>
+            <div className="mt-2 text-xs text-muted">NbClust result</div>
+          </Panel>
+          <Panel title="Input dimensions">
+            <div className="text-4xl font-semibold">{run.slope_construction.input_dimensions}</div>
+            <div className="mt-2 text-xs text-muted">ADAS-Cog13 slope only</div>
+          </Panel>
+          {Object.entries(metricLabels).map(([metricKey, label]) => {
+            const metric = metricKey as keyof typeof finalMetrics;
+            return (
+              <Panel key={metricKey} title={label}>
+                <div className="text-3xl font-semibold text-teal-700">{formatMetric(metric, finalMetrics[metric])}</div>
+                <div className="mt-2 text-xs text-muted">Final fixed-seed standard K-Means</div>
+              </Panel>
+            );
+          })}
+        </div>
+        <Panel title="Final Axis B method" className="mt-4">
+          <p className="text-sm text-muted">
+            PCA is not applicable to the one-dimensional slope input. DPC suitability was evaluated but rejected for
+            final initialization. The reported result uses fixed-seed standard Lloyd K-Means.
+          </p>
+        </Panel>
+      </>
+    );
+  }
 
   const { baseline, enhanced } = getConditions(run);
 

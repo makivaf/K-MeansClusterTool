@@ -2,7 +2,7 @@ import type { ClusteringRun } from "../../../../packages/shared/src";
 import { MetricsBarChart } from "../components/charts/MetricsBarChart";
 import { MetricsTable } from "../components/tables/MetricsTable";
 import { Panel } from "../components/ui/Panel";
-import { getConditions } from "../utils/metrics";
+import { formatMetric, getConditions, metricLabels } from "../utils/metrics";
 import { PageHeading } from "./PageHeading";
 
 type ComparisonPageProps = {
@@ -11,6 +11,38 @@ type ComparisonPageProps = {
 
 export const ComparisonPage = ({ run }: ComparisonPageProps) => {
   if (!run) return null;
+
+  if (run.axis === "Axis B") {
+    const finalMetrics = run.final_clustering.metrics;
+
+    return (
+      <>
+        <PageHeading
+          title="Final Axis B result"
+          description="Axis A-style baseline-versus-enhanced DPC comparison is not applicable to final Axis B."
+        />
+        <Panel title={run.final_clustering.algorithm_label}>
+          <div className="grid grid-cols-3 gap-4">
+            {Object.entries(metricLabels).map(([metricKey, label]) => {
+              const metric = metricKey as keyof typeof finalMetrics;
+              return (
+                <div key={metricKey} className="rounded-md border border-line bg-canvas p-4">
+                  <div className="text-xs text-muted">{label}</div>
+                  <div className="mt-2 text-2xl font-semibold text-teal-700">
+                    {formatMetric(metric, finalMetrics[metric])}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+          <p className="mt-4 text-sm text-muted">
+            DPC was evaluated and rejected for final initialization. This page therefore reports the single fixed-seed
+            standard K-Means result and does not fabricate an enhanced Axis B condition.
+          </p>
+        </Panel>
+      </>
+    );
+  }
 
   const { baseline, enhanced } = getConditions(run);
 

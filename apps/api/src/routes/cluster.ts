@@ -112,26 +112,27 @@ clusterRouter.post("/api/cluster/run", async (request, response, next) => {
       return;
     }
 
-    const run_id = await runLocalPipelinePlaceholder(upload_ref);
-    response.json(ClusterRunResponseSchema.parse({ status: "complete", run_id }));
+    const runIds = await runLocalPipelinePlaceholder(upload_ref);
+    response.json(ClusterRunResponseSchema.parse({ status: "complete", ...runIds }));
   } catch (error) {
     next(error);
   }
 });
 
-const runLocalPipelinePlaceholder = async (uploadReference: string): Promise<string> => {
+const runLocalPipelinePlaceholder = async (
+  uploadReference: string
+): Promise<{ axis_a_run_id: string; axis_b_run_id: string }> => {
   void uploadReference;
   await delay(1500);
 
   /*
-   * TODO: Replace this placeholder with the local Python pipeline handoff:
-   * 1. Resolve the uploaded CSV path(s) from uploadReference.
-   * 2. Spawn the pipeline with child_process.spawn:
-   *      run_pipeline.py <uploaded_file_path>
-   * 3. Wait for the pipeline to write a run_*.json file matching ClusteringRunSchema.
-   * 4. Read and validate the JSON with ClusteringRunSchema.parse(...).
-   * 5. Import only that aggregate run JSON into PostgreSQL via importRun(...).
-   * 6. Return the real run_id. Never persist raw CSV participant rows to PostgreSQL.
+   * TODO (later integration phases): replace this development fixture response
+   * with a thin orchestrator that invokes separate Axis A and Axis B adapters,
+   * validates two aggregate result records, imports each record independently,
+   * and returns their distinct run IDs. Never persist raw participant rows.
    */
-  return "axis-a-baseline-2024-05-18";
+  return {
+    axis_a_run_id: "dev-fixture-axis-a",
+    axis_b_run_id: "dev-fixture-axis-b"
+  };
 };

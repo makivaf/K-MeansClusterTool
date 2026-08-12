@@ -7,6 +7,7 @@ import { Panel } from "../components/ui/Panel";
 import { PageHeading } from "./PageHeading";
 
 type UploadStatus = "idle" | "uploading" | "processing" | "done" | "error";
+type CompletedRunIds = { axisA: string; axisB: string };
 
 const buttonText: Record<UploadStatus, string> = {
   idle: "Run Clustering",
@@ -20,7 +21,7 @@ export const UploadAndCluster = () => {
   const [files, setFiles] = useState<File[]>([]);
   const [status, setStatus] = useState<UploadStatus>("idle");
   const [error, setError] = useState<string | null>(null);
-  const [completedRunId, setCompletedRunId] = useState<string | null>(null);
+  const [completedRunIds, setCompletedRunIds] = useState<CompletedRunIds | null>(null);
   const localApiEnabled = useMemo(() => isLocalApiBaseUrl(), []);
   const busy = status === "uploading" || status === "processing";
   const disabled = !localApiEnabled || files.length === 0 || busy;
@@ -29,7 +30,7 @@ export const UploadAndCluster = () => {
     setFiles(Array.from(event.target.files ?? []));
     setStatus("idle");
     setError(null);
-    setCompletedRunId(null);
+    setCompletedRunIds(null);
   };
 
   const runClustering = async () => {
@@ -40,7 +41,7 @@ export const UploadAndCluster = () => {
     try {
       setStatus("uploading");
       setError(null);
-      setCompletedRunId(null);
+      setCompletedRunIds(null);
 
       const formData = new FormData();
       files.forEach((file) => formData.append("files", file));
@@ -70,7 +71,10 @@ export const UploadAndCluster = () => {
       }
 
       const runPayload = ClusterRunResponseSchema.parse(await runResponse.json());
-      setCompletedRunId(runPayload.run_id);
+      setCompletedRunIds({
+        axisA: runPayload.axis_a_run_id,
+        axisB: runPayload.axis_b_run_id
+      });
       setStatus("done");
     } catch (caught) {
       setStatus("error");
@@ -153,21 +157,33 @@ export const UploadAndCluster = () => {
 
             {error ? <div className="rounded-md border border-red-200 bg-red-50 p-3 text-sm text-red-700">{error}</div> : null}
 
-            {completedRunId ? (
+            {completedRunIds ? (
               <div className="rounded-md border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-900">
-                <div className="font-semibold">Pipeline placeholder returned run `{completedRunId}`.</div>
-                <div className="mt-3 flex gap-2">
+                <div className="font-semibold">Development placeholder returned separate Axis A and Axis B fixtures.</div>
+                <div className="mt-3 grid grid-cols-2 gap-2">
                   <Link
-                    to={`/runs/${completedRunId}/comparison`}
+                    to={`/runs/${completedRunIds.axisA}/comparison`}
                     className="rounded-md bg-white px-3 py-2 text-xs font-semibold text-emerald-800 shadow-sm ring-1 ring-emerald-200"
                   >
-                    View Comparison
+                    Axis A comparison
                   </Link>
                   <Link
-                    to={`/runs/${completedRunId}/cluster-profiles`}
+                    to={`/runs/${completedRunIds.axisA}/cluster-profiles`}
                     className="rounded-md bg-white px-3 py-2 text-xs font-semibold text-emerald-800 shadow-sm ring-1 ring-emerald-200"
                   >
-                    View Cluster Profiles
+                    Axis A profiles
+                  </Link>
+                  <Link
+                    to={`/runs/${completedRunIds.axisB}/comparison`}
+                    className="rounded-md bg-white px-3 py-2 text-xs font-semibold text-emerald-800 shadow-sm ring-1 ring-emerald-200"
+                  >
+                    Axis B final result
+                  </Link>
+                  <Link
+                    to={`/runs/${completedRunIds.axisB}/cluster-profiles`}
+                    className="rounded-md bg-white px-3 py-2 text-xs font-semibold text-emerald-800 shadow-sm ring-1 ring-emerald-200"
+                  >
+                    Axis B profiles
                   </Link>
                 </div>
               </div>

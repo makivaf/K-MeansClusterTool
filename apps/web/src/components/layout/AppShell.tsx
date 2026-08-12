@@ -106,9 +106,13 @@ export const AppShell = ({
                 <div className="mt-1 text-xl font-semibold">{selectedRun?.nbclust.selected_k ?? "-"}</div>
               </div>
               <div>
-                <div className="text-xs font-medium uppercase tracking-normal text-muted">Cumulative variance</div>
+                <div className="text-xs font-medium uppercase tracking-normal text-muted">PCA variance</div>
                 <div className="mt-1 text-xl font-semibold">
-                  {selectedRun ? `${(selectedRun.pca.cumulative_explained_variance * 100).toFixed(1)}%` : "-"}
+                  {selectedRun?.axis === "Axis A"
+                    ? `${(selectedRun.pca.cumulative_explained_variance * 100).toFixed(1)}%`
+                    : selectedRun?.axis === "Axis B"
+                      ? "Not applicable"
+                      : "-"}
                 </div>
               </div>
               <div>

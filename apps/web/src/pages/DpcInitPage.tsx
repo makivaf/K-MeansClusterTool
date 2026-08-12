@@ -11,6 +11,29 @@ type DpcInitPageProps = {
 export const DpcInitPage = ({ run }: DpcInitPageProps) => {
   if (!run) return null;
 
+  if (run.axis === "Axis B") {
+    return (
+      <>
+        <PageHeading
+          title="DPC suitability"
+          description="Axis B evaluation of DPC initialization in the one-dimensional slope space."
+        />
+        <Panel title="Evaluated and not used">
+          <dl className="space-y-3 text-sm">
+            <div>
+              <dt className="font-semibold">Final initialization</dt>
+              <dd className="mt-1 text-muted">Fixed-seed standard K-Means; DPC was not used.</dd>
+            </div>
+            <div>
+              <dt className="font-semibold">Conclusion</dt>
+              <dd className="mt-1 text-muted">{run.dpc_suitability.summary}</dd>
+            </div>
+          </dl>
+        </Panel>
+      </>
+    );
+  }
+
   return (
     <>
       <PageHeading
