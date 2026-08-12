@@ -7,7 +7,7 @@ import { Panel } from "../components/ui/Panel";
 import { PageHeading } from "./PageHeading";
 
 type UploadStatus = "idle" | "uploading" | "processing" | "done" | "error";
-type CompletedRunIds = { axisA: string; axisB: string };
+type CompletedRunIds = { axisA: string; axisB: string; persistence: "durable" | "memory_only" };
 
 const buttonText: Record<UploadStatus, string> = {
   idle: "Run Clustering",
@@ -24,7 +24,7 @@ export const UploadAndCluster = () => {
   const [completedRunIds, setCompletedRunIds] = useState<CompletedRunIds | null>(null);
   const localApiEnabled = useMemo(() => isLocalApiBaseUrl(), []);
   const busy = status === "uploading" || status === "processing";
-  const disabled = !localApiEnabled || files.length === 0 || busy;
+  const disabled = !localApiEnabled || files.length !== 7 || busy;
 
   const onFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     setFiles(Array.from(event.target.files ?? []));
@@ -73,7 +73,8 @@ export const UploadAndCluster = () => {
       const runPayload = ClusterRunResponseSchema.parse(await runResponse.json());
       setCompletedRunIds({
         axisA: runPayload.axis_a_run_id,
-        axisB: runPayload.axis_b_run_id
+        axisB: runPayload.axis_b_run_id,
+        persistence: runPayload.persistence
       });
       setStatus("done");
     } catch (caught) {
@@ -86,7 +87,7 @@ export const UploadAndCluster = () => {
     <>
       <PageHeading
         title="Upload Dataset & Run Clustering"
-        description="Local-only CSV upload workflow for handing raw research data to the clustering pipeline during thesis development."
+        description="Local-only workflow for the exact seven-file ADNI export manifest used by the validated Axis A and Axis B research pipelines."
       />
 
       {!localApiEnabled ? (
@@ -107,8 +108,8 @@ export const UploadAndCluster = () => {
         <Panel title="Dataset Files" className="col-span-7">
           <label className="flex min-h-48 cursor-pointer flex-col items-center justify-center rounded-md border border-dashed border-line bg-slate-50 px-6 py-8 text-center transition hover:border-teal-600 hover:bg-teal-50">
             <UploadCloud size={34} className="text-teal-700" strokeWidth={1.8} />
-            <span className="mt-3 text-sm font-semibold">Choose CSV file(s)</span>
-            <span className="mt-1 text-xs text-muted">Multiple files accepted. 500MB maximum per file.</span>
+            <span className="mt-3 text-sm font-semibold">Choose the seven required ADNI CSV exports</span>
+            <span className="mt-1 text-xs text-muted">Exact filenames and required headers are validated. 500MB maximum per file.</span>
             <input type="file" multiple accept=".csv" className="sr-only" onChange={onFileChange} disabled={!localApiEnabled || busy} />
           </label>
 
@@ -159,7 +160,12 @@ export const UploadAndCluster = () => {
 
             {completedRunIds ? (
               <div className="rounded-md border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-900">
-                <div className="font-semibold">Development placeholder returned separate Axis A and Axis B fixtures.</div>
+                <div className="font-semibold">Validated Axis A and Axis B analyses completed.</div>
+                <p className="mt-1 text-xs text-emerald-800">
+                  {completedRunIds.persistence === "durable"
+                    ? "Both aggregate results were persisted to PostgreSQL."
+                    : "Both aggregate results are available in this API process only; DATABASE_URL is not configured."}
+                </p>
                 <div className="mt-3 grid grid-cols-2 gap-2">
                   <Link
                     to={`/runs/${completedRunIds.axisA}/comparison`}
@@ -190,7 +196,7 @@ export const UploadAndCluster = () => {
             ) : null}
 
             <div className="text-xs leading-5 text-muted">
-              Raw CSV files are saved to the local API filesystem only. The production API never mounts these endpoints.
+              Required files: ADAS, CDR, FAQ, MMSE, NEUROBAT, NPIQ, and GDSCALE exports named for the 10Aug2026 snapshot. Raw rows stay on the local API filesystem; production never mounts this workflow.
             </div>
           </div>
         </Panel>

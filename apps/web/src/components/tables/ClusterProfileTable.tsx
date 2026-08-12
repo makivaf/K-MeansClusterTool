@@ -10,7 +10,7 @@ const variableKeys = (profiles: ClusterProfile[]) => Object.keys(profiles[0]?.va
 export const ClusterProfileTable = ({ result }: ClusterProfileTableProps) => {
   const profiles: ClusterProfile[] = [...result.cluster_profiles];
   const keys = variableKeys(profiles);
-  const showsPostHoc = profiles.some((profile) => "post_hoc_summary" in profile);
+  const showsPostHoc = profiles.some((profile) => "post_hoc_summary" in profile && profile.post_hoc_summary !== undefined);
 
   return (
     <div className="space-y-3">
@@ -41,7 +41,7 @@ export const ClusterProfileTable = ({ result }: ClusterProfileTableProps) => {
                     {profile.variable_means[key].toFixed(2)}
                   </td>
                 ))}
-                {"post_hoc_summary" in profile ? (
+                {"post_hoc_summary" in profile && profile.post_hoc_summary ? (
                   <>
                     <td className="px-4 py-3">
                       {profile.post_hoc_summary.age.mean.toFixed(1)} ({profile.post_hoc_summary.age.sd.toFixed(1)})
