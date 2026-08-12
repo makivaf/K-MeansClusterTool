@@ -238,7 +238,7 @@ POST /api/cluster/run
 
 - Accepts `multipart/form-data`
 - Uses field name `files`
-- Accepts multiple `.csv` files
+- Requires the exact seven-file ADNI CSV manifest documented in `docs/ANALYSIS_INPUT_CONTRACT.md`
 - Rejects non-CSV files
 - Limits file size to 500MB per file
 - Saves files under `apps/api/uploads/<upload_ref>/`
@@ -255,34 +255,20 @@ POST /api/cluster/run
 ```
 
 - Verifies the upload reference exists locally
-- Simulates pipeline processing
+- Runs the bounded Axis A and Axis B research orchestrator in an isolated local workspace
+- Validates and maps separate aggregate results, then persists both together
 - Returns:
 
 ```json
 {
   "status": "complete",
-  "run_id": "axis-a-baseline-2024-05-18"
+  "persistence": "durable",
+  "axis_a_run_id": "analysis-...-axis-a",
+  "axis_b_run_id": "analysis-...-axis-b"
 }
 ```
 
-## Future Pipeline Integration
-
-The backend currently contains a TODO block in `apps/api/src/routes/cluster.ts` for replacing the placeholder with the real Python workflow.
-
-The intended future flow is:
-
-1. Resolve uploaded CSV file paths from `upload_ref`.
-2. Spawn the Python pipeline with `child_process.spawn`.
-3. Run something like:
-
-```bash
-python run_pipeline.py <uploaded_file_path>
-```
-
-4. Wait for Python to write a `run_*.json` file.
-5. Validate the JSON with `ClusteringRunSchema`.
-6. Import only aggregate JSON into PostgreSQL with `importRun`.
-7. Return the real `run_id` to the frontend.
+When `DATABASE_URL` is absent outside production, `persistence` is `memory_only`; results remain available only for the lifetime of that API process. Production refuses dummy fallback and does not mount upload/execution routes.
 
 Raw CSV content should never be imported into PostgreSQL.
 
@@ -406,21 +392,20 @@ Build only the shared package:
 npm run build -w @ad-clustering/shared
 ```
 
-## Current Dummy Runs
+## Development Fixtures
 
-The scaffold includes three validated dummy runs:
+The scaffold includes two clearly labeled, schema-valid development fixtures:
 
-- `axis-a-baseline-2024-05-18`
-- `axis-a-sensitivity-2024-06-02`
-- `axis-b-decline-2024-06-16`
+- `dev-fixture-axis-a`
+- `dev-fixture-axis-b`
 
-These are realistic placeholders for UI development and thesis review demos. Replace them with real aggregate pipeline output once the Python pipeline is ready.
+Their zero-valued descriptive metrics are not thesis findings. Real local execution returns separate validated aggregate results.
 
 ## Development Notes
 
 - Keep page components modular.
 - Keep chart components separate from page containers.
-- Add real pipeline integration behind the local-only API boundary.
+- Keep the research process allowlist and aggregate adapter boundary narrow.
 - Keep Upload & Run disabled for non-local API URLs.
 - Do not add authentication yet unless the project requirements change.
 - Do not add participant-level rendering to frontend pages.
