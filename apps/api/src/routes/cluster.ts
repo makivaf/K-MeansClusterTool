@@ -1,9 +1,7 @@
 // DUA compliance: uploaded CSV files may contain raw participant-level research data.
 // These local-only routes are mounted only outside production, and raw CSVs stay on local disk only.
-import crypto from "node:crypto";
 import fs from "node:fs";
 import path from "node:path";
-import { fileURLToPath } from "node:url";
 import express, { type Request } from "express";
 import multer from "multer";
 import {
@@ -14,6 +12,10 @@ import {
 import { AnalysisInputError, validateAnalysisInputManifest } from "../services/analysisInputManifest";
 import { ArtifactValidationError } from "../services/artifactReaders";
 import { executeAnalysis } from "../services/executeAnalysis";
+import {
+  createUploadDirectory,
+  resolveUploadDirectory
+} from "../services/localUploadStore";
 import { ResearchExecutionError } from "../services/researchPipelineOrchestrator";
 import { ZodError } from "zod";
 
@@ -21,26 +23,7 @@ type UploadRequest = Request & {
   uploadBatchId?: string;
 };
 
-const routerDir = path.dirname(fileURLToPath(import.meta.url));
-const uploadRoot = path.resolve(routerDir, "../../uploads");
 const maxCsvBytes = 500 * 1024 * 1024;
-const uploadRefPattern = /^upload-\d{13}-[a-f0-9]{12}$/;
-
-const ensureUploadRoot = () => {
-  fs.mkdirSync(uploadRoot, { recursive: true });
-};
-
-const getUploadDir = (uploadRef: string) => {
-  if (!uploadRefPattern.test(uploadRef)) {
-    throw new Error("Invalid upload reference");
-  }
-
-  const resolved = path.resolve(uploadRoot, uploadRef);
-  if (!resolved.startsWith(uploadRoot)) {
-    throw new Error("Invalid upload reference");
-  }
-  return resolved;
-};
 
 const sanitizeFilename = (filename: string) =>
   path
@@ -49,15 +32,13 @@ const sanitizeFilename = (filename: string) =>
     .replace(/_+/g, "_");
 
 const assignUploadBatch = (request: UploadRequest, _response: express.Response, next: express.NextFunction) => {
-  ensureUploadRoot();
-  request.uploadBatchId = `upload-${Date.now()}-${crypto.randomBytes(6).toString("hex")}`;
-  fs.mkdirSync(getUploadDir(request.uploadBatchId), { recursive: true });
+  request.uploadBatchId = createUploadDirectory().uploadRef;
   next();
 };
 
 const storage = multer.diskStorage({
   destination: (request: UploadRequest, _file, callback) => {
-    callback(null, getUploadDir(request.uploadBatchId ?? ""));
+    callback(null, resolveUploadDirectory(request.uploadBatchId ?? ""));
   },
   filename: (_request, file, callback) => {
     callback(null, sanitizeFilename(file.originalname));
@@ -99,9 +80,9 @@ clusterRouter.post("/api/upload", (request: UploadRequest, response) => {
   }
 
   try {
-    validateAnalysisInputManifest(getUploadDir(request.uploadBatchId));
+    validateAnalysisInputManifest(resolveUploadDirectory(request.uploadBatchId));
   } catch (error) {
-    fs.rmSync(getUploadDir(request.uploadBatchId), { recursive: true, force: true });
+    fs.rmSync(resolveUploadDirectory(request.uploadBatchId), { recursive: true, force: true });
     const message = error instanceof AnalysisInputError ? error.message : "Unable to validate the analysis input manifest.";
     response.status(400).json({ error: message });
     return;
@@ -115,7 +96,7 @@ clusterRouter.post("/api/upload", (request: UploadRequest, response) => {
 clusterRouter.post("/api/cluster/run", async (request, response, next) => {
   try {
     const { upload_ref, run_label } = ClusterRunRequestSchema.parse(request.body);
-    const uploadDir = getUploadDir(upload_ref);
+    const uploadDir = resolveUploadDirectory(upload_ref);
     if (!fs.existsSync(uploadDir)) {
       response.status(404).json({ error: "Upload reference was not found on local disk." });
       return;

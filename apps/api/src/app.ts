@@ -3,6 +3,7 @@ import express from "express";
 import { ZodError } from "zod";
 import { RunListResponseSchema, RunResponseSchema } from "../../../packages/shared/src/schema";
 import { clusterRouter } from "./routes/cluster";
+import { researchRunsRouter } from "./routes/researchRuns";
 import { getRunById, listRuns } from "./services/runRepository";
 
 export const app = express();
@@ -38,6 +39,7 @@ app.get("/api/runs/:runId", async (request, response, next) => {
 
 if (process.env.NODE_ENV !== "production") {
   app.use(clusterRouter);
+  app.use(researchRunsRouter);
 }
 
 app.use((error: unknown, _request: express.Request, response: express.Response, _next: express.NextFunction) => {

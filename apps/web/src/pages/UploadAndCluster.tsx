@@ -1,36 +1,58 @@
 import { AlertTriangle, CheckCircle2, FileText, Loader2, UploadCloud } from "lucide-react";
-import { useMemo, useState } from "react";
-import { Link } from "react-router-dom";
-import { ClusterRunResponseSchema, UploadResponseSchema } from "../../../../packages/shared/src";
+import { useEffect, useMemo, useRef, useState } from "react";
+import {
+  ResearchRunResponseSchema,
+  RunResponseSchema,
+  UploadResponseSchema,
+  type Axis
+} from "../../../../packages/shared/src";
 import { API_BASE_URL, isLocalApiBaseUrl } from "../config/api";
 import { Panel } from "../components/ui/Panel";
 import { PageHeading } from "./PageHeading";
 
-type UploadStatus = "idle" | "uploading" | "processing" | "done" | "error";
-type CompletedRunIds = { axisA: string; axisB: string; persistence: "durable" | "memory_only" };
+type UploadStatus = "idle" | "uploading" | "queued" | "running" | "complete" | "failed";
+type CompletedRun = { axis: Axis; resultRunId: string; persistence: "durable" | "memory_only" };
 
 const buttonText: Record<UploadStatus, string> = {
   idle: "Run Clustering",
   uploading: "Uploading CSV files",
-  processing: "Processing locally",
-  done: "Run Complete",
-  error: "Try Again"
+  queued: "Research run queued",
+  running: "Processing locally",
+  complete: "Run Complete",
+  failed: "Try Again"
 };
+
+const waitForNextPoll = (signal: AbortSignal, milliseconds = 1000) => new Promise<void>((resolve, reject) => {
+  const onAbort = () => {
+    window.clearTimeout(timer);
+    reject(new DOMException("Polling aborted", "AbortError"));
+  };
+  const timer = window.setTimeout(() => {
+    signal.removeEventListener("abort", onAbort);
+    resolve();
+  }, milliseconds);
+  signal.addEventListener("abort", onAbort, { once: true });
+});
 
 export const UploadAndCluster = () => {
   const [files, setFiles] = useState<File[]>([]);
   const [status, setStatus] = useState<UploadStatus>("idle");
+  const [selectedAxis, setSelectedAxis] = useState<Axis>("Axis A");
   const [error, setError] = useState<string | null>(null);
-  const [completedRunIds, setCompletedRunIds] = useState<CompletedRunIds | null>(null);
+  const [completedRun, setCompletedRun] = useState<CompletedRun | null>(null);
+  const pollingController = useRef<AbortController | null>(null);
   const localApiEnabled = useMemo(() => isLocalApiBaseUrl(), []);
-  const busy = status === "uploading" || status === "processing";
+  const busy = status === "uploading" || status === "queued" || status === "running";
   const disabled = !localApiEnabled || files.length !== 7 || busy;
+
+  useEffect(() => () => pollingController.current?.abort(), []);
 
   const onFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     setFiles(Array.from(event.target.files ?? []));
+    pollingController.current?.abort();
     setStatus("idle");
     setError(null);
-    setCompletedRunIds(null);
+    setCompletedRun(null);
   };
 
   const runClustering = async () => {
@@ -41,14 +63,18 @@ export const UploadAndCluster = () => {
     try {
       setStatus("uploading");
       setError(null);
-      setCompletedRunIds(null);
+      setCompletedRun(null);
+      pollingController.current?.abort();
+      const controller = new AbortController();
+      pollingController.current = controller;
 
       const formData = new FormData();
       files.forEach((file) => formData.append("files", file));
 
       const uploadResponse = await fetch(`${API_BASE_URL}/api/upload`, {
         method: "POST",
-        body: formData
+        body: formData,
+        signal: controller.signal
       });
 
       if (!uploadResponse.ok) {
@@ -58,11 +84,11 @@ export const UploadAndCluster = () => {
 
       const uploadPayload = UploadResponseSchema.parse(await uploadResponse.json());
 
-      setStatus("processing");
-      const runResponse = await fetch(`${API_BASE_URL}/api/cluster/run`, {
+      const runResponse = await fetch(`${API_BASE_URL}/api/research/runs`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ upload_ref: uploadPayload.upload_ref })
+        body: JSON.stringify({ axis: selectedAxis, upload_ref: uploadPayload.upload_ref }),
+        signal: controller.signal
       });
 
       if (!runResponse.ok) {
@@ -70,15 +96,39 @@ export const UploadAndCluster = () => {
         throw new Error(payload?.error ?? `Pipeline run failed with ${runResponse.status}`);
       }
 
-      const runPayload = ClusterRunResponseSchema.parse(await runResponse.json());
-      setCompletedRunIds({
-        axisA: runPayload.axis_a_run_id,
-        axisB: runPayload.axis_b_run_id,
-        persistence: runPayload.persistence
+      let researchRun = ResearchRunResponseSchema.parse(await runResponse.json()).run;
+      setStatus(researchRun.status);
+
+      while (researchRun.status === "queued" || researchRun.status === "running") {
+        await waitForNextPoll(controller.signal);
+        const statusResponse = await fetch(
+          `${API_BASE_URL}/api/research/runs/${encodeURIComponent(researchRun.run_id)}`,
+          { signal: controller.signal }
+        );
+        if (!statusResponse.ok) throw new Error(`Research status request failed with ${statusResponse.status}`);
+        researchRun = ResearchRunResponseSchema.parse(await statusResponse.json()).run;
+        setStatus(researchRun.status);
+      }
+
+      if (researchRun.status === "failed") throw new Error(researchRun.error.message);
+
+      const resultResponse = await fetch(
+        `${API_BASE_URL}/api/runs/${encodeURIComponent(researchRun.result_run_id)}`,
+        { signal: controller.signal }
+      );
+      if (!resultResponse.ok) throw new Error(`Persisted result request failed with ${resultResponse.status}`);
+      const persistedResult = RunResponseSchema.parse(await resultResponse.json()).run;
+      if (persistedResult.axis !== researchRun.axis) throw new Error("Persisted result axis did not match the research run.");
+
+      setCompletedRun({
+        axis: researchRun.axis,
+        resultRunId: researchRun.result_run_id,
+        persistence: researchRun.persistence
       });
-      setStatus("done");
+      setStatus("complete");
     } catch (caught) {
-      setStatus("error");
+      if (caught instanceof DOMException && caught.name === "AbortError") return;
+      setStatus("failed");
       setError(caught instanceof Error ? caught.message : "Unable to run clustering.");
     }
   };
@@ -137,11 +187,24 @@ export const UploadAndCluster = () => {
 
         <Panel title="Run Control" className="col-span-5">
           <div className="space-y-4">
+            <label className="block text-sm font-semibold">
+              Research axis
+              <select
+                value={selectedAxis}
+                onChange={(event) => setSelectedAxis(event.target.value as Axis)}
+                disabled={busy}
+                className="mt-2 h-11 w-full rounded-md border border-line bg-white px-3 text-sm shadow-sm outline-none focus:border-teal-600 disabled:bg-slate-100"
+              >
+                <option>Axis A</option>
+                <option>Axis B</option>
+              </select>
+            </label>
+
             <div className="rounded-md border border-line bg-canvas p-4 text-sm">
               <div className="font-semibold">Status</div>
               <div className="mt-2 flex items-center gap-2 text-muted">
                 {busy ? <Loader2 size={16} className="animate-spin text-teal-700" /> : null}
-                {status === "done" ? <CheckCircle2 size={16} className="text-emerald-700" /> : null}
+                {status === "complete" ? <CheckCircle2 size={16} className="text-emerald-700" /> : null}
                 <span className="capitalize">{status}</span>
               </div>
             </div>
@@ -158,39 +221,27 @@ export const UploadAndCluster = () => {
 
             {error ? <div className="rounded-md border border-red-200 bg-red-50 p-3 text-sm text-red-700">{error}</div> : null}
 
-            {completedRunIds ? (
+            {completedRun ? (
               <div className="rounded-md border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-900">
-                <div className="font-semibold">Validated Axis A and Axis B analyses completed.</div>
+                <div className="font-semibold">Validated {completedRun.axis} analysis completed.</div>
                 <p className="mt-1 text-xs text-emerald-800">
-                  {completedRunIds.persistence === "durable"
-                    ? "Both aggregate results were persisted to PostgreSQL."
-                    : "Both aggregate results are available in this API process only; DATABASE_URL is not configured."}
+                  {completedRun.persistence === "durable"
+                    ? "The aggregate result was persisted to PostgreSQL."
+                    : "The aggregate result is available in this API process only; DATABASE_URL is not configured."}
                 </p>
                 <div className="mt-3 grid grid-cols-2 gap-2">
-                  <Link
-                    to={`/runs/${completedRunIds.axisA}/comparison`}
+                  <a
+                    href={`/runs/${completedRun.resultRunId}/comparison`}
                     className="rounded-md bg-white px-3 py-2 text-xs font-semibold text-emerald-800 shadow-sm ring-1 ring-emerald-200"
                   >
-                    Axis A comparison
-                  </Link>
-                  <Link
-                    to={`/runs/${completedRunIds.axisA}/cluster-profiles`}
+                    {completedRun.axis} result
+                  </a>
+                  <a
+                    href={`/runs/${completedRun.resultRunId}/cluster-profiles`}
                     className="rounded-md bg-white px-3 py-2 text-xs font-semibold text-emerald-800 shadow-sm ring-1 ring-emerald-200"
                   >
-                    Axis A profiles
-                  </Link>
-                  <Link
-                    to={`/runs/${completedRunIds.axisB}/comparison`}
-                    className="rounded-md bg-white px-3 py-2 text-xs font-semibold text-emerald-800 shadow-sm ring-1 ring-emerald-200"
-                  >
-                    Axis B final result
-                  </Link>
-                  <Link
-                    to={`/runs/${completedRunIds.axisB}/cluster-profiles`}
-                    className="rounded-md bg-white px-3 py-2 text-xs font-semibold text-emerald-800 shadow-sm ring-1 ring-emerald-200"
-                  >
-                    Axis B profiles
-                  </Link>
+                    {completedRun.axis} profiles
+                  </a>
                 </div>
               </div>
             ) : null}
