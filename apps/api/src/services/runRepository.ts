@@ -6,6 +6,9 @@ let prisma: PrismaClient | null = null;
 const memoryRuns = new Map<string, ClusteringRun>();
 const isProduction = () => process.env.NODE_ENV === "production";
 
+export const getRunPersistenceMode = (): "durable" | "memory_only" =>
+  process.env.DATABASE_URL ? "durable" : "memory_only";
+
 const getPrisma = () => {
   if (!process.env.DATABASE_URL) {
     return null;

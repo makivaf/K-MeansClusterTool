@@ -3,7 +3,9 @@ import {
   ClusteringRunSchema,
   ClusterRunResponseSchema,
   FrozenAxisAStudyResultSchema,
-  FrozenAxisBStudyResultSchema
+  FrozenAxisBStudyResultSchema,
+  ResearchRunRequestSchema,
+  ResearchRunStatusSchema
 } from "./schema.js";
 
 type MutablePayload = Record<string, any>;
@@ -92,3 +94,20 @@ if (ClusterRunResponseSchema.safeParse({ ...coordinatedResponse, axis_b_run_id: 
   throw new Error("Coordinated response should reject one record masquerading as both axes");
 }
 console.log("PASS rejected: coordinated response reusing one run ID for both axes");
+
+ResearchRunRequestSchema.parse({ axis: "Axis A", upload_ref: "upload-1", run_label: "Axis A validation" });
+ResearchRunRequestSchema.parse({ axis: "Axis B", upload_ref: "upload-2" });
+if (ResearchRunRequestSchema.safeParse({ axis: "Axis C", upload_ref: "upload-3" }).success) {
+  throw new Error("Unsupported research axis should be rejected");
+}
+if (ResearchRunRequestSchema.safeParse({ axis: "Axis A", upload_ref: "upload-1", axis_b_options: {} }).success) {
+  throw new Error("Cross-axis request fields should be rejected");
+}
+console.log("PASS research request: strict Axis A/Axis B discrimination");
+
+const lifecycleBase = { run_id: "research-test", axis: "Axis A", created_at: "2026-08-13T00:00:00.000Z" };
+ResearchRunStatusSchema.parse({ ...lifecycleBase, status: "queued" });
+ResearchRunStatusSchema.parse({ ...lifecycleBase, status: "running", started_at: "2026-08-13T00:00:01.000Z" });
+ResearchRunStatusSchema.parse({ ...lifecycleBase, status: "complete", started_at: "2026-08-13T00:00:01.000Z", finished_at: "2026-08-13T00:00:02.000Z", result_run_id: "axis-a-result", persistence: "memory_only" });
+ResearchRunStatusSchema.parse({ ...lifecycleBase, status: "failed", started_at: "2026-08-13T00:00:01.000Z", finished_at: "2026-08-13T00:00:02.000Z", error: { code: "EXECUTION_FAILURE", message: "The research pipeline did not complete successfully." } });
+console.log("PASS research status: queued, running, complete, and failed contracts");

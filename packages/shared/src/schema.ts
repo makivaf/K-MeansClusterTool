@@ -393,6 +393,85 @@ export const ClusterRunResponseSchema = z
     message: "Axis A and Axis B must reference separate result records."
   });
 
+const ResearchRunRequestBaseShape = {
+  upload_ref: z.string().min(1),
+  run_label: z.string().trim().min(1).max(120).optional()
+};
+
+export const ResearchRunRequestSchema = z.discriminatedUnion("axis", [
+  z.object({ axis: z.literal("Axis A"), ...ResearchRunRequestBaseShape }).strict(),
+  z.object({ axis: z.literal("Axis B"), ...ResearchRunRequestBaseShape }).strict()
+]);
+
+const ResearchRunBaseShape = {
+  run_id: z.string().min(1),
+  axis: AxisSchema,
+  created_at: z.string().datetime()
+};
+
+export const ResearchRunQueuedSchema = z
+  .object({
+    ...ResearchRunBaseShape,
+    status: z.literal("queued")
+  })
+  .strict();
+
+export const ResearchRunRunningSchema = z
+  .object({
+    ...ResearchRunBaseShape,
+    status: z.literal("running"),
+    started_at: z.string().datetime()
+  })
+  .strict();
+
+export const ResearchRunCompleteSchema = z
+  .object({
+    ...ResearchRunBaseShape,
+    status: z.literal("complete"),
+    started_at: z.string().datetime(),
+    finished_at: z.string().datetime(),
+    result_run_id: z.string().min(1),
+    persistence: z.enum(["durable", "memory_only"])
+  })
+  .strict();
+
+export const ResearchRunFailureCodeSchema = z.enum([
+  "INVALID_INPUT",
+  "ENVIRONMENT_FAILURE",
+  "EXECUTION_FAILURE",
+  "EXECUTION_TIMEOUT",
+  "ARTIFACT_VALIDATION_FAILURE",
+  "PERSISTENCE_FAILURE"
+]);
+
+export const ResearchRunFailedSchema = z
+  .object({
+    ...ResearchRunBaseShape,
+    status: z.literal("failed"),
+    started_at: z.string().datetime().optional(),
+    finished_at: z.string().datetime(),
+    error: z
+      .object({
+        code: ResearchRunFailureCodeSchema,
+        message: z.string().min(1)
+      })
+      .strict()
+  })
+  .strict();
+
+export const ResearchRunStatusSchema = z.discriminatedUnion("status", [
+  ResearchRunQueuedSchema,
+  ResearchRunRunningSchema,
+  ResearchRunCompleteSchema,
+  ResearchRunFailedSchema
+]);
+
+export const ResearchRunResponseSchema = z
+  .object({
+    run: ResearchRunStatusSchema
+  })
+  .strict();
+
 export type Axis = z.infer<typeof AxisSchema>;
 export type ResultSource = z.infer<typeof ResultSourceSchema>;
 export type Condition = z.infer<typeof ConditionSchema>;
@@ -424,3 +503,11 @@ export type RunResponse = z.infer<typeof RunResponseSchema>;
 export type UploadResponse = z.infer<typeof UploadResponseSchema>;
 export type ClusterRunRequest = z.infer<typeof ClusterRunRequestSchema>;
 export type ClusterRunResponse = z.infer<typeof ClusterRunResponseSchema>;
+export type ResearchRunRequest = z.infer<typeof ResearchRunRequestSchema>;
+export type ResearchRunQueued = z.infer<typeof ResearchRunQueuedSchema>;
+export type ResearchRunRunning = z.infer<typeof ResearchRunRunningSchema>;
+export type ResearchRunComplete = z.infer<typeof ResearchRunCompleteSchema>;
+export type ResearchRunFailureCode = z.infer<typeof ResearchRunFailureCodeSchema>;
+export type ResearchRunFailed = z.infer<typeof ResearchRunFailedSchema>;
+export type ResearchRunStatus = z.infer<typeof ResearchRunStatusSchema>;
+export type ResearchRunResponse = z.infer<typeof ResearchRunResponseSchema>;

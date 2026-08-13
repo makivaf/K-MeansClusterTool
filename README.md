@@ -121,6 +121,8 @@ Backend routes used:
 ```text
 POST /api/upload
 POST /api/cluster/run
+POST /api/research/runs
+GET /api/research/runs/:runId
 ```
 
 These routes are local-only and are not mounted in production.
@@ -271,6 +273,19 @@ POST /api/cluster/run
 When `DATABASE_URL` is absent outside production, `persistence` is `memory_only`; results remain available only for the lifetime of that API process. Production refuses dummy fallback and does not mount upload/execution routes.
 
 Raw CSV content should never be imported into PostgreSQL.
+
+`POST /api/research/runs` is the axis-aware asynchronous lifecycle endpoint.
+It accepts `{ "axis": "Axis A" | "Axis B", "upload_ref": "upload-...", "run_label"?: string }`,
+returns `202 Accepted` with a queued job, and executes jobs one at a time.
+`GET /api/research/runs/:runId` returns queued, running, complete, or failed
+status. Complete jobs contain only a `result_run_id`; fetch the aggregate result
+from `GET /api/runs/:resultRunId`. Failures are sanitized and never include
+subprocess output, participant identifiers, or raw file contents.
+
+Axis A runs execute the validated Axis A sequence only. Axis B runs execute the
+complete validated Axis A prerequisite sequence before Axis B, but persist only
+the requested Axis B aggregate result. The older coordinated `/api/cluster/run`
+endpoint remains available for compatibility.
 
 ## Setup
 

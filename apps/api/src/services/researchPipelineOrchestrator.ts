@@ -4,9 +4,15 @@ import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { validateAnalysisInputManifest } from "./analysisInputManifest";
+import {
+  approvedResearchScripts,
+  getResearchExecutionPlan,
+  type ResearchAxis,
+  type ResearchStageGroup
+} from "./researchStageManifest";
 
-export type ResearchAxis = "Axis A" | "Axis B";
-export type ResearchStage = { axis: ResearchAxis; script: string };
+export type { ResearchAxis } from "./researchStageManifest";
+export type ResearchStage = { axis: ResearchAxis; script: string; group: ResearchStageGroup };
 export type StageRunner = (stage: ResearchStage, context: ExecutionContext) => Promise<void>;
 
 export type ExecutionContext = {
@@ -28,34 +34,6 @@ const repositoryRoot = path.resolve(serviceDirectory, "../../../..");
 const authoritativeScripts = path.join(repositoryRoot, "scripts", "research");
 const workRoot = path.resolve(serviceDirectory, "../../work");
 
-const stages: readonly ResearchStage[] = [
-  { axis: "Axis A", script: "audit_adni.py" },
-  { axis: "Axis A", script: "audit_adni_candidate_mapping.py" },
-  { axis: "Axis A", script: "reconcile_adni_dictionary.py" },
-  { axis: "Axis A", script: "construct_axis_a_study_entry.py" },
-  { axis: "Axis A", script: "audit_axis_a_scope_npiq.py" },
-  { axis: "Axis A", script: "preprocess_axis_a.py" },
-  { axis: "Axis A", script: "check_sop2_environment.py" },
-  { axis: "Axis A", script: "select_axis_a_k_nbclust.py" },
-  { axis: "Axis A", script: "dpc_init_axis_a.py" },
-  { axis: "Axis A", script: "run_axis_a_enhanced_kmeans.py" },
-  { axis: "Axis A", script: "run_axis_a_baseline_comparison.py" },
-  { axis: "Axis A", script: "run_axis_a_dpc_ablation.py" },
-  { axis: "Axis B", script: "audit_axis_b_longitudinal.py" },
-  { axis: "Axis B", script: "reconcile_axis_b_longitudinal_methodology.py" },
-  { axis: "Axis B", script: "construct_axis_b_longitudinal_cohort.py" },
-  { axis: "Axis B", script: "extract_axis_b_adas13_slopes.py" },
-  { axis: "Axis B", script: "select_axis_b_k_nbclust.py" },
-  { axis: "Axis B", script: "select_axis_b_dpc_seeds.py" },
-  { axis: "Axis B", script: "reconcile_axis_b_dpc_methodology.py" },
-  { axis: "Axis B", script: "run_axis_b_final_clustering.py" },
-  { axis: "Axis B", script: "run_axis_b_random_ablation.py" },
-  { axis: "Axis B", script: "run_axis_b_sensitivity_analysis.py" },
-  { axis: "Axis B", script: "summarize_axis_b_results.py" }
-] as const;
-
-const approvedScripts = new Set(stages.map((stage) => stage.script));
-
 const buildResearchEnvironment = (): NodeJS.ProcessEnv => {
   const environment: NodeJS.ProcessEnv = { ...process.env, PYTHONUNBUFFERED: "1" };
   const rHome = process.env.RESEARCH_R_HOME ?? process.env.R_HOME;
@@ -75,7 +53,23 @@ export class ResearchExecutionError extends Error {
 
 export const getStagesForAxis = (axis: ResearchAxis): readonly ResearchStage[] => {
   if (axis !== "Axis A" && axis !== "Axis B") throw new ResearchExecutionError("EXECUTION_FAILURE", "Unsupported research axis.");
-  return stages.filter((stage) => stage.axis === axis);
+  return getResearchExecutionPlan(axis).map((entry) => ({
+    axis: entry.executionAxis,
+    script: entry.script,
+    group: entry.group
+  }));
+};
+
+export const resolveResearchScriptPath = (workspace: string, script: string): string => {
+  if (!approvedResearchScripts.has(script) || path.basename(script) !== script) {
+    throw new ResearchExecutionError("EXECUTION_FAILURE", "An unapproved research entry point was requested.");
+  }
+  const scriptRoot = path.resolve(workspace, "scripts", "research");
+  const resolved = path.resolve(scriptRoot, script);
+  if (!resolved.startsWith(`${scriptRoot}${path.sep}`)) {
+    throw new ResearchExecutionError("EXECUTION_FAILURE", "An invalid research script path was requested.");
+  }
+  return resolved;
 };
 
 const resolvePython = (): string => {
@@ -86,11 +80,13 @@ const resolvePython = (): string => {
 };
 
 const defaultStageRunner: StageRunner = (stage, context) => new Promise((resolve, reject) => {
-  if (!approvedScripts.has(stage.script) || path.basename(stage.script) !== stage.script) {
-    reject(new ResearchExecutionError("EXECUTION_FAILURE", "An unapproved research entry point was requested."));
+  let scriptPath: string;
+  try {
+    scriptPath = resolveResearchScriptPath(context.workspace, stage.script);
+  } catch (error) {
+    reject(error);
     return;
   }
-  const scriptPath = path.join(context.workspace, "scripts", "research", stage.script);
   const child = spawn(context.pythonExecutable, [scriptPath], {
     cwd: context.workspace,
     windowsHide: true,
@@ -156,8 +152,9 @@ const prepareWorkspace = (uploadDirectory: string, executionId: string, pythonEx
   return workspace;
 };
 
-export const runResearchPipelines = async (
+export const runResearchPipeline = async (
   uploadDirectory: string,
+  axis: ResearchAxis,
   options: { runner?: StageRunner; timeoutMs?: number; pythonExecutable?: string } = {}
 ): Promise<ResearchExecution> => {
   const executionId = `analysis-${Date.now()}-${crypto.randomBytes(6).toString("hex")}`;
@@ -168,6 +165,7 @@ export const runResearchPipelines = async (
     : path.join(workspace, ".venv", "Scripts", "python.exe");
   const context: ExecutionContext = { workspace, pythonExecutable: workspacePython, timeoutMs: options.timeoutMs ?? 60 * 60 * 1000, environment: buildResearchEnvironment() };
   const runner = options.runner ?? defaultStageRunner;
+  const stages = getStagesForAxis(axis);
   try {
     for (const stage of stages) {
       try {
@@ -182,6 +180,16 @@ export const runResearchPipelines = async (
     throw error;
   }
   const artifactDirectory = path.join(workspace, "data", "interim");
-  if (!fs.existsSync(artifactDirectory)) throw new ResearchExecutionError("MISSING_ARTIFACT", "Research output directory was not produced.");
+  if (!fs.existsSync(artifactDirectory)) {
+    fs.rmSync(workspace, { recursive: true, force: true });
+    throw new ResearchExecutionError("MISSING_ARTIFACT", "Research output directory was not produced.");
+  }
   return { executionId, workspace, axisAArtifactDirectory: artifactDirectory, axisBArtifactDirectory: artifactDirectory };
 };
+
+/** Compatibility path for the existing coordinated endpoint: Axis B's validated
+ * plan includes every Axis A prerequisite followed by all Axis B stages. */
+export const runResearchPipelines = async (
+  uploadDirectory: string,
+  options: { runner?: StageRunner; timeoutMs?: number; pythonExecutable?: string } = {}
+): Promise<ResearchExecution> => runResearchPipeline(uploadDirectory, "Axis B", options);
