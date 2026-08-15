@@ -67,6 +67,25 @@ if (JSON.stringify(failed).match(/PTID|sensitive|raw\.csv/)) throw new Error("Se
 if (failedUploadCleanups !== 1) throw new Error("Failed research upload was not cleaned");
 console.log("PASS lifecycle: timeout failure is classified and sanitized");
 
+let environmentFailureCleanups = 0;
+const environmentFailureLifecycle = new ResearchRunLifecycle({
+  execute: async () => { throw new ResearchExecutionError("ENVIRONMENT_FAILURE", "C:\\private\\missing-python.exe"); },
+  cleanupUpload: () => { environmentFailureCleanups += 1; }
+});
+const environmentFailure = environmentFailureLifecycle.enqueue(
+  { axis: "Axis B", upload_ref: "upload-environment-failure" },
+  "environment-failure-directory"
+);
+await environmentFailureLifecycle.whenIdle();
+const environmentFailed = environmentFailureLifecycle.get(environmentFailure.run_id);
+if (environmentFailed?.status !== "failed" || environmentFailed.error.code !== "ENVIRONMENT_FAILURE") {
+  throw new Error("Interpreter environment failure was not represented as failed");
+}
+if (JSON.stringify(environmentFailed).includes("private") || environmentFailureCleanups !== 1) {
+  throw new Error("Interpreter failure was not sanitized or its upload was not cleaned");
+}
+console.log("PASS lifecycle: interpreter failure is sanitized and cleans the upload");
+
 const genericFailureLifecycle = new ResearchRunLifecycle({
   execute: async () => { throw new Error("participant_id=SECRET local-file.csv"); },
   cleanupUpload: () => undefined
@@ -109,6 +128,61 @@ try {
 }
 if (fs.existsSync(failedWorkspace)) throw new Error("Failed axis execution workspace was not cleaned");
 console.log("PASS axis execution: failed workspace cleanup");
+
+let equivalenceFailureAdapted = false;
+let equivalenceFailurePersisted = false;
+try {
+  await executeResearchAxis("unused-upload", { axis: "Axis B", upload_ref: "upload-equivalence-failure" }, {
+    orchestrate: async () => {
+      throw new ResearchExecutionError("EXECUTION_FAILURE", "Runtime scientific equivalence failed: axis_b_nbclust_k_selection.json.");
+    },
+    adaptAxisB: () => {
+      equivalenceFailureAdapted = true;
+      throw new Error("Adapter must not run");
+    },
+    persist: async (payload) => {
+      equivalenceFailurePersisted = true;
+      return payload as typeof axisADevelopmentFixture;
+    }
+  });
+  throw new Error("Failed equivalence reached result persistence");
+} catch (error) {
+  if (error instanceof Error && error.message === "Failed equivalence reached result persistence") throw error;
+  if (!(error instanceof ResearchExecutionError)) throw error;
+}
+if (equivalenceFailureAdapted || equivalenceFailurePersisted) {
+  throw new Error("Failed equivalence reached aggregate adaptation or persistence");
+}
+console.log("PASS axis execution: failed prerequisite equivalence prevents adaptation and persistence");
+
+let sourceFailureAdapted = false;
+let sourceFailurePersisted = false;
+try {
+  await executeResearchAxis("unused-upload", { axis: "Axis B", upload_ref: "upload-source-failure" }, {
+    orchestrate: async () => {
+      throw new ResearchExecutionError(
+        "EXECUTION_FAILURE",
+        "The isolated workspace failed canonical research-source verification."
+      );
+    },
+    adaptAxisB: () => {
+      sourceFailureAdapted = true;
+      throw new Error("Adapter must not run");
+    },
+    persist: async (payload) => {
+      sourceFailurePersisted = true;
+      return payload as typeof axisADevelopmentFixture;
+    }
+  });
+  throw new Error("Canonical source failure reached result persistence");
+} catch (error) {
+  if (error instanceof Error && error.message === "Canonical source failure reached result persistence") throw error;
+  if (!(error instanceof ResearchExecutionError)) throw error;
+}
+if (sourceFailureAdapted || sourceFailurePersisted) {
+  throw new Error("Canonical source failure reached aggregate adaptation or persistence");
+}
+console.log("PASS axis execution: canonical source failure prevents adaptation and persistence");
 
 const routeRepository = new ResearchRunJobRepository();
 const routeApp = express();

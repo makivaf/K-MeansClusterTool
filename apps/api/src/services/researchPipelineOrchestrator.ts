@@ -5,11 +5,23 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { validateAnalysisInputManifest } from "./analysisInputManifest";
 import {
+  AxisBFrozenPrerequisiteError,
+  reconcileAxisBFrozenPrerequisite,
+  type AxisBFrozenPrerequisiteName,
+  type FrozenPrerequisiteAudit
+} from "./axisBFrozenPrerequisites";
+import {
   approvedResearchScripts,
   getResearchExecutionPlan,
   type ResearchAxis,
   type ResearchStageGroup
 } from "./researchStageManifest";
+import {
+  DPC_INIT_AXIS_A_CANONICAL_SHA256,
+  materializeCanonicalResearchSources,
+  ResearchSourceMaterializationError,
+  verifyCanonicalDpcSource
+} from "./researchSourceMaterializer";
 
 export type { ResearchAxis } from "./researchStageManifest";
 export type ResearchStage = { axis: ResearchAxis; script: string; group: ResearchStageGroup };
@@ -18,6 +30,7 @@ export type StageRunner = (stage: ResearchStage, context: ExecutionContext) => P
 export type ExecutionContext = {
   workspace: string;
   pythonExecutable: string;
+  axisBSlopePythonExecutable?: string;
   timeoutMs: number;
   environment: NodeJS.ProcessEnv;
 };
@@ -34,12 +47,23 @@ const repositoryRoot = path.resolve(serviceDirectory, "../../../..");
 const authoritativeScripts = path.join(repositoryRoot, "scripts", "research");
 const workRoot = path.resolve(serviceDirectory, "../../work");
 
-const buildResearchEnvironment = (): NodeJS.ProcessEnv => {
-  const environment: NodeJS.ProcessEnv = { ...process.env, PYTHONUNBUFFERED: "1" };
-  const rHome = process.env.RESEARCH_R_HOME ?? process.env.R_HOME;
+export const AXIS_B_SLOPE_SCRIPT = "extract_axis_b_adas13_slopes.py";
+export const AXIS_B_SLOPE_SHA256 = "22cdd55303a873d62889a40190caf061f95c4ed81d7d7c82eb8f454886ed0280";
+
+export const getResearchRPathEntries = (rHome: string, platform: NodeJS.Platform = process.platform): string[] =>
+  platform === "win32"
+    ? [path.join(rHome, "bin"), path.join(rHome, "bin", "x64")]
+    : [path.join(rHome, "bin")];
+
+export const buildResearchEnvironment = (
+  source: NodeJS.ProcessEnv = process.env,
+  platform: NodeJS.Platform = process.platform
+): NodeJS.ProcessEnv => {
+  const environment: NodeJS.ProcessEnv = { ...source, PYTHONUNBUFFERED: "1" };
+  const rHome = source.RESEARCH_R_HOME ?? source.R_HOME;
   if (rHome) {
     environment.R_HOME = rHome;
-    const rPaths = process.platform === "win32" ? [path.join(rHome, "bin", "x64"), path.join(rHome, "bin")] : [path.join(rHome, "bin")];
+    const rPaths = getResearchRPathEntries(rHome, platform);
     environment.PATH = [...rPaths, environment.PATH ?? ""].join(path.delimiter);
   }
   return environment;
@@ -79,6 +103,47 @@ const resolvePython = (): string => {
     : path.join(repositoryRoot, ".venv", "bin", "python");
 };
 
+type ResearchPipelineOptions = {
+  runner?: StageRunner;
+  timeoutMs?: number;
+  pythonExecutable?: string;
+  verifySlopeArtifact?: (workspace: string) => string;
+  reconcileFrozenPrerequisite?: (workspace: string, prerequisite: AxisBFrozenPrerequisiteName) => FrozenPrerequisiteAudit;
+  researchScriptsDirectory?: string;
+  expectedDpcSourceSha256?: string;
+};
+
+export const resolveAxisBSlopePython = (environment: NodeJS.ProcessEnv = process.env): string | undefined => {
+  const configured = environment.AXIS_B_SLOPE_PYTHON?.trim();
+  if (!configured) return undefined;
+  if (!path.isAbsolute(configured)) {
+    throw new ResearchExecutionError("ENVIRONMENT_FAILURE", "The configured Axis B slope interpreter is unavailable.");
+  }
+  try {
+    if (!fs.statSync(configured).isFile()) throw new Error("Not a file");
+  } catch {
+    throw new ResearchExecutionError("ENVIRONMENT_FAILURE", "The configured Axis B slope interpreter is unavailable.");
+  }
+  return path.normalize(configured);
+};
+
+export const resolveResearchStagePython = (stage: ResearchStage, context: ExecutionContext): string =>
+  stage.script === AXIS_B_SLOPE_SCRIPT
+    ? context.axisBSlopePythonExecutable ?? context.pythonExecutable
+    : context.pythonExecutable;
+
+export const verifyAxisBSlopeArtifact = (workspace: string): string => {
+  const artifact = path.join(workspace, "data", "interim", "axis_b_adas13_slopes.csv");
+  if (!fs.existsSync(artifact) || !fs.statSync(artifact).isFile()) {
+    throw new ResearchExecutionError("MISSING_ARTIFACT", "Axis B slope extraction did not produce its required artifact.");
+  }
+  const actualHash = crypto.createHash("sha256").update(fs.readFileSync(artifact)).digest("hex");
+  if (actualHash !== AXIS_B_SLOPE_SHA256) {
+    throw new ResearchExecutionError("EXECUTION_FAILURE", "Axis B slope extraction failed its exact reproducibility preflight.");
+  }
+  return actualHash;
+};
+
 const defaultStageRunner: StageRunner = (stage, context) => new Promise((resolve, reject) => {
   let scriptPath: string;
   try {
@@ -87,7 +152,7 @@ const defaultStageRunner: StageRunner = (stage, context) => new Promise((resolve
     reject(error);
     return;
   }
-  const child = spawn(context.pythonExecutable, [scriptPath], {
+  const child = spawn(resolveResearchStagePython(stage, context), [scriptPath], {
     cwd: context.workspace,
     windowsHide: true,
     stdio: ["ignore", "pipe", "pipe"],
@@ -117,24 +182,33 @@ const defaultStageRunner: StageRunner = (stage, context) => new Promise((resolve
   });
 });
 
-const prepareWorkspace = (uploadDirectory: string, executionId: string, pythonExecutable: string): string => {
+export const prepareWorkspace = (
+  uploadDirectory: string,
+  executionId: string,
+  pythonExecutable: string,
+  researchScriptsDirectory = authoritativeScripts,
+  expectedDpcSourceSha256 = DPC_INIT_AXIS_A_CANONICAL_SHA256
+): string => {
   validateAnalysisInputManifest(uploadDirectory);
   const workspace = path.join(workRoot, executionId);
-  fs.mkdirSync(path.join(workspace, "scripts"), { recursive: true });
-  fs.cpSync(authoritativeScripts, path.join(workspace, "scripts", "research"), { recursive: true });
-  const rawDirectory = path.join(workspace, "data", "raw", "adni");
-  fs.mkdirSync(rawDirectory, { recursive: true });
-  fs.mkdirSync(path.join(workspace, "data", "interim"), { recursive: true });
-  fs.mkdirSync(path.join(workspace, "data", "processed"), { recursive: true });
-  for (const filename of fs.readdirSync(uploadDirectory)) {
-    const source = path.join(uploadDirectory, filename);
-    const destination = path.join(rawDirectory, filename);
-    try { fs.linkSync(source, destination); } catch { fs.copyFileSync(source, destination); }
-  }
-  const environmentRoot = path.resolve(pythonExecutable, "..", "..");
-  const workspaceEnvironment = path.join(workspace, ".venv");
-  if (fs.existsSync(path.join(environmentRoot, "pyvenv.cfg")) && !fs.existsSync(workspaceEnvironment)) {
-    try {
+  try {
+    const workspaceResearchScripts = path.join(workspace, "scripts", "research");
+    materializeCanonicalResearchSources(researchScriptsDirectory, workspaceResearchScripts);
+    const dpcSourceHash = verifyCanonicalDpcSource(workspaceResearchScripts, expectedDpcSourceSha256);
+    console.info(`[research] Canonical DPC source SHA-256 verified: ${dpcSourceHash}`);
+
+    const rawDirectory = path.join(workspace, "data", "raw", "adni");
+    fs.mkdirSync(rawDirectory, { recursive: true });
+    fs.mkdirSync(path.join(workspace, "data", "interim"), { recursive: true });
+    fs.mkdirSync(path.join(workspace, "data", "processed"), { recursive: true });
+    for (const filename of fs.readdirSync(uploadDirectory)) {
+      const source = path.join(uploadDirectory, filename);
+      const destination = path.join(rawDirectory, filename);
+      try { fs.linkSync(source, destination); } catch { fs.copyFileSync(source, destination); }
+    }
+    const environmentRoot = path.resolve(pythonExecutable, "..", "..");
+    const workspaceEnvironment = path.join(workspace, ".venv");
+    if (fs.existsSync(path.join(environmentRoot, "pyvenv.cfg")) && !fs.existsSync(workspaceEnvironment)) {
       if (process.platform === "win32" && fs.existsSync(path.join(environmentRoot, "pyvenv.cfg"))) {
         fs.mkdirSync(path.join(workspaceEnvironment, "Scripts"), { recursive: true });
         fs.mkdirSync(path.join(workspaceEnvironment, "Lib"), { recursive: true });
@@ -144,10 +218,13 @@ const prepareWorkspace = (uploadDirectory: string, executionId: string, pythonEx
       } else {
         fs.symlinkSync(environmentRoot, workspaceEnvironment, "dir");
       }
-    } catch {
-      fs.rmSync(workspace, { recursive: true, force: true });
-      throw new ResearchExecutionError("ENVIRONMENT_FAILURE", "The isolated workspace could not link the local research environment.");
     }
+  } catch (error) {
+    fs.rmSync(workspace, { recursive: true, force: true });
+    if (error instanceof ResearchSourceMaterializationError) {
+      throw new ResearchExecutionError("EXECUTION_FAILURE", "The isolated workspace failed canonical research-source verification.");
+    }
+    throw new ResearchExecutionError("ENVIRONMENT_FAILURE", "The isolated workspace could not be prepared.");
   }
   return workspace;
 };
@@ -155,16 +232,32 @@ const prepareWorkspace = (uploadDirectory: string, executionId: string, pythonEx
 export const runResearchPipeline = async (
   uploadDirectory: string,
   axis: ResearchAxis,
-  options: { runner?: StageRunner; timeoutMs?: number; pythonExecutable?: string } = {}
+  options: ResearchPipelineOptions = {}
 ): Promise<ResearchExecution> => {
   const executionId = `analysis-${Date.now()}-${crypto.randomBytes(6).toString("hex")}`;
   const pythonExecutable = options.pythonExecutable ?? resolvePython();
-  const workspace = prepareWorkspace(uploadDirectory, executionId, pythonExecutable);
+  const environment = buildResearchEnvironment();
+  const axisBSlopePythonExecutable = axis === "Axis B" ? resolveAxisBSlopePython(environment) : undefined;
+  const workspace = prepareWorkspace(
+    uploadDirectory,
+    executionId,
+    pythonExecutable,
+    options.researchScriptsDirectory,
+    options.expectedDpcSourceSha256
+  );
   const workspacePython = options.pythonExecutable || process.platform !== "win32"
     ? pythonExecutable
     : path.join(workspace, ".venv", "Scripts", "python.exe");
-  const context: ExecutionContext = { workspace, pythonExecutable: workspacePython, timeoutMs: options.timeoutMs ?? 60 * 60 * 1000, environment: buildResearchEnvironment() };
+  const context: ExecutionContext = {
+    workspace,
+    pythonExecutable: workspacePython,
+    axisBSlopePythonExecutable,
+    timeoutMs: options.timeoutMs ?? 60 * 60 * 1000,
+    environment
+  };
   const runner = options.runner ?? defaultStageRunner;
+  const verifySlopeArtifact = options.verifySlopeArtifact ?? verifyAxisBSlopeArtifact;
+  const reconcileFrozenPrerequisite = options.reconcileFrozenPrerequisite ?? reconcileAxisBFrozenPrerequisite;
   const stages = getStagesForAxis(axis);
   try {
     for (const stage of stages) {
@@ -173,6 +266,27 @@ export const runResearchPipeline = async (
       } catch (error) {
         if (error instanceof ResearchExecutionError) throw error;
         throw new ResearchExecutionError("EXECUTION_FAILURE", `${stage.axis} research stage failed: ${stage.script}.`);
+      }
+      if (stage.script === AXIS_B_SLOPE_SCRIPT) {
+        const slopeHash = verifySlopeArtifact(workspace);
+        console.info(`[research] Axis B slope SHA-256 verified: ${slopeHash}`);
+      }
+      const frozenPrerequisite = stage.script === "select_axis_b_k_nbclust.py"
+        ? "k_selection"
+        : stage.script === "select_axis_b_dpc_seeds.py"
+          ? "dpc_seed_selection"
+          : undefined;
+      if (frozenPrerequisite) {
+        try {
+          const audit = reconcileFrozenPrerequisite(workspace, frozenPrerequisite);
+          console.info(`[research] Axis B frozen prerequisite reconciled: ${JSON.stringify(audit)}`);
+        } catch (error) {
+          if (error instanceof AxisBFrozenPrerequisiteError) {
+            throw new ResearchExecutionError("EXECUTION_FAILURE", error.message);
+          }
+          if (error instanceof ResearchExecutionError) throw error;
+          throw new ResearchExecutionError("EXECUTION_FAILURE", `Axis B frozen prerequisite reconciliation failed: ${frozenPrerequisite}.`);
+        }
       }
     }
   } catch (error) {
@@ -191,5 +305,5 @@ export const runResearchPipeline = async (
  * plan includes every Axis A prerequisite followed by all Axis B stages. */
 export const runResearchPipelines = async (
   uploadDirectory: string,
-  options: { runner?: StageRunner; timeoutMs?: number; pythonExecutable?: string } = {}
+  options: ResearchPipelineOptions = {}
 ): Promise<ResearchExecution> => runResearchPipeline(uploadDirectory, "Axis B", options);

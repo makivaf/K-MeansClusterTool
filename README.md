@@ -321,7 +321,41 @@ Example:
 ```env
 DATABASE_URL="postgresql://postgres:postgres@localhost:5432/ad_clustering_thesis?schema=public"
 PORT=4000
+RESEARCH_PYTHON="C:\\path\\to\\K-MeansClusterTool\\.venv\\Scripts\\python.exe"
+AXIS_B_SLOPE_PYTHON="C:\\path\\to\\Python313\\python.exe"
+RESEARCH_R_HOME="C:\\Program Files\\R\\R-4.6.1"
 ```
+
+`RESEARCH_PYTHON` remains the interpreter for the validated pipeline. The
+optional `AXIS_B_SLOPE_PYTHON` override applies only to
+`extract_axis_b_adas13_slopes.py`, whose generated CSV is checked against its
+authoritative exact SHA-256 before Axis B k-selection. If the override is
+unset, that one stage falls back to `RESEARCH_PYTHON`; if it is configured but
+is not an absolute executable file path, an Axis B run fails with a sanitized
+environment error. See `scripts/research/README.md` for the recovered numerical
+environment and reproducibility rationale.
+
+Axis B also distinguishes newly generated runtime reproduction artifacts from
+the authoritative frozen prerequisite bytes required by final research scripts.
+Runtime k-selection and DPC stages always execute. Machine-path-only JSON
+differences are excluded from scientific comparison. Axis B secondary
+candidate-k inertia is compared candidate by candidate with the reviewed
+absolute threshold `1e-11`, reflecting demonstrated last-bit OpenMP reduction
+variation in the recovered scikit-learn 1.9.0 environment. No other numeric
+field uses that threshold. The generated file and per-k comparison are retained
+in a workspace audit before the verified, repository-controlled authoritative
+artifact is copied into the downstream workspace path. An over-threshold
+inertia difference or any exact scientific-field difference fails the run. No
+upload path can supply or replace an authoritative prerequisite.
+
+Frozen Python research sources are also provenance-gated inside each disposable
+execution workspace. Git stores the reviewed sources with LF line endings, but
+a Windows checkout may expose identical text as CRLF. Workspace preparation
+therefore canonicalizes only copied `scripts/research/*.py` source bytes to LF
+and verifies `dpc_init_axis_a.py` against the historical committed SHA-256
+`bda58cfd431934c7c2077bc0fdc583a9fe5a5a771f18682d7d14a4edd9bec513`
+before any research stage starts. Repository files, uploads, CSV/JSON artifacts,
+binary files, and authoritative data are never normalized by this mechanism.
 
 Frontend API URL can be overridden with:
 
