@@ -1,9 +1,9 @@
-import type { ClusteringRun } from "../../../../../packages/shared/src";
+import type { AxisAClusteringRun } from "../../../../../packages/shared/src";
 import { formatMetric, getConditions, metricDelta, metricLabels } from "../../utils/metrics";
 import { DeltaBadge } from "../ui/DeltaBadge";
 
 type MetricsTableProps = {
-  run: ClusteringRun;
+  run: AxisAClusteringRun;
 };
 
 export const MetricsTable = ({ run }: MetricsTableProps) => {

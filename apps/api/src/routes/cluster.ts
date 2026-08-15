@@ -1,10 +1,7 @@
 // DUA compliance: uploaded CSV files may contain raw participant-level research data.
 // These local-only routes are mounted only outside production, and raw CSVs stay on local disk only.
-import crypto from "node:crypto";
 import fs from "node:fs";
 import path from "node:path";
-import { setTimeout as delay } from "node:timers/promises";
-import { fileURLToPath } from "node:url";
 import express, { type Request } from "express";
 import multer from "multer";
 import {
@@ -12,31 +9,21 @@ import {
   ClusterRunResponseSchema,
   UploadResponseSchema
 } from "../../../../packages/shared/src/schema";
+import { AnalysisInputError, validateAnalysisInputManifest } from "../services/analysisInputManifest";
+import { ArtifactValidationError } from "../services/artifactReaders";
+import { executeAnalysis } from "../services/executeAnalysis";
+import {
+  createUploadDirectory,
+  resolveUploadDirectory
+} from "../services/localUploadStore";
+import { ResearchExecutionError } from "../services/researchPipelineOrchestrator";
+import { ZodError } from "zod";
 
 type UploadRequest = Request & {
   uploadBatchId?: string;
 };
 
-const routerDir = path.dirname(fileURLToPath(import.meta.url));
-const uploadRoot = path.resolve(routerDir, "../../uploads");
 const maxCsvBytes = 500 * 1024 * 1024;
-const uploadRefPattern = /^upload-\d{13}-[a-f0-9]{12}$/;
-
-const ensureUploadRoot = () => {
-  fs.mkdirSync(uploadRoot, { recursive: true });
-};
-
-const getUploadDir = (uploadRef: string) => {
-  if (!uploadRefPattern.test(uploadRef)) {
-    throw new Error("Invalid upload reference");
-  }
-
-  const resolved = path.resolve(uploadRoot, uploadRef);
-  if (!resolved.startsWith(uploadRoot)) {
-    throw new Error("Invalid upload reference");
-  }
-  return resolved;
-};
 
 const sanitizeFilename = (filename: string) =>
   path
@@ -45,18 +32,16 @@ const sanitizeFilename = (filename: string) =>
     .replace(/_+/g, "_");
 
 const assignUploadBatch = (request: UploadRequest, _response: express.Response, next: express.NextFunction) => {
-  ensureUploadRoot();
-  request.uploadBatchId = `upload-${Date.now()}-${crypto.randomBytes(6).toString("hex")}`;
-  fs.mkdirSync(getUploadDir(request.uploadBatchId), { recursive: true });
+  request.uploadBatchId = createUploadDirectory().uploadRef;
   next();
 };
 
 const storage = multer.diskStorage({
   destination: (request: UploadRequest, _file, callback) => {
-    callback(null, getUploadDir(request.uploadBatchId ?? ""));
+    callback(null, resolveUploadDirectory(request.uploadBatchId ?? ""));
   },
   filename: (_request, file, callback) => {
-    callback(null, `${Date.now()}-${sanitizeFilename(file.originalname)}`);
+    callback(null, sanitizeFilename(file.originalname));
   }
 });
 
@@ -64,7 +49,7 @@ const csvUpload = multer({
   storage,
   limits: {
     fileSize: maxCsvBytes,
-    files: 12
+    files: 7
   },
   fileFilter: (_request, file, callback) => {
     if (path.extname(file.originalname).toLowerCase() !== ".csv") {
@@ -94,44 +79,45 @@ clusterRouter.post("/api/upload", (request: UploadRequest, response) => {
     return;
   }
 
-  const payload = UploadResponseSchema.parse({
-    upload_ref: request.uploadBatchId,
-    filenames: files.map((file) => file.originalname),
-    file_count: files.length
-  });
+  try {
+    validateAnalysisInputManifest(resolveUploadDirectory(request.uploadBatchId));
+  } catch (error) {
+    fs.rmSync(resolveUploadDirectory(request.uploadBatchId), { recursive: true, force: true });
+    const message = error instanceof AnalysisInputError ? error.message : "Unable to validate the analysis input manifest.";
+    response.status(400).json({ error: message });
+    return;
+  }
+
+  const payload = UploadResponseSchema.parse({ upload_ref: request.uploadBatchId, filenames: files.map((file) => file.originalname), file_count: files.length });
 
   response.status(201).json(payload);
 });
 
 clusterRouter.post("/api/cluster/run", async (request, response, next) => {
   try {
-    const { upload_ref } = ClusterRunRequestSchema.parse(request.body);
-    const uploadDir = getUploadDir(upload_ref);
+    const { upload_ref, run_label } = ClusterRunRequestSchema.parse(request.body);
+    const uploadDir = resolveUploadDirectory(upload_ref);
     if (!fs.existsSync(uploadDir)) {
       response.status(404).json({ error: "Upload reference was not found on local disk." });
       return;
     }
 
-    const run_id = await runLocalPipelinePlaceholder(upload_ref);
-    response.json(ClusterRunResponseSchema.parse({ status: "complete", run_id }));
+    const result = await executeAnalysis(uploadDir, run_label);
+    response.json(ClusterRunResponseSchema.parse(result));
   } catch (error) {
+    if (error instanceof ZodError || error instanceof AnalysisInputError) {
+      response.status(400).json({ error: "The analysis request or uploaded input manifest is invalid." });
+      return;
+    }
+    if (error instanceof ArtifactValidationError) {
+      response.status(422).json({ error: "Research artifacts failed aggregate validation." });
+      return;
+    }
+    if (error instanceof ResearchExecutionError) {
+      const status = error.code === "EXECUTION_TIMEOUT" ? 504 : error.code === "ENVIRONMENT_FAILURE" ? 503 : 422;
+      response.status(status).json({ error: error.message });
+      return;
+    }
     next(error);
   }
 });
-
-const runLocalPipelinePlaceholder = async (uploadReference: string): Promise<string> => {
-  void uploadReference;
-  await delay(1500);
-
-  /*
-   * TODO: Replace this placeholder with the local Python pipeline handoff:
-   * 1. Resolve the uploaded CSV path(s) from uploadReference.
-   * 2. Spawn the pipeline with child_process.spawn:
-   *      run_pipeline.py <uploaded_file_path>
-   * 3. Wait for the pipeline to write a run_*.json file matching ClusteringRunSchema.
-   * 4. Read and validate the JSON with ClusteringRunSchema.parse(...).
-   * 5. Import only that aggregate run JSON into PostgreSQL via importRun(...).
-   * 6. Return the real run_id. Never persist raw CSV participant rows to PostgreSQL.
-   */
-  return "axis-a-baseline-2024-05-18";
-};

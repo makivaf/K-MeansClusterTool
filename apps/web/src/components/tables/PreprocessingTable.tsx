@@ -18,7 +18,9 @@ export const PreprocessingTable = ({ rows }: PreprocessingTableProps) => (
         {rows.map((row) => (
           <tr key={row.variable}>
             <td className="px-4 py-3 font-medium">{row.variable}</td>
-            <td className="px-4 py-3">{(row.missing_rate * 100).toFixed(1)}%</td>
+            <td className="px-4 py-3">
+              {row.missing_rate === undefined ? "Not provided for fixture" : `${(row.missing_rate * 100).toFixed(1)}%`}
+            </td>
             <td className="px-4 py-3 text-muted">{row.reason}</td>
           </tr>
         ))}

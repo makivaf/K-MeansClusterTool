@@ -10,6 +10,20 @@ type PcaPageProps = {
 export const PcaPage = ({ run }: PcaPageProps) => {
   if (!run) return null;
 
+  if (run.axis === "Axis B") {
+    return (
+      <>
+        <PageHeading title="PCA" description="Dimensionality-reduction applicability for the selected run." />
+        <Panel title="Not applicable to Axis B">
+          <p className="text-sm text-muted">
+            Axis B clusters one participant-level ADAS-Cog13 slope. PCA is not applied because there is no
+            multivariate feature space to reduce.
+          </p>
+        </Panel>
+      </>
+    );
+  }
+
   return (
     <>
       <PageHeading

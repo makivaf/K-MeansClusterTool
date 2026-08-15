@@ -10,6 +10,20 @@ type ClusterProfilesPageProps = {
 export const ClusterProfilesPage = ({ run }: ClusterProfilesPageProps) => {
   if (!run) return null;
 
+  if (run.axis === "Axis B") {
+    return (
+      <>
+        <PageHeading
+          title="Cluster Profiles"
+          description="Aggregate-only lower- and higher-slope group sizes for the final Axis B result."
+        />
+        <Panel title="Final fixed-seed standard K-Means">
+          <ClusterProfileTable result={run.final_clustering} />
+        </Panel>
+      </>
+    );
+  }
+
   return (
     <>
       <PageHeading
@@ -19,7 +33,7 @@ export const ClusterProfilesPage = ({ run }: ClusterProfilesPageProps) => {
       <div className="space-y-4">
         {run.conditions.map((condition) => (
           <Panel key={condition.condition} title={condition.condition === "baseline" ? "Baseline Condition" : "Enhanced Condition"}>
-            <ClusterProfileTable condition={condition} />
+            <ClusterProfileTable result={condition} />
           </Panel>
         ))}
       </div>

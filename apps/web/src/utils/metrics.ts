@@ -1,4 +1,4 @@
-import type { ClusteringMetrics, ClusteringRun, ConditionResult } from "../../../../packages/shared/src";
+import type { AxisAClusteringRun, ClusteringMetrics, ConditionResult } from "../../../../packages/shared/src";
 
 export const metricLabels: Record<keyof ClusteringMetrics, string> = {
   silhouette: "Silhouette",
@@ -12,7 +12,7 @@ export const betterDirection: Record<keyof ClusteringMetrics, "higher" | "lower"
   calinski_harabasz: "higher"
 };
 
-export const getConditions = (run: ClusteringRun) => {
+export const getConditions = (run: AxisAClusteringRun) => {
   const [baseline, enhanced] = run.conditions;
   return { baseline, enhanced };
 };

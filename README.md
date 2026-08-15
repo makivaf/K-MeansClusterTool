@@ -121,6 +121,8 @@ Backend routes used:
 ```text
 POST /api/upload
 POST /api/cluster/run
+POST /api/research/runs
+GET /api/research/runs/:runId
 ```
 
 These routes are local-only and are not mounted in production.
@@ -238,7 +240,7 @@ POST /api/cluster/run
 
 - Accepts `multipart/form-data`
 - Uses field name `files`
-- Accepts multiple `.csv` files
+- Requires the exact seven-file ADNI CSV manifest documented in `docs/ANALYSIS_INPUT_CONTRACT.md`
 - Rejects non-CSV files
 - Limits file size to 500MB per file
 - Saves files under `apps/api/uploads/<upload_ref>/`
@@ -255,36 +257,35 @@ POST /api/cluster/run
 ```
 
 - Verifies the upload reference exists locally
-- Simulates pipeline processing
+- Runs the bounded Axis A and Axis B research orchestrator in an isolated local workspace
+- Validates and maps separate aggregate results, then persists both together
 - Returns:
 
 ```json
 {
   "status": "complete",
-  "run_id": "axis-a-baseline-2024-05-18"
+  "persistence": "durable",
+  "axis_a_run_id": "analysis-...-axis-a",
+  "axis_b_run_id": "analysis-...-axis-b"
 }
 ```
 
-## Future Pipeline Integration
-
-The backend currently contains a TODO block in `apps/api/src/routes/cluster.ts` for replacing the placeholder with the real Python workflow.
-
-The intended future flow is:
-
-1. Resolve uploaded CSV file paths from `upload_ref`.
-2. Spawn the Python pipeline with `child_process.spawn`.
-3. Run something like:
-
-```bash
-python run_pipeline.py <uploaded_file_path>
-```
-
-4. Wait for Python to write a `run_*.json` file.
-5. Validate the JSON with `ClusteringRunSchema`.
-6. Import only aggregate JSON into PostgreSQL with `importRun`.
-7. Return the real `run_id` to the frontend.
+When `DATABASE_URL` is absent outside production, `persistence` is `memory_only`; results remain available only for the lifetime of that API process. Production refuses dummy fallback and does not mount upload/execution routes.
 
 Raw CSV content should never be imported into PostgreSQL.
+
+`POST /api/research/runs` is the axis-aware asynchronous lifecycle endpoint.
+It accepts `{ "axis": "Axis A" | "Axis B", "upload_ref": "upload-...", "run_label"?: string }`,
+returns `202 Accepted` with a queued job, and executes jobs one at a time.
+`GET /api/research/runs/:runId` returns queued, running, complete, or failed
+status. Complete jobs contain only a `result_run_id`; fetch the aggregate result
+from `GET /api/runs/:resultRunId`. Failures are sanitized and never include
+subprocess output, participant identifiers, or raw file contents.
+
+Axis A runs execute the validated Axis A sequence only. Axis B runs execute the
+complete validated Axis A prerequisite sequence before Axis B, but persist only
+the requested Axis B aggregate result. The older coordinated `/api/cluster/run`
+endpoint remains available for compatibility.
 
 ## Setup
 
@@ -320,7 +321,41 @@ Example:
 ```env
 DATABASE_URL="postgresql://postgres:postgres@localhost:5432/ad_clustering_thesis?schema=public"
 PORT=4000
+RESEARCH_PYTHON="C:\\path\\to\\K-MeansClusterTool\\.venv\\Scripts\\python.exe"
+AXIS_B_SLOPE_PYTHON="C:\\path\\to\\Python313\\python.exe"
+RESEARCH_R_HOME="C:\\Program Files\\R\\R-4.6.1"
 ```
+
+`RESEARCH_PYTHON` remains the interpreter for the validated pipeline. The
+optional `AXIS_B_SLOPE_PYTHON` override applies only to
+`extract_axis_b_adas13_slopes.py`, whose generated CSV is checked against its
+authoritative exact SHA-256 before Axis B k-selection. If the override is
+unset, that one stage falls back to `RESEARCH_PYTHON`; if it is configured but
+is not an absolute executable file path, an Axis B run fails with a sanitized
+environment error. See `scripts/research/README.md` for the recovered numerical
+environment and reproducibility rationale.
+
+Axis B also distinguishes newly generated runtime reproduction artifacts from
+the authoritative frozen prerequisite bytes required by final research scripts.
+Runtime k-selection and DPC stages always execute. Machine-path-only JSON
+differences are excluded from scientific comparison. Axis B secondary
+candidate-k inertia is compared candidate by candidate with the reviewed
+absolute threshold `1e-11`, reflecting demonstrated last-bit OpenMP reduction
+variation in the recovered scikit-learn 1.9.0 environment. No other numeric
+field uses that threshold. The generated file and per-k comparison are retained
+in a workspace audit before the verified, repository-controlled authoritative
+artifact is copied into the downstream workspace path. An over-threshold
+inertia difference or any exact scientific-field difference fails the run. No
+upload path can supply or replace an authoritative prerequisite.
+
+Frozen Python research sources are also provenance-gated inside each disposable
+execution workspace. Git stores the reviewed sources with LF line endings, but
+a Windows checkout may expose identical text as CRLF. Workspace preparation
+therefore canonicalizes only copied `scripts/research/*.py` source bytes to LF
+and verifies `dpc_init_axis_a.py` against the historical committed SHA-256
+`bda58cfd431934c7c2077bc0fdc583a9fe5a5a771f18682d7d14a4edd9bec513`
+before any research stage starts. Repository files, uploads, CSV/JSON artifacts,
+binary files, and authoritative data are never normalized by this mechanism.
 
 Frontend API URL can be overridden with:
 
@@ -406,21 +441,20 @@ Build only the shared package:
 npm run build -w @ad-clustering/shared
 ```
 
-## Current Dummy Runs
+## Development Fixtures
 
-The scaffold includes three validated dummy runs:
+The scaffold includes two clearly labeled, schema-valid development fixtures:
 
-- `axis-a-baseline-2024-05-18`
-- `axis-a-sensitivity-2024-06-02`
-- `axis-b-decline-2024-06-16`
+- `dev-fixture-axis-a`
+- `dev-fixture-axis-b`
 
-These are realistic placeholders for UI development and thesis review demos. Replace them with real aggregate pipeline output once the Python pipeline is ready.
+Their zero-valued descriptive metrics are not thesis findings. Real local execution returns separate validated aggregate results.
 
 ## Development Notes
 
 - Keep page components modular.
 - Keep chart components separate from page containers.
-- Add real pipeline integration behind the local-only API boundary.
+- Keep the research process allowlist and aggregate adapter boundary narrow.
 - Keep Upload & Run disabled for non-local API URLs.
 - Do not add authentication yet unless the project requirements change.
 - Do not add participant-level rendering to frontend pages.
