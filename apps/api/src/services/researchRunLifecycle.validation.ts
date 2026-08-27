@@ -14,7 +14,7 @@ import {
   resolveUploadDirectory
 } from "./localUploadStore";
 import { ResearchExecutionError } from "./researchPipelineOrchestrator";
-import { ResearchRunLifecycle } from "./researchRunLifecycle";
+import { formatResearchFailureDiagnostic, ResearchRunLifecycle } from "./researchRunLifecycle";
 import { ResearchRunJobRepository } from "./researchRunRepository";
 
 const nextTurn = () => new Promise<void>((resolve) => setImmediate(resolve));
@@ -64,6 +64,9 @@ await timeoutLifecycle.whenIdle();
 const failed = timeoutLifecycle.get(timedOut.run_id);
 if (failed?.status !== "failed" || failed.error.code !== "EXECUTION_TIMEOUT") throw new Error("Execution timeout was not represented as failed");
 if (JSON.stringify(failed).match(/PTID|sensitive|raw\.csv/)) throw new Error("Sensitive process detail escaped the failure sanitizer");
+if (formatResearchFailureDiagnostic(new ResearchExecutionError("EXECUTION_TIMEOUT", "PTID=001_S_SECRET C:\\sensitive\\raw.csv")) !== "EXECUTION_TIMEOUT") {
+  throw new Error("Sensitive process detail escaped the internal diagnostic formatter");
+}
 if (failedUploadCleanups !== 1) throw new Error("Failed research upload was not cleaned");
 console.log("PASS lifecycle: timeout failure is classified and sanitized");
 
@@ -152,6 +155,12 @@ try {
 }
 if (equivalenceFailureAdapted || equivalenceFailurePersisted) {
   throw new Error("Failed equivalence reached aggregate adaptation or persistence");
+}
+const equivalenceDiagnostic = formatResearchFailureDiagnostic(
+  new ResearchExecutionError("EXECUTION_FAILURE", "Runtime scientific equivalence failed: axis_b_nbclust_k_selection.json.")
+);
+if (!equivalenceDiagnostic.includes("axis_b_nbclust_k_selection.json")) {
+  throw new Error("Controlled scientific-equivalence detail was not retained for developers");
 }
 console.log("PASS axis execution: failed prerequisite equivalence prevents adaptation and persistence");
 
