@@ -24,6 +24,7 @@ type LifecycleDependencies = {
   repository?: ResearchRunJobRepository;
   execute?: (uploadDirectory: string, request: ResearchRunRequest) => Promise<ResearchAxisExecutionResult>;
   cleanupUpload?: (uploadDirectory: string) => void;
+  diagnoseFailure?: (runId: string, diagnostic: string) => void;
 };
 
 const safeFailure = (
@@ -43,10 +44,34 @@ export const sanitizeResearchFailure = (error: unknown): { code: ResearchRunFail
   return safeFailure("EXECUTION_FAILURE", "The research pipeline did not complete successfully.");
 };
 
+const controlledExecutionDiagnosticPatterns = [
+  /^Runtime scientific equivalence failed: [A-Za-z0-9_.-]+\.$/,
+  /^Axis [AB] research stage failed: [A-Za-z0-9_.-]+\.$/,
+  /^Axis B frozen prerequisite reconciliation failed: [a-z_]+\.$/,
+  /^The isolated workspace failed canonical research-source verification\.$/,
+  /^Axis B slope extraction failed its exact reproducibility preflight\.$/
+] as const;
+
+/** Retain useful controlled server diagnostics without logging arbitrary
+ * exception text that could contain participant identifiers or private paths. */
+export const formatResearchFailureDiagnostic = (error: unknown): string => {
+  if (error instanceof ResearchExecutionError) {
+    const detail = controlledExecutionDiagnosticPatterns.some((pattern) => pattern.test(error.message))
+      ? `: ${error.message}`
+      : "";
+    return `${error.code}${detail}`;
+  }
+  if (error instanceof AnalysisInputError) return "INVALID_INPUT";
+  if (error instanceof ResearchArtifactError) return "ARTIFACT_VALIDATION_FAILURE";
+  if (error instanceof ResearchPersistenceError) return "PERSISTENCE_FAILURE";
+  return "EXECUTION_FAILURE";
+};
+
 export class ResearchRunLifecycle {
   readonly repository: ResearchRunJobRepository;
   private readonly execute: NonNullable<LifecycleDependencies["execute"]>;
   private readonly cleanupUpload: NonNullable<LifecycleDependencies["cleanupUpload"]>;
+  private readonly diagnoseFailure: NonNullable<LifecycleDependencies["diagnoseFailure"]>;
   private readonly queue: QueuedTask[] = [];
   private draining = false;
   private idleWaiters: Array<() => void> = [];
@@ -55,6 +80,8 @@ export class ResearchRunLifecycle {
     this.repository = dependencies.repository ?? new ResearchRunJobRepository();
     this.execute = dependencies.execute ?? executeResearchAxis;
     this.cleanupUpload = dependencies.cleanupUpload ?? removeUploadDirectory;
+    this.diagnoseFailure = dependencies.diagnoseFailure
+      ?? ((runId, diagnostic) => console.error(`[research] Run ${runId} failed internally: ${diagnostic}`));
   }
 
   enqueue(request: ResearchRunRequest, uploadDirectory: string): ResearchRunStatus {
@@ -84,6 +111,11 @@ export class ResearchRunLifecycle {
           const result = await this.execute(task.uploadDirectory, task.request);
           this.repository.markComplete(task.runId, result);
         } catch (error) {
+          try {
+            this.diagnoseFailure(task.runId, formatResearchFailureDiagnostic(error));
+          } catch {
+            console.warn("A research failure diagnostic could not be recorded.");
+          }
           this.repository.markFailed(task.runId, sanitizeResearchFailure(error));
         } finally {
           try {
