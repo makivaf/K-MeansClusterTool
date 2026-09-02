@@ -1,5 +1,7 @@
 # Defense Algorithm Traceability
 
+> **LEGACY / HISTORICAL — NOT CURRENT METHODOLOGY:** This traceability packet predates the unified longitudinal continuation. Its Axis B clustering sections are preserved only as an audit record. See `UNIFIED_RESEARCH_PIPELINE.md` and `UNIFIED_RESULTS_AUDIT.md` for current claims.
+
 ## Direct answer: what was enhanced?
 
 Axis A enhances the **method around K-Means**, principally its input representation, cluster-number selection, and centroid initialization. Median imputation and z-score standardization feed PCA; NbClust selects `k`; DPC selects real observations as deterministic initial centroids; ordinary Lloyd assignment/update iterations then optimize the K-Means objective. The work does not claim a newly invented Lloyd update rule. K-Means|| is not implemented.

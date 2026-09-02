@@ -1,5 +1,7 @@
 # Adviser Confirmation Required
 
+> **LEGACY / HISTORICAL — NOT CURRENT METHODOLOGY:** This packet records questions from the superseded two-axis design. It is retained for provenance and must not be used as the active pipeline specification. See `UNIFIED_RESEARCH_PIPELINE.md`.
+
 The research implementation below is frozen. These items seek confirmation of manuscript characterization or interpretation; they do not authorize reopening completed code.
 
 | Issue | Current implementation and evidence | Proposed wording | Decision type | Why confirmation is needed / impact |

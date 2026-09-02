@@ -1,5 +1,7 @@
 # Final Axis A and Axis B Results
 
+> **Legacy scientific record:** This document describes the superseded two-axis design. The active study contract is documented in `UNIFIED_RESEARCH_PIPELINE.md`; the historical results below are retained only for provenance.
+
 This sheet consolidates aggregate, defense-ready findings. Participant identifiers and assignments are intentionally omitted.
 
 ## Axis A: cross-sectional cognitive/functional profiles

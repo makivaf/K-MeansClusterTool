@@ -11,6 +11,17 @@ try {
   validateAnalysisInputManifest(root);
   console.log("PASS accepted: exact seven-file ADNI manifest with required headers");
 
+  const duplicateHeaderFile = analysisInputManifest[0];
+  fs.writeFileSync(path.join(root, duplicateHeaderFile.filename), `${duplicateHeaderFile.requiredColumns.join(",")},RID\n`, "utf8");
+  try {
+    validateAnalysisInputManifest(root);
+    throw new Error("Duplicate CSV header should be rejected");
+  } catch (error) {
+    if (error instanceof Error && error.message === "Duplicate CSV header should be rejected") throw error;
+  }
+  fs.writeFileSync(path.join(root, duplicateHeaderFile.filename), `${duplicateHeaderFile.requiredColumns.join(",")}\n`, "utf8");
+  console.log("PASS rejected: duplicate CSV header names");
+
   fs.rmSync(path.join(root, analysisInputManifest[0].filename));
   try {
     validateAnalysisInputManifest(root);

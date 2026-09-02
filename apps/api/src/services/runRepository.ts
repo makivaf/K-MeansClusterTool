@@ -1,10 +1,22 @@
 import { PrismaClient } from "@prisma/client";
+import fs from "node:fs";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
 import { dummyRuns } from "../../../../packages/shared/src/dummyRuns";
-import { ClusteringRunSchema, type ClusteringRun } from "../../../../packages/shared/src/schema";
+import {
+  ClusteringRunSchema,
+  ResearchResultSchema,
+  type ClusteringRun,
+  type ResearchResult,
+  type UnifiedResearchRun
+} from "../../../../packages/shared/src/schema";
+import { adaptUnifiedResult, UNIFIED_RESULT_FILENAME } from "./unifiedResultAdapter";
 
 let prisma: PrismaClient | null = null;
-const memoryRuns = new Map<string, ClusteringRun>();
+const memoryRuns = new Map<string, ResearchResult>();
 const isProduction = () => process.env.NODE_ENV === "production";
+const serviceDirectory = path.dirname(fileURLToPath(import.meta.url));
+const localArtifactDirectory = path.resolve(serviceDirectory, "../../../../data/interim");
 
 export const getRunPersistenceMode = (): "durable" | "memory_only" =>
   process.env.DATABASE_URL ? "durable" : "memory_only";
@@ -17,38 +29,57 @@ const getPrisma = () => {
   return prisma;
 };
 
-export const listRuns = async (): Promise<ClusteringRun[]> => {
+const persistenceDiscriminator = (run: ResearchResult): string =>
+  "pipeline" in run ? "Unified" : run.axis;
+
+const loadLocalUnifiedResult = (): UnifiedResearchRun | null => {
+  const artifactPath = path.join(localArtifactDirectory, UNIFIED_RESULT_FILENAME);
+  if (!fs.existsSync(artifactPath)) return null;
+  return adaptUnifiedResult(localArtifactDirectory, {
+    runId: "validated-unified-study-run",
+    createdAt: fs.statSync(artifactPath).mtime.toISOString()
+  });
+};
+
+export const listRuns = async (): Promise<ResearchResult[]> => {
   const client = getPrisma();
 
-  // TODO: Replace dummy fallback with persisted Python pipeline outputs once the thesis pipeline writes finalized JSON/Postgres records.
   if (!client) {
     if (isProduction()) {
-      throw new Error("DATABASE_URL is required in production; refusing to serve dummy clustering runs.");
+      throw new Error("DATABASE_URL is required in production; refusing to serve local research artifacts.");
     }
-    return [...memoryRuns.values(), ...dummyRuns.filter((run) => !memoryRuns.has(run.run_id))];
+    const localUnified = loadLocalUnifiedResult();
+    const compatibilityFixtures = process.env.INCLUDE_LEGACY_AXIS_FIXTURES === "true" ? dummyRuns : [];
+    const localRuns = localUnified ? [localUnified] : [];
+    return [
+      ...memoryRuns.values(),
+      ...localRuns.filter((run) => !memoryRuns.has(run.run_id)),
+      ...compatibilityFixtures.filter((run) => !memoryRuns.has(run.run_id))
+    ];
   }
 
   try {
     const rows = await client.clusteringRun.findMany({
       orderBy: { createdAt: "desc" }
     });
-    return rows.map((row: { payload: unknown }) => ClusteringRunSchema.parse(row.payload));
+    return rows.map((row: { payload: unknown }) => ResearchResultSchema.parse(row.payload));
   } catch (error) {
     if (isProduction()) {
       throw error;
     }
-    console.warn("Falling back to validated dummy runs because Prisma could not read PostgreSQL.", error);
-    return dummyRuns;
+    console.warn("Falling back to the local validated unified artifact because Prisma could not read PostgreSQL.", error);
+    const localUnified = loadLocalUnifiedResult();
+    return localUnified ? [localUnified] : [];
   }
 };
 
-export const getRunById = async (runId: string): Promise<ClusteringRun | null> => {
+export const getRunById = async (runId: string): Promise<ResearchResult | null> => {
   const runs = await listRuns();
   return runs.find((run) => run.run_id === runId) ?? null;
 };
 
-export const importRun = async (payload: unknown): Promise<ClusteringRun> => {
-  const run = ClusteringRunSchema.parse(payload);
+export const importRun = async (payload: unknown): Promise<ResearchResult> => {
+  const run = ResearchResultSchema.parse(payload);
   const client = getPrisma();
 
   if (!client) {
@@ -59,13 +90,13 @@ export const importRun = async (payload: unknown): Promise<ClusteringRun> => {
   await client.clusteringRun.upsert({
     where: { runId: run.run_id },
     update: {
-      axis: run.axis,
+      axis: persistenceDiscriminator(run),
       title: run.title,
       payload: run
     },
     create: {
       runId: run.run_id,
-      axis: run.axis,
+      axis: persistenceDiscriminator(run),
       title: run.title,
       payload: run
     }

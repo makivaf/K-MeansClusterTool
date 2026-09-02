@@ -1,80 +1,57 @@
-export type ResearchAxis = "Axis A" | "Axis B";
-
 export type ResearchStageGroup =
-  | "shared/audit"
-  | "Axis A preprocessing"
-  | "Axis A k-selection"
-  | "Axis A initialization"
-  | "Axis A clustering"
-  | "Axis A validation"
-  | "Axis B longitudinal"
-  | "Axis B k-selection"
-  | "Axis B clustering"
-  | "Axis B validation";
+  | "constructing_study_entry_cohort"
+  | "preprocessing"
+  | "pca"
+  | "selecting_k"
+  | "deterministic_initialization"
+  | "enhanced_kmeans"
+  | "cluster_profiling"
+  | "baseline_comparison"
+  | "matching_longitudinal_records"
+  | "longitudinal_eligibility"
+  | "longitudinal_analysis";
 
 export type ResearchScriptManifestEntry = {
   script: string;
   group: ResearchStageGroup;
-  executionAxis: ResearchAxis;
   kind: "entrypoint" | "module";
 };
 
-/**
- * Reviewed logical organization for the frozen flat scripts/research directory.
- * Array order is the validated execution order; paths deliberately remain flat.
- */
+/** Active one-run execution order. No independent longitudinal clustering is present. */
 export const researchScriptManifest: readonly ResearchScriptManifestEntry[] = [
-  { script: "audit_adni.py", group: "shared/audit", executionAxis: "Axis A", kind: "entrypoint" },
-  { script: "audit_adni_candidate_mapping.py", group: "shared/audit", executionAxis: "Axis A", kind: "entrypoint" },
-  { script: "reconcile_adni_dictionary.py", group: "shared/audit", executionAxis: "Axis A", kind: "entrypoint" },
-  { script: "construct_axis_a_study_entry.py", group: "Axis A preprocessing", executionAxis: "Axis A", kind: "entrypoint" },
-  { script: "audit_axis_a_scope_npiq.py", group: "Axis A preprocessing", executionAxis: "Axis A", kind: "entrypoint" },
-  { script: "preprocess_axis_a.py", group: "Axis A preprocessing", executionAxis: "Axis A", kind: "entrypoint" },
-  { script: "check_sop2_environment.py", group: "shared/audit", executionAxis: "Axis A", kind: "entrypoint" },
-  { script: "select_axis_a_k_nbclust.py", group: "Axis A k-selection", executionAxis: "Axis A", kind: "entrypoint" },
-  { script: "dpc_init_axis_a.py", group: "Axis A initialization", executionAxis: "Axis A", kind: "entrypoint" },
-  { script: "run_axis_a_enhanced_kmeans.py", group: "Axis A clustering", executionAxis: "Axis A", kind: "entrypoint" },
-  { script: "run_axis_a_baseline_comparison.py", group: "Axis A validation", executionAxis: "Axis A", kind: "entrypoint" },
-  { script: "run_axis_a_dpc_ablation.py", group: "Axis A validation", executionAxis: "Axis A", kind: "entrypoint" },
-  { script: "audit_axis_b_longitudinal.py", group: "Axis B longitudinal", executionAxis: "Axis B", kind: "entrypoint" },
-  { script: "reconcile_axis_b_longitudinal_methodology.py", group: "Axis B longitudinal", executionAxis: "Axis B", kind: "entrypoint" },
-  { script: "construct_axis_b_longitudinal_cohort.py", group: "Axis B longitudinal", executionAxis: "Axis B", kind: "entrypoint" },
-  { script: "extract_axis_b_adas13_slopes.py", group: "Axis B longitudinal", executionAxis: "Axis B", kind: "entrypoint" },
-  { script: "select_axis_b_k_nbclust.py", group: "Axis B k-selection", executionAxis: "Axis B", kind: "entrypoint" },
-  { script: "select_axis_b_dpc_seeds.py", group: "Axis B validation", executionAxis: "Axis B", kind: "entrypoint" },
-  { script: "reconcile_axis_b_dpc_methodology.py", group: "Axis B validation", executionAxis: "Axis B", kind: "entrypoint" },
-  { script: "axis_b_final_common.py", group: "Axis B clustering", executionAxis: "Axis B", kind: "module" },
-  { script: "run_axis_b_final_clustering.py", group: "Axis B clustering", executionAxis: "Axis B", kind: "entrypoint" },
-  { script: "run_axis_b_random_ablation.py", group: "Axis B validation", executionAxis: "Axis B", kind: "entrypoint" },
-  { script: "run_axis_b_sensitivity_analysis.py", group: "Axis B validation", executionAxis: "Axis B", kind: "entrypoint" },
-  { script: "summarize_axis_b_results.py", group: "Axis B validation", executionAxis: "Axis B", kind: "entrypoint" }
+  { script: "study_entry/audit_adni_inputs.py", group: "constructing_study_entry_cohort", kind: "entrypoint" },
+  { script: "study_entry/audit_candidate_mapping.py", group: "constructing_study_entry_cohort", kind: "entrypoint" },
+  { script: "study_entry/reconcile_variable_dictionary.py", group: "constructing_study_entry_cohort", kind: "entrypoint" },
+  { script: "study_entry/construct_study_entry_cohort.py", group: "constructing_study_entry_cohort", kind: "entrypoint" },
+  { script: "study_entry/audit_study_entry_scope_npiq.py", group: "preprocessing", kind: "entrypoint" },
+  { script: "study_entry/preprocess_study_entry.py", group: "pca", kind: "entrypoint" },
+  { script: "validation/check_clustering_environment.py", group: "selecting_k", kind: "entrypoint" },
+  { script: "study_entry/select_cluster_count_nbclust.py", group: "selecting_k", kind: "entrypoint" },
+  { script: "study_entry/dpc_initialize_clusters.py", group: "deterministic_initialization", kind: "entrypoint" },
+  { script: "study_entry/run_enhanced_kmeans.py", group: "enhanced_kmeans", kind: "entrypoint" },
+  { script: "comparison/run_baseline_kmeans_comparison.py", group: "baseline_comparison", kind: "entrypoint" },
+  { script: "comparison/run_dpc_initialization_comparison.py", group: "baseline_comparison", kind: "entrypoint" },
+  { script: "longitudinal/audit_longitudinal_records.py", group: "matching_longitudinal_records", kind: "entrypoint" },
+  { script: "longitudinal/reconcile_longitudinal_methodology.py", group: "matching_longitudinal_records", kind: "entrypoint" },
+  { script: "longitudinal/construct_longitudinal_cohort.py", group: "longitudinal_eligibility", kind: "entrypoint" },
+  { script: "longitudinal/fit_longitudinal_mixed_model.py", group: "longitudinal_analysis", kind: "entrypoint" },
+  { script: "longitudinal/consolidate_unified_results.py", group: "longitudinal_analysis", kind: "entrypoint" }
 ] as const;
 
-export const researchStageGroups = researchScriptManifest.reduce<Record<ResearchStageGroup, string[]>>(
-  (groups, entry) => {
-    groups[entry.group].push(entry.script);
-    return groups;
-  },
-  {
-    "shared/audit": [],
-    "Axis A preprocessing": [],
-    "Axis A k-selection": [],
-    "Axis A initialization": [],
-    "Axis A clustering": [],
-    "Axis A validation": [],
-    "Axis B longitudinal": [],
-    "Axis B k-selection": [],
-    "Axis B clustering": [],
-    "Axis B validation": []
-  }
-);
+/** Audit-only inventory of the abandoned independent slope-clustering design. */
+export const deprecatedLongitudinalClusteringScripts = [
+  "legacy/old_longitudinal_clustering/extract_axis_b_adas13_slopes.py",
+  "legacy/old_longitudinal_clustering/select_axis_b_k_nbclust.py",
+  "legacy/old_longitudinal_clustering/select_axis_b_dpc_seeds.py",
+  "legacy/old_longitudinal_clustering/reconcile_axis_b_dpc_methodology.py",
+  "legacy/old_longitudinal_clustering/axis_b_final_common.py",
+  "legacy/old_longitudinal_clustering/run_axis_b_final_clustering.py",
+  "legacy/old_longitudinal_clustering/run_axis_b_random_ablation.py",
+  "legacy/old_longitudinal_clustering/run_axis_b_sensitivity_analysis.py",
+  "legacy/old_longitudinal_clustering/summarize_axis_b_results.py"
+] as const;
 
-const executableStages = researchScriptManifest.filter((entry) => entry.kind === "entrypoint");
+export const getResearchExecutionPlan = (): readonly ResearchScriptManifestEntry[] =>
+  researchScriptManifest.filter((entry) => entry.kind === "entrypoint");
 
-export const getResearchExecutionPlan = (axis: ResearchAxis): readonly ResearchScriptManifestEntry[] => {
-  if (axis === "Axis A") return executableStages.filter((entry) => entry.executionAxis === "Axis A");
-  if (axis === "Axis B") return executableStages;
-  return [];
-};
-
-export const approvedResearchScripts = new Set(executableStages.map((entry) => entry.script));
+export const approvedResearchScripts = new Set(getResearchExecutionPlan().map((entry) => entry.script));

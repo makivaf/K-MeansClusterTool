@@ -10,13 +10,22 @@ import {
   resolveUploadDirectory
 } from "../services/localUploadStore";
 import { researchRunLifecycle } from "../services/researchRunLifecycle";
+import { ResearchAdmissionError } from "../services/researchRunLifecycle";
+import { createFixedWindowRateLimiter, requireTrustedBrowserOrigin } from "../httpSecurity";
 
 type ResearchRunLifecyclePort = Pick<typeof researchRunLifecycle, "enqueue" | "get">;
 
 export const createResearchRunsRouter = (lifecycle: ResearchRunLifecyclePort = researchRunLifecycle) => {
   const router = express.Router();
 
-  router.post("/api/research/runs", (request, response, next) => {
+  router.use(requireTrustedBrowserOrigin);
+  const admissionRateLimiter = createFixedWindowRateLimiter({
+    windowMs: 60 * 60 * 1000,
+    maximumRequests: 4,
+    message: "Too many local research requests. Try again later."
+  });
+
+  router.post("/api/research/runs", admissionRateLimiter, (request, response, next) => {
     try {
       const payload = ResearchRunRequestSchema.parse(request.body);
       const uploadDirectory = resolveUploadDirectory(payload.upload_ref);
@@ -30,6 +39,10 @@ export const createResearchRunsRouter = (lifecycle: ResearchRunLifecyclePort = r
         .location(`/api/research/runs/${encodeURIComponent(run.run_id)}`)
         .json(ResearchRunResponseSchema.parse({ run }));
     } catch (error) {
+      if (error instanceof ResearchAdmissionError) {
+        response.status(429).json({ error: error.message });
+        return;
+      }
       if (error instanceof ZodError || error instanceof InvalidUploadReferenceError) {
         response.status(400).json({ error: "The research run request is invalid." });
         return;

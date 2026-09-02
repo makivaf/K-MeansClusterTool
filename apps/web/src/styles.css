@@ -13,13 +13,22 @@
 
 body {
   margin: 0;
-  min-width: 1180px;
+  min-width: 320px;
   min-height: 100vh;
 }
 
 button,
 select {
   font: inherit;
+}
+
+button:focus-visible,
+a:focus-visible,
+select:focus-visible,
+summary:focus-visible,
+input:focus-visible {
+  outline: 3px solid rgba(15, 121, 119, 0.28);
+  outline-offset: 2px;
 }
 
 .recharts-wrapper text {

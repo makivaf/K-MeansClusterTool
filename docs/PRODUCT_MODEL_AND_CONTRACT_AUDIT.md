@@ -1,5 +1,7 @@
 # Product Model and Result Contract Audit
 
+> **Historical audit:** This captures the former Axis A/Axis B product contract and is retained for migration traceability. It is not the active application contract.
+
 ## Determination
 
 The repository describes a **hybrid** application: it reports validated thesis analyses and also provides a local-only workflow for running the same authoritative methods on a newly supplied, compatible ADNI export batch. It is not a general arbitrary-CSV clustering tool.

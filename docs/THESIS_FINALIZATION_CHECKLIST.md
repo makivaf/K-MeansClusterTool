@@ -1,5 +1,7 @@
 # Thesis Finalization Checklist
 
+> **LEGACY / HISTORICAL — NOT CURRENT STATUS:** This checklist captures the former integration milestone and may reference the superseded Axis A/Axis B design. Use the unified pipeline and repository-structure audits for current implementation status.
+
 Status reflects repository evidence as of the integration branch. “Complete” means repository work is complete, not that external academic approval has occurred.
 
 ## Research

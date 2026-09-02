@@ -3,8 +3,8 @@ import fs from "node:fs";
 import path from "node:path";
 
 /** SHA-256 of the committed LF Git blob used by the historical DPC audit. */
-export const DPC_INIT_AXIS_A_CANONICAL_SHA256 =
-  "bda58cfd431934c7c2077bc0fdc583a9fe5a5a771f18682d7d14a4edd9bec513";
+export const DPC_INITIALIZER_CANONICAL_SHA256 =
+  "714c22d4df1afff370d0f9f7f44e376fffe68998617799bab8ded3a89fccf54a";
 
 export class ResearchSourceMaterializationError extends Error {}
 
@@ -23,6 +23,7 @@ export const materializeCanonicalResearchSources = (
 ): void => {
   fs.mkdirSync(destinationDirectory, { recursive: true });
   for (const entry of fs.readdirSync(sourceDirectory, { withFileTypes: true })) {
+    if (entry.isDirectory() && entry.name === "legacy") continue;
     const source = path.join(sourceDirectory, entry.name);
     const destination = path.join(destinationDirectory, entry.name);
     if (entry.isFile() && path.extname(entry.name).toLowerCase() === ".py") {
@@ -35,13 +36,15 @@ export const materializeCanonicalResearchSources = (
 
 export const verifyCanonicalDpcSource = (
   researchScriptsDirectory: string,
-  expectedSha256 = DPC_INIT_AXIS_A_CANONICAL_SHA256
+  expectedSha256 = DPC_INITIALIZER_CANONICAL_SHA256
 ): string => {
-  const source = path.join(researchScriptsDirectory, "dpc_init_axis_a.py");
+  const source = path.join(researchScriptsDirectory, "study_entry", "dpc_initialize_clusters.py");
   if (!fs.existsSync(source) || !fs.statSync(source).isFile()) {
     throw new ResearchSourceMaterializationError("The canonical DPC research source is missing.");
   }
-  const actualSha256 = sha256Bytes(fs.readFileSync(source));
+  // Hash the repository's canonical LF representation, not platform checkout
+  // bytes. Git may materialize the same frozen source with CRLF on Windows.
+  const actualSha256 = sha256Bytes(canonicalizeResearchPythonSource(fs.readFileSync(source)));
   if (actualSha256 !== expectedSha256) {
     throw new ResearchSourceMaterializationError("The canonical DPC research source hash is invalid.");
   }

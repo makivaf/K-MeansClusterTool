@@ -1,5 +1,7 @@
 # Research Integration Plan
 
+> **Superseded integration plan:** This document records the former two-axis application architecture. See `UNIFIED_RESEARCH_PIPELINE.md` for the implemented one-run design.
+
 ## 1. Purpose
 
 This plan defines what is still needed to safely connect the existing dashboard system to the already validated Alzheimer's disease clustering research pipeline.

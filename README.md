@@ -1,99 +1,75 @@
-# AD Clustering Lab
+# AD Progression Lab
 
-A research-oriented clustering application developed to support the study:
+Research software for the undergraduate thesis:
 
 > **An Enhancement of the K-Means Clustering Algorithm Applied to Modeling Alzheimer's Disease Progression Using Cognitive Data**
 
-The project provides a reproducible computational workflow for analyzing cognitive and functional data from the Alzheimer's Disease Neuroimaging Initiative (ADNI). It combines research scripts with a web-based interface for executing and reviewing the clustering analyses used in the study.
+The active scientific design is one continuous pipeline. Enhanced K-Means first defines Cluster 0 and Cluster 1 in the 2,437-participant study-entry cohort. Eligible members of those same fixed groups are then followed using dated ADAS-Cog13 records and compared longitudinally. Longitudinal slopes are not clustered.
 
-## Research Overview
-
-The study investigates the application of K-Means clustering to Alzheimer's disease progression modeling using cognitive and functional measurements.
-
-The analysis is divided into two complementary components:
-
-### Axis A — Cross-Sectional Cognitive and Functional Profiles
-
-Axis A analyzes participants using multiple cognitive and functional measures at study entry.
-
-The research workflow includes:
-
-- Data quality and missingness assessment
-- Feature preparation
-- Median imputation
-- Standardization
-- Principal Component Analysis (PCA)
-- Cluster-count selection
-- Density-Peak-based initialization assessment
-- K-Means clustering
-- Baseline and enhanced-method comparison
-- Aggregate cluster profiling
-
-The finalized analysis uses **13 retained cognitive and functional features** and **six principal components**, preserving approximately **87.5% of the total variance**.
-
-The selected number of clusters is:
-
-**k = 2**
-
-### Axis B — Longitudinal Progression
-
-Axis B provides a supplementary longitudinal analysis based on change in ADAS-Cog13 scores over time.
-
-Participant-level progression is represented using an estimated longitudinal slope:
-
-**ADAS-Cog13 points per year**
-
-Participants included in this analysis satisfy the predefined longitudinal observation requirements.
-
-Because Axis B contains only one clustering dimension:
-
-- PCA is not applicable.
-- DPC initialization was evaluated for methodological suitability but was not retained for the final analysis.
-- Final clustering uses standard fixed-seed Lloyd K-Means.
-
-The selected number of clusters is:
-
-**k = 2**
-
-Axis B therefore provides an additional view of progression based on longitudinal cognitive change rather than the multivariate cross-sectional profile used in Axis A.
-
-## Application
-
-The AD Clustering Lab provides an interface for executing and reviewing the research workflow.
-
-The application includes views for:
-
-- Dataset upload and research execution
-- Analysis dashboard
-- Preprocessing summaries
-- PCA results
-- Cluster-count selection
-- DPC initialization or suitability analysis
-- Clustering comparison
-- Aggregate cluster profiles
-
-The interface is designed to display validated research outputs while maintaining separation between raw research data and aggregate reporting results.
-
-## Project Structure
-
-The repository is organized into separate application, research, documentation, and data areas.
+## Active pipeline
 
 ```text
-K-MeansClusterTool/
-├── apps/
-│   ├── web/                 # Web application
-│   └── api/                 # Application services
-│
-├── scripts/
-│   └── research/            # Reproducible research workflows
-│
-├── data/
-│   ├── raw/                 # Local research inputs
-│   ├── interim/             # Intermediate research artifacts
-│   └── processed/           # Final reporting artifacts
-│
-├── docs/                    # Architecture and research documentation
-│
-├── packages/                # Shared application components
-│
-└── README.md
+Study-entry cohort
+  -> 13 retained cognitive/functional variables
+  -> median imputation and z-score standardization
+  -> PCA (6 retained components)
+  -> NbClust (k = 2)
+  -> deterministic DPC initialization
+  -> Lloyd K-Means
+  -> Cluster 0 / Cluster 1 assignments
+  -> longitudinal ADAS-Cog13 linkage
+  -> >=3 dated observations and >=365.25 days follow-up
+  -> progression summaries by original cluster
+  -> random-intercept mixed-effects comparison of Time × Cluster
+  -> aggregate-only unified research artifact
+```
+
+The former separate cross-sectional “Axis A” and independent slope-clustering “Axis B” implementation is retained only for provenance and historical audit. The active orchestrator never invokes the deprecated longitudinal NbClust, DPC suitability, or K-Means scripts.
+
+## Validated headline results
+
+- Parent clustered cohort: 2,437 participants
+- Final enhanced cluster sizes: Cluster 0 = 1,553; Cluster 1 = 884
+- PCA: 6 components; 87.479459% cumulative explained variance
+- NbClust: k = 2; 9 of 24 usable votes
+- Longitudinal audit: 1,917 participants with at least 3 observations
+- Final longitudinal subset: 1,845 participants with at least 365.25 days follow-up
+- Eligible by original cluster: Cluster 0 = 1,233; Cluster 1 = 612
+- Primary Time × Cluster estimate: +1.469681 ADAS-Cog13 points/year for original Cluster 1 relative to Cluster 0; 95% CI 1.364061–1.575300
+
+See [Unified Research Pipeline](docs/UNIFIED_RESEARCH_PIPELINE.md), [Unified Results Audit](docs/UNIFIED_RESULTS_AUDIT.md), and [Repository Structure Audit](docs/REPOSITORY_STRUCTURE_AUDIT.md) for the current contract, results, and file/artifact classification.
+
+## Repository structure
+
+```text
+apps/web/                  React research dashboard
+apps/api/                  Express orchestration and aggregate API
+packages/shared/           Zod contracts and shared TypeScript types
+scripts/research/          Authoritative Python research stages
+data/raw/                  Local ADNI inputs; never committed
+data/interim/              Local generated artifacts; never committed
+docs/                      Architecture, audit, and migration notes
+```
+
+## Local commands
+
+```powershell
+npm install
+& '.venv\Scripts\python.exe' -m pip install -r 'scripts\research\requirements-mixed-effects.txt'
+npm run typecheck
+npm run build
+npm run dev
+```
+
+Generate the unified scientific artifact from an already validated local research workspace:
+
+```powershell
+& '.venv\Scripts\python.exe' 'scripts\research\longitudinal\fit_longitudinal_mixed_model.py'
+& '.venv\Scripts\python.exe' 'scripts\research\longitudinal\consolidate_unified_results.py'
+```
+
+The Python stage writes participant-level diagnostics only under gitignored `data/interim/`. The API adapter reads only `data/interim/unified_research_result.json`, whose strict schema contains aggregates and provenance metadata but no participant rows or identifiers.
+
+## Data handling
+
+Raw ADNI exports and generated participant-level artifacts are local-only and ignored by Git. Production routes expose validated aggregate payloads only. Do not commit or publish ADNI participant-level data.

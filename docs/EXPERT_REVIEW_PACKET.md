@@ -1,5 +1,7 @@
 # Expert Review Packet
 
+> **LEGACY / HISTORICAL — NOT CURRENT METHODOLOGY:** This review packet describes the superseded two-axis analysis and remains only for review provenance. Do not treat its independent Axis B clustering as part of the active pipeline.
+
 ## Study
 
 **Title:** *An Enhancement of the K-Means Clustering Algorithm Applied to Modeling Alzheimer's Disease Progression Using Cognitive Data*
