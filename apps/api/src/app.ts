@@ -5,11 +5,27 @@ import { RunListResponseSchema, RunResponseSchema } from "../../../packages/shar
 import { clusterRouter } from "./routes/cluster";
 import { researchRunsRouter } from "./routes/researchRuns";
 import { getRunById, listRuns } from "./services/runRepository";
+import { allowedBrowserOrigins } from "./httpSecurity";
 
 export const app = express();
 
-app.use(cors());
-app.use(express.json());
+app.disable("x-powered-by");
+app.use((_request, response, next) => {
+  response.setHeader("X-Content-Type-Options", "nosniff");
+  response.setHeader("X-Frame-Options", "DENY");
+  response.setHeader("Referrer-Policy", "no-referrer");
+  response.setHeader("Permissions-Policy", "camera=(), microphone=(), geolocation=()");
+  response.setHeader("Content-Security-Policy", "default-src 'none'; frame-ancestors 'none'; base-uri 'none'");
+  if (process.env.NODE_ENV === "production") response.setHeader("Strict-Transport-Security", "max-age=31536000; includeSubDomains");
+  next();
+});
+app.use(cors({
+  origin: (origin, callback) => callback(null, !origin || allowedBrowserOrigins.has(origin)),
+  methods: ["GET", "POST"],
+  allowedHeaders: ["Content-Type"],
+  maxAge: 600
+}));
+app.use(express.json({ limit: "32kb", strict: true }));
 
 app.get("/api/health", (_request, response) => {
   response.json({ ok: true });
@@ -44,7 +60,7 @@ if (process.env.NODE_ENV !== "production") {
 
 app.use((error: unknown, _request: express.Request, response: express.Response, _next: express.NextFunction) => {
   if (error instanceof ZodError) {
-    response.status(500).json({ error: "API response failed schema validation", details: error.flatten() });
+    response.status(500).json({ error: "API response failed schema validation" });
     return;
   }
 

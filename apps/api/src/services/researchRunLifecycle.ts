@@ -1,15 +1,16 @@
 import type {
+  ResearchProgressStage,
   ResearchRunFailureCode,
   ResearchRunRequest,
   ResearchRunStatus
 } from "../../../../packages/shared/src/schema";
 import { AnalysisInputError } from "./analysisInputManifest";
 import {
-  executeResearchAxis,
+  executeUnifiedResearch,
   ResearchArtifactError,
   ResearchPersistenceError,
-  type ResearchAxisExecutionResult
-} from "./executeResearchAxis";
+  type UnifiedResearchExecutionResult
+} from "./executeUnifiedResearch";
 import { removeUploadDirectory } from "./localUploadStore";
 import { ResearchExecutionError } from "./researchPipelineOrchestrator";
 import { ResearchRunJobRepository } from "./researchRunRepository";
@@ -22,10 +23,17 @@ type QueuedTask = {
 
 type LifecycleDependencies = {
   repository?: ResearchRunJobRepository;
-  execute?: (uploadDirectory: string, request: ResearchRunRequest) => Promise<ResearchAxisExecutionResult>;
+  execute?: (
+    uploadDirectory: string,
+    request: ResearchRunRequest,
+    onProgress?: (stage: ResearchProgressStage, completedStages: number, totalStages: number) => void
+  ) => Promise<UnifiedResearchExecutionResult>;
   cleanupUpload?: (uploadDirectory: string) => void;
   diagnoseFailure?: (runId: string, diagnostic: string) => void;
+  maxQueuedTasks?: number;
 };
+
+export class ResearchAdmissionError extends Error {}
 
 const safeFailure = (
   code: ResearchRunFailureCode,
@@ -46,10 +54,9 @@ export const sanitizeResearchFailure = (error: unknown): { code: ResearchRunFail
 
 const controlledExecutionDiagnosticPatterns = [
   /^Runtime scientific equivalence failed: [A-Za-z0-9_.-]+\.$/,
-  /^Axis [AB] research stage failed: [A-Za-z0-9_.-]+\.$/,
-  /^Axis B frozen prerequisite reconciliation failed: [a-z_]+\.$/,
+  /^Research stage failed: [A-Za-z0-9_.-]+\.$/,
   /^The isolated workspace failed canonical research-source verification\.$/,
-  /^Axis B slope extraction failed its exact reproducibility preflight\.$/
+  /^The unified aggregate research artifact was not produced\.$/
 ] as const;
 
 /** Retain useful controlled server diagnostics without logging arbitrary
@@ -72,21 +79,27 @@ export class ResearchRunLifecycle {
   private readonly execute: NonNullable<LifecycleDependencies["execute"]>;
   private readonly cleanupUpload: NonNullable<LifecycleDependencies["cleanupUpload"]>;
   private readonly diagnoseFailure: NonNullable<LifecycleDependencies["diagnoseFailure"]>;
+  private readonly maxQueuedTasks: number;
   private readonly queue: QueuedTask[] = [];
+  private readonly admittedUploadRefs = new Set<string>();
   private draining = false;
   private idleWaiters: Array<() => void> = [];
 
   constructor(dependencies: LifecycleDependencies = {}) {
     this.repository = dependencies.repository ?? new ResearchRunJobRepository();
-    this.execute = dependencies.execute ?? executeResearchAxis;
+    this.execute = dependencies.execute ?? executeUnifiedResearch;
     this.cleanupUpload = dependencies.cleanupUpload ?? removeUploadDirectory;
     this.diagnoseFailure = dependencies.diagnoseFailure
       ?? ((runId, diagnostic) => console.error(`[research] Run ${runId} failed internally: ${diagnostic}`));
+    this.maxQueuedTasks = dependencies.maxQueuedTasks ?? Number(process.env.RESEARCH_MAX_QUEUED_RUNS ?? 2);
   }
 
   enqueue(request: ResearchRunRequest, uploadDirectory: string): ResearchRunStatus {
-    const job = this.repository.create(request.axis);
+    if (this.queue.length >= this.maxQueuedTasks) throw new ResearchAdmissionError("The local research queue is full. Try again after an active run finishes.");
+    if (this.admittedUploadRefs.has(request.upload_ref)) throw new ResearchAdmissionError("This upload batch is already queued or running.");
+    const job = this.repository.create();
     this.queue.push({ runId: job.run_id, request, uploadDirectory });
+    this.admittedUploadRefs.add(request.upload_ref);
     queueMicrotask(() => { void this.drain(); });
     return job;
   }
@@ -106,20 +119,28 @@ export class ResearchRunLifecycle {
     try {
       let task = this.queue.shift();
       while (task) {
-        this.repository.markRunning(task.runId);
+        const currentTask = task;
+        this.repository.markRunning(currentTask.runId);
         try {
-          const result = await this.execute(task.uploadDirectory, task.request);
-          this.repository.markComplete(task.runId, result);
+          const result = await this.execute(
+            currentTask.uploadDirectory,
+            currentTask.request,
+            (stage, completedStages, totalStages) => {
+              this.repository.markProgress(currentTask.runId, stage, completedStages, totalStages);
+            }
+          );
+          this.repository.markComplete(currentTask.runId, result);
         } catch (error) {
           try {
-            this.diagnoseFailure(task.runId, formatResearchFailureDiagnostic(error));
+            this.diagnoseFailure(currentTask.runId, formatResearchFailureDiagnostic(error));
           } catch {
             console.warn("A research failure diagnostic could not be recorded.");
           }
-          this.repository.markFailed(task.runId, sanitizeResearchFailure(error));
+          this.repository.markFailed(currentTask.runId, sanitizeResearchFailure(error));
         } finally {
+          this.admittedUploadRefs.delete(currentTask.request.upload_ref);
           try {
-            this.cleanupUpload(task.uploadDirectory);
+            this.cleanupUpload(currentTask.uploadDirectory);
           } catch {
             console.warn("A completed research upload directory could not be removed.");
           }

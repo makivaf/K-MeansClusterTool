@@ -1,59 +1,35 @@
+import { lazy, Suspense } from "react";
 import { Navigate, Route, Routes } from "react-router-dom";
 import { AppShell } from "./components/layout/AppShell";
 import { useRunData } from "./hooks/useRunData";
-import { ClusterProfilesPage } from "./pages/ClusterProfilesPage";
-import { ComparisonPage } from "./pages/ComparisonPage";
-import { DashboardPage } from "./pages/DashboardPage";
-import { DpcInitPage } from "./pages/DpcInitPage";
-import { NbClustPage } from "./pages/NbClustPage";
-import { PcaPage } from "./pages/PcaPage";
-import { PreprocessingPage } from "./pages/PreprocessingPage";
-import { RunLinkedPage } from "./pages/RunLinkedPage";
-import { UploadAndCluster } from "./pages/UploadAndCluster";
+
+const OverviewPage = lazy(() => import("./pages/OverviewPage").then((module) => ({ default: module.OverviewPage })));
+const EnhancedKMeansPage = lazy(() => import("./pages/EnhancedKMeansPage").then((module) => ({ default: module.EnhancedKMeansPage })));
+const ClustersPage = lazy(() => import("./pages/ClustersPage").then((module) => ({ default: module.ClustersPage })));
+const BaselineVsEnhancedPage = lazy(() => import("./pages/BaselineVsEnhancedPage").then((module) => ({ default: module.BaselineVsEnhancedPage })));
+const LongitudinalProgressionPage = lazy(() => import("./pages/LongitudinalProgressionPage").then((module) => ({ default: module.LongitudinalProgressionPage })));
+const UploadAndCluster = lazy(() => import("./pages/UploadAndCluster").then((module) => ({ default: module.UploadAndCluster })));
 
 export default function App() {
   const runState = useRunData();
+  const run = runState.selectedRun;
 
   return (
     <AppShell {...runState}>
-      <Routes>
-        <Route path="/" element={<Navigate to="/upload-cluster" replace />} />
-        <Route path="/dashboard" element={<DashboardPage run={runState.selectedRun} />} />
-        <Route path="/preprocessing" element={<PreprocessingPage run={runState.selectedRun} />} />
-        <Route path="/pca" element={<PcaPage run={runState.selectedRun} />} />
-        <Route path="/nbclust" element={<NbClustPage run={runState.selectedRun} />} />
-        <Route path="/dpc-init" element={<DpcInitPage run={runState.selectedRun} />} />
-        <Route path="/comparison" element={<ComparisonPage run={runState.selectedRun} />} />
-        <Route path="/cluster-profiles" element={<ClusterProfilesPage run={runState.selectedRun} />} />
-        <Route path="/upload-cluster" element={<UploadAndCluster />} />
-        <Route
-          path="/runs/:runId/comparison"
-          element={
-            <RunLinkedPage
-              runs={runState.runs}
-              isLoading={runState.isLoading}
-              error={runState.error}
-              selectRunById={runState.selectRunById}
-            >
-              {(run) => <ComparisonPage run={run} />}
-            </RunLinkedPage>
-          }
-        />
-        <Route
-          path="/runs/:runId/cluster-profiles"
-          element={
-            <RunLinkedPage
-              runs={runState.runs}
-              isLoading={runState.isLoading}
-              error={runState.error}
-              selectRunById={runState.selectRunById}
-            >
-              {(run) => <ClusterProfilesPage run={run} />}
-            </RunLinkedPage>
-          }
-        />
-        <Route path="*" element={<Navigate to="/upload-cluster" replace />} />
-      </Routes>
+      <Suspense fallback={<div className="rounded-xl border border-border bg-white p-6 text-sm text-muted">Loading research view…</div>}>
+        <Routes>
+          <Route path="/" element={<Navigate to="/overview" replace />} />
+          <Route path="/overview" element={<OverviewPage run={run} />} />
+          <Route path="/enhanced-kmeans" element={<EnhancedKMeansPage run={run} />} />
+          <Route path="/clusters" element={<ClustersPage run={run} />} />
+          <Route path="/baseline-vs-enhanced" element={<BaselineVsEnhancedPage run={run} />} />
+          <Route path="/longitudinal" element={<LongitudinalProgressionPage run={run} />} />
+          <Route path="/data-preparation" element={<Navigate to="/enhanced-kmeans#data-preparation" replace />} />
+          <Route path="/validation" element={<Navigate to="/longitudinal#validation-limitations" replace />} />
+          <Route path="/upload-run" element={<UploadAndCluster />} />
+          <Route path="*" element={<Navigate to="/overview" replace />} />
+        </Routes>
+      </Suspense>
     </AppShell>
   );
 }

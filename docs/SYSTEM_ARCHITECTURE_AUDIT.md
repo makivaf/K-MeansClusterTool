@@ -1,5 +1,7 @@
 # System Architecture Audit
 
+> **Historical audit:** Axis-specific findings below describe the pre-migration system. The active architecture is documented in `UNIFIED_RESEARCH_PIPELINE.md`.
+
 > Historical baseline: this audit records the pre-integration scaffold at `origin/main`/`b054eb7`. Statements about the hard-coded run ID and placeholder endpoint are retained as evidence of the starting state; the integration branch replaces that behavior. See `THESIS_FINALIZATION_CHECKLIST.md` and `PRODUCT_MODEL_AND_CONTRACT_AUDIT.md` for current status.
 
 ## 1. Audit Scope

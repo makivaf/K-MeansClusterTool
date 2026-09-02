@@ -14,16 +14,19 @@ import { ArtifactValidationError } from "../services/artifactReaders";
 import { executeAnalysis } from "../services/executeAnalysis";
 import {
   createUploadDirectory,
+  removeUploadDirectory,
   resolveUploadDirectory
 } from "../services/localUploadStore";
 import { ResearchExecutionError } from "../services/researchPipelineOrchestrator";
 import { ZodError } from "zod";
+import { createFixedWindowRateLimiter, requireTrustedBrowserOrigin } from "../httpSecurity";
 
 type UploadRequest = Request & {
   uploadBatchId?: string;
 };
 
-const maxCsvBytes = 500 * 1024 * 1024;
+const maxCsvBytes = Number(process.env.RESEARCH_MAX_CSV_BYTES ?? 500 * 1024 * 1024);
+const maxUploadRequestBytes = (maxCsvBytes * 7) + (1024 * 1024);
 
 const sanitizeFilename = (filename: string) =>
   path
@@ -41,7 +44,12 @@ const storage = multer.diskStorage({
     callback(null, resolveUploadDirectory(request.uploadBatchId ?? ""));
   },
   filename: (_request, file, callback) => {
-    callback(null, sanitizeFilename(file.originalname));
+    const sanitized = sanitizeFilename(file.originalname);
+    if (sanitized.length === 0 || sanitized.length > 180) {
+      callback(new Error("A dataset filename is invalid."), "");
+      return;
+    }
+    callback(null, sanitized);
   }
 });
 
@@ -61,11 +69,38 @@ const csvUpload = multer({
 }).array("files");
 
 export const clusterRouter = express.Router();
+let synchronousRunActive = false;
+
+clusterRouter.use(requireTrustedBrowserOrigin);
+clusterRouter.use(createFixedWindowRateLimiter({
+  windowMs: 60 * 60 * 1000,
+  maximumRequests: 4,
+  message: "Too many local research requests. Try again later."
+}));
+
+clusterRouter.use((request, response, next) => {
+  const contentLength = Number(request.get("content-length") ?? 0);
+  if (Number.isFinite(contentLength) && contentLength > maxUploadRequestBytes) {
+    response.status(413).json({ error: "The upload request exceeds the configured size limit." });
+    return;
+  }
+  next();
+});
 
 clusterRouter.post("/api/upload", assignUploadBatch, (request: UploadRequest, response, next) => {
   csvUpload(request, response, (error) => {
     if (error) {
-      response.status(400).json({ error: error instanceof Error ? error.message : "Unable to upload CSV files." });
+      if (request.uploadBatchId) {
+        try { removeUploadDirectory(resolveUploadDirectory(request.uploadBatchId)); } catch { /* best-effort cleanup */ }
+      }
+      const message = error instanceof multer.MulterError && error.code === "LIMIT_FILE_SIZE"
+        ? "A CSV file exceeds the configured size limit."
+        : error instanceof multer.MulterError && error.code === "LIMIT_FILE_COUNT"
+          ? "Exactly seven CSV files are allowed."
+          : error instanceof Error && ["Only .csv dataset files are accepted.", "A dataset filename is invalid."].includes(error.message)
+            ? error.message
+            : "Unable to store the uploaded CSV files.";
+      response.status(400).json({ error: message });
       return;
     }
     next();
@@ -82,7 +117,7 @@ clusterRouter.post("/api/upload", (request: UploadRequest, response) => {
   try {
     validateAnalysisInputManifest(resolveUploadDirectory(request.uploadBatchId));
   } catch (error) {
-    fs.rmSync(resolveUploadDirectory(request.uploadBatchId), { recursive: true, force: true });
+    removeUploadDirectory(resolveUploadDirectory(request.uploadBatchId));
     const message = error instanceof AnalysisInputError ? error.message : "Unable to validate the analysis input manifest.";
     response.status(400).json({ error: message });
     return;
@@ -93,7 +128,14 @@ clusterRouter.post("/api/upload", (request: UploadRequest, response) => {
   response.status(201).json(payload);
 });
 
-clusterRouter.post("/api/cluster/run", async (request, response, next) => {
+clusterRouter.post("/api/cluster/run", (request, response, next) => {
+  if (synchronousRunActive) {
+    response.status(429).json({ error: "A local research analysis is already running." });
+    return;
+  }
+  synchronousRunActive = true;
+  next();
+}, async (request, response, next) => {
   try {
     const { upload_ref, run_label } = ClusterRunRequestSchema.parse(request.body);
     const uploadDir = resolveUploadDirectory(upload_ref);
@@ -102,8 +144,12 @@ clusterRouter.post("/api/cluster/run", async (request, response, next) => {
       return;
     }
 
-    const result = await executeAnalysis(uploadDir, run_label);
-    response.json(ClusterRunResponseSchema.parse(result));
+    try {
+      const result = await executeAnalysis(uploadDir, run_label);
+      response.json(ClusterRunResponseSchema.parse(result));
+    } finally {
+      removeUploadDirectory(uploadDir);
+    }
   } catch (error) {
     if (error instanceof ZodError || error instanceof AnalysisInputError) {
       response.status(400).json({ error: "The analysis request or uploaded input manifest is invalid." });
@@ -119,5 +165,7 @@ clusterRouter.post("/api/cluster/run", async (request, response, next) => {
       return;
     }
     next(error);
+  } finally {
+    synchronousRunActive = false;
   }
 });

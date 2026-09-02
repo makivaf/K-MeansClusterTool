@@ -349,20 +349,552 @@ export const FrozenAxisBStudyResultSchema = AxisBClusteringRunSchema.superRefine
   if (sizes.length !== 2 || sizes[0] !== 1675 || sizes[1] !== 242) context.addIssue({ code: z.ZodIssueCode.custom, path: ["final_clustering", "cluster_profiles"], message: "Frozen Axis B study cluster sizes were 1,675 and 242." });
 });
 
+export const UnifiedClusterIdSchema = z.union([z.literal(0), z.literal(1)]);
+
+export const DistributionSummarySchema = z
+  .object({
+    n: z.number().int().positive(),
+    mean: z.number(),
+    median: z.number(),
+    standardDeviation: z.number().nonnegative(),
+    q1: z.number(),
+    q3: z.number(),
+    interquartileRange: z.number().nonnegative(),
+    minimum: z.number(),
+    maximum: z.number()
+  })
+  .strict()
+  .superRefine((summary, context) => {
+    if (!(summary.minimum <= summary.q1 && summary.q1 <= summary.median && summary.median <= summary.q3 && summary.q3 <= summary.maximum)) {
+      context.addIssue({ code: z.ZodIssueCode.custom, message: "Distribution quantiles must be ordered." });
+    }
+  });
+
+const UnifiedCohortFlowSchema = z
+  .object({
+    stage: z.enum([
+      "parent_clustered_cohort",
+      "longitudinal_records_found",
+      "valid_dated_records",
+      "at_least_3_distinct_observations",
+      "at_least_12_months_followup"
+    ]),
+    participantCount: z.number().int().nonnegative(),
+    observationCount: z.number().int().nonnegative().optional()
+  })
+  .strict();
+
+const UnifiedClusterFlowSchema = z
+  .object({
+    clusterId: UnifiedClusterIdSchema,
+    parentParticipants: z.number().int().positive(),
+    atLeast3ObservationParticipants: z.number().int().positive(),
+    atLeast12MonthParticipants: z.number().int().positive(),
+    eligibleObservationCount: z.number().int().positive()
+  })
+  .strict();
+
+const UnifiedLinkageChecksSchema = z
+  .object({
+    parentParticipantKeysUnique: z.literal(true),
+    parentPtidRidOneToOne: z.literal(true),
+    allLongitudinalParticipantsInParentCohort: z.literal(true),
+    noParticipantInBothClusters: z.literal(true),
+    noDuplicateParticipantDate: z.literal(true),
+    oneToOneAssignmentLinkageSucceeded: z.literal(true),
+    noSecondLongitudinalKMeans: z.literal(true)
+  })
+  .strict();
+
+const UnifiedCohortSchema = z
+  .object({
+    parentN: z.number().int().positive(),
+    studyEntryPhaseCounts: z.record(z.number().int().nonnegative()),
+    longitudinalEligibleN: z.number().int().positive(),
+    atLeast3ObservationN: z.number().int().positive(),
+    atLeast12MonthN: z.number().int().positive(),
+    flow: z.array(UnifiedCohortFlowSchema).length(5),
+    byOriginalCluster: z.array(UnifiedClusterFlowSchema).length(2),
+    exclusions: z.array(z.object({ reason: z.string().min(1), participantCount: z.number().int().nonnegative() }).strict()),
+    linkageChecks: UnifiedLinkageChecksSchema
+  })
+  .strict()
+  .superRefine((cohort, context) => {
+    const uniqueClusters = new Set(cohort.byOriginalCluster.map((entry) => entry.clusterId));
+    if (uniqueClusters.size !== 2) context.addIssue({ code: z.ZodIssueCode.custom, path: ["byOriginalCluster"], message: "Both original clusters must be represented exactly once." });
+    if (cohort.atLeast12MonthN !== cohort.longitudinalEligibleN || cohort.atLeast12MonthN > cohort.atLeast3ObservationN || cohort.atLeast3ObservationN > cohort.parentN) {
+      context.addIssue({ code: z.ZodIssueCode.custom, path: ["longitudinalEligibleN"], message: "Longitudinal cohort counts must form a nested subset of the clustered parent cohort." });
+    }
+    const parentTotal = cohort.byOriginalCluster.reduce((sum, entry) => sum + entry.parentParticipants, 0);
+    const atLeast3Total = cohort.byOriginalCluster.reduce((sum, entry) => sum + entry.atLeast3ObservationParticipants, 0);
+    const eligibleTotal = cohort.byOriginalCluster.reduce((sum, entry) => sum + entry.atLeast12MonthParticipants, 0);
+    if (parentTotal !== cohort.parentN || atLeast3Total !== cohort.atLeast3ObservationN || eligibleTotal !== cohort.longitudinalEligibleN) {
+      context.addIssue({ code: z.ZodIssueCode.custom, path: ["byOriginalCluster"], message: "Cluster-specific cohort counts must sum to the corresponding cohort totals." });
+    }
+  });
+
+const UnifiedPreprocessingSchema = z
+  .object({
+    candidateFeatures: z.array(z.string().min(1)).length(15),
+    excludedFeatures: z.array(z.object({ feature: z.string().min(1), missingPercent: z.number().min(0).max(100), reason: z.string().min(1) }).strict()).length(2),
+    retainedFeatures: z.array(z.string().min(1)).length(13),
+    missingnessThresholdPercent: z.literal(20),
+    imputation: z.literal("Median imputation"),
+    standardization: z.literal("Z-score standardization")
+  })
+  .strict();
+
+const UnifiedPcaSchema = z
+  .object({
+    components: z.number().int().positive(),
+    cumulativeExplainedVariance: z.number().min(0).max(1),
+    scree: z.array(z.object({
+      component: z.number().int().positive(),
+      eigenvalue: z.number().nonnegative(),
+      individualVariance: z.number().min(0).max(1),
+      cumulativeVariance: z.number().min(0).max(1),
+      retained: z.boolean()
+    }).strict()).min(1)
+  })
+  .strict();
+
+const UnifiedKSelectionSchema = z
+  .object({
+    method: z.literal("NbClust majority rule"),
+    candidateK: z.array(z.number().int().positive()).min(1),
+    selectedK: z.number().int().positive(),
+    usableVotes: z.number().int().positive(),
+    votesForSelectedK: z.number().int().positive(),
+    voteDistribution: z.array(z.object({ k: z.number().int().positive(), votes: z.number().int().nonnegative() }).strict()).min(1),
+    indexResults: z.array(z.object({ index: z.string().min(1), status: z.string().min(1), recommendedK: z.number().int().positive().optional() }).strict()).min(1)
+  })
+  .strict();
+
+const UnifiedInitializationSchema = z
+  .object({
+    method: z.literal("Density Peaks Clustering-derived observation centroids"),
+    deterministic: z.literal(true),
+    selectedCentroids: z.array(z.object({
+      rank: z.number().int().positive(),
+      candidateId: SafeCandidateIdSchema,
+      rho: z.number().nonnegative(),
+      delta: z.number().nonnegative(),
+      gamma: z.number().nonnegative(),
+      assignedCluster: UnifiedClusterIdSchema
+    }).strict()).length(2),
+    reproducibilityRuns: z.number().int().positive(),
+    reproducibilityPassed: z.literal(true)
+  })
+  .strict();
+
+const UnifiedClusteringMetricsSchema = z
+  .object({
+    silhouette: z.number(),
+    daviesBouldin: z.number(),
+    calinskiHarabasz: z.number()
+  })
+  .strict();
+
+const UnifiedEnhancedClusteringSchema = z
+  .object({
+    algorithm: z.literal("Lloyd K-Means"),
+    representation: z.string().min(1),
+    clusterSizes: z.array(z.object({ clusterId: UnifiedClusterIdSchema, nMembers: z.number().int().positive() }).strict()).length(2),
+    metrics: UnifiedClusteringMetricsSchema,
+    iterations: z.number().int().positive(),
+    converged: z.literal(true),
+    inertia: z.number().positive()
+  })
+  .strict();
+
+const UnifiedClusterProfilesSchema = z
+  .object({
+    scale: z.string().min(1),
+    profiles: z.array(z.object({
+      clusterId: UnifiedClusterIdSchema,
+      nMembers: z.number().int().positive(),
+      variableMeans: AggregateNumberRecordSchema,
+      variableStandardDeviations: AggregateNumberRecordSchema
+    }).strict()).length(2),
+    smdRanking: z.array(z.object({
+      variable: z.string().min(1),
+      standardizedMeanDifferenceCluster1Minus0: z.number(),
+      absoluteSmd: z.number().nonnegative(),
+      rank: z.number().int().positive()
+    }).strict()).length(13)
+  })
+  .strict();
+
+const MetricNameSchema = z.enum(["silhouette", "davies_bouldin", "calinski_harabasz"]);
+const MetricDirectionSchema = z.enum(["higher", "lower"]);
+
+const UnifiedBaselineComparisonSchema = z
+  .object({
+    baselineMethod: z.object({
+      representation: z.string().min(1),
+      kSelection: z.string().min(1),
+      selectedK: z.number().int().positive(),
+      initialization: z.string().min(1),
+      algorithm: z.literal("Lloyd K-Means"),
+      runCount: z.number().int().positive()
+    }).strict(),
+    enhancedMethod: z.object({
+      representation: z.string().min(1),
+      kSelection: z.string().min(1),
+      initialization: z.string().min(1),
+      algorithm: z.literal("Lloyd K-Means")
+    }).strict(),
+    metrics: z.array(z.object({
+      metric: MetricNameSchema,
+      direction: MetricDirectionSchema,
+      baselineValue: z.number(),
+      baselineStandardDeviation: z.number().nonnegative(),
+      baselineMedian: z.number(),
+      baselineMinimum: z.number(),
+      baselineMaximum: z.number(),
+      enhancedValue: z.number(),
+      signedRelativeChangePercent: z.number(),
+      improved: z.literal(true)
+    }).strict()).length(3),
+    caution: z.string().min(1),
+    controlledDpcInitializationComparison: z.object({
+      scope: z.string().min(1),
+      purpose: z.string().min(1),
+      metrics: z.array(z.object({
+        metric: MetricNameSchema,
+        direction: MetricDirectionSchema,
+        dpcValue: z.number(),
+        randomMean: z.number(),
+        signedRelativeChangePercent: z.number(),
+        dpcAssessment: z.enum(["better", "worse", "equal"])
+      }).strict()).length(3)
+    }).strict()
+  })
+  .strict()
+  .superRefine((comparison, context) => {
+    const expectedDirections: Record<z.infer<typeof MetricNameSchema>, z.infer<typeof MetricDirectionSchema>> = {
+      silhouette: "higher",
+      davies_bouldin: "lower",
+      calinski_harabasz: "higher"
+    };
+    comparison.metrics.forEach((metric, index) => {
+      if (metric.direction !== expectedDirections[metric.metric]) context.addIssue({ code: z.ZodIssueCode.custom, path: ["metrics", index, "direction"], message: "Metric improvement direction is invalid." });
+      if (metric.baselineMinimum > metric.baselineMedian || metric.baselineMedian > metric.baselineMaximum) context.addIssue({ code: z.ZodIssueCode.custom, path: ["metrics", index], message: "Baseline run variability must have an ordered minimum, median, and maximum." });
+    });
+  });
+
+const UnifiedLongitudinalClusterSummarySchema = z
+  .object({
+    clusterId: UnifiedClusterIdSchema,
+    eligibleParticipants: z.number().int().positive(),
+    observationCount: z.number().int().positive(),
+    observationsPerParticipant: DistributionSummarySchema,
+    followupYears: DistributionSummarySchema,
+    baselineAdas13: DistributionSummarySchema,
+    slopePointsPerYear: DistributionSummarySchema,
+    intercept: DistributionSummarySchema,
+    rSquared: DistributionSummarySchema,
+    rmse: DistributionSummarySchema
+  })
+  .strict();
+
+const sha256Schema = z.string().regex(/^[a-f0-9]{64}$/);
+const finiteNumberSchema = z.number().finite();
+const MixedEffectsTermSchema = z.enum(["intercept", "time", "cluster", "time_x_cluster"]);
+const MixedEffectsOptimizerSchema = z.enum(["lbfgs", "bfgs", "cg"]);
+
+const MixedEffectsCoefficientBaseSchema = z
+  .object({
+    term: MixedEffectsTermSchema,
+    parameterName: z.string().min(1),
+    estimate: finiteNumberSchema,
+    standardError: finiteNumberSchema.nonnegative(),
+    confidenceInterval95: z.object({ lower: finiteNumberSchema, upper: finiteNumberSchema }).strict(),
+    zStatistic: finiteNumberSchema,
+    pValue: finiteNumberSchema.min(0).max(1)
+  })
+  .strict();
+
+const MixedEffectsCoefficientSchema = MixedEffectsCoefficientBaseSchema
+  .superRefine((coefficient, context) => {
+    if (coefficient.confidenceInterval95.lower > coefficient.confidenceInterval95.upper) {
+      context.addIssue({ code: z.ZodIssueCode.custom, path: ["confidenceInterval95"], message: "A coefficient confidence interval must be ordered." });
+    }
+  });
+
+export const UnifiedMixedEffectsModelSchema = z
+  .object({
+    contractVersion: z.literal("unified-longitudinal-mixed-model/v1"),
+    status: z.literal("converged"),
+    modelRole: z.literal("primary_inferential_longitudinal_model"),
+    modelFormula: z.literal("ADAS13 ~ time + cluster + time:cluster + (1 | participant)"),
+    implementationFormula: z.literal("adas13 ~ time_years * original_cluster"),
+    estimationMethod: z.literal("Maximum likelihood (ML); random intercept only"),
+    library: z.object({ name: z.literal("statsmodels"), version: z.string().min(1) }).strict(),
+    alpha: z.literal(0.05),
+    confidenceLevel: z.literal(0.95),
+    referenceCluster: z.literal(0),
+    participantCount: z.literal(1845),
+    participantCountsByOriginalCluster: z.array(z.object({ clusterId: UnifiedClusterIdSchema, participantCount: z.number().int().positive() }).strict()).length(2),
+    observationCount: z.literal(11111),
+    groupingVariable: z.literal("private participant composite key (not exported)"),
+    randomEffectsStructure: z.literal("participant-level random intercept"),
+    selectedOptimizer: MixedEffectsOptimizerSchema,
+    optimizerAttempts: z.array(z.object({
+      optimizer: MixedEffectsOptimizerSchema,
+      converged: z.boolean(),
+      warnings: z.array(z.string()),
+      error: z.string().min(1).nullable()
+    }).strict()).min(1).max(3),
+    converged: z.literal(true),
+    fixedEffects: z.array(MixedEffectsCoefficientSchema).length(4),
+    primaryTerm: z.literal("time_x_cluster"),
+    primaryResult: MixedEffectsCoefficientBaseSchema.extend({
+      term: z.literal("time_x_cluster"),
+      significantAtAlpha: z.boolean(),
+      coefficientMeaning: z.literal("Difference in annual ADAS-Cog13 change for original Cluster 1 relative to original Cluster 0")
+    }).strict(),
+    estimatedAnnualChangeByOriginalCluster: z.array(z.object({
+      clusterId: UnifiedClusterIdSchema,
+      estimate: finiteNumberSchema,
+      unit: z.literal("ADAS-Cog13 points/year")
+    }).strict()).length(2),
+    varianceComponents: z.object({
+      randomInterceptVariance: finiteNumberSchema.nonnegative(),
+      residualVariance: finiteNumberSchema.positive()
+    }).strict(),
+    fitStatistics: z.object({
+      logLikelihood: finiteNumberSchema,
+      aic: finiteNumberSchema,
+      bic: finiteNumberSchema
+    }).strict(),
+    diagnostics: z.object({
+      coefficientStructureComplete: z.literal(true),
+      allEstimatesFinite: z.literal(true),
+      timeClusterEstimable: z.literal(true),
+      randomEffectBoundaryDetected: z.boolean(),
+      randomEffectBoundaryThreshold: finiteNumberSchema.positive(),
+      selectedFitWarnings: z.array(z.string())
+    }).strict(),
+    interpretation: z.object({
+      summary: z.string().min(1),
+      coefficientMeaning: z.literal("The Time × Cluster coefficient estimates how much the annual ADAS-Cog13 rate differs between the original enhanced K-Means groups."),
+      causalCaution: z.literal("The model compares observed trajectories of algorithmic groups and does not establish prediction or causation.")
+    }).strict(),
+    provenance: z.object({
+      inputSha256: z.record(sha256Schema),
+      originalAssignmentsFixed: z.literal(true),
+      eligibleCohortFrozen: z.literal(true),
+      participantLevelRowsExported: z.literal(false),
+      longitudinalClusteringInvoked: z.literal(false)
+    }).strict()
+  })
+  .strict()
+  .superRefine((model, context) => {
+    const clusterCounts = Object.fromEntries(model.participantCountsByOriginalCluster.map((entry) => [entry.clusterId, entry.participantCount]));
+    if (clusterCounts[0] !== 1233 || clusterCounts[1] !== 612) context.addIssue({ code: z.ZodIssueCode.custom, path: ["participantCountsByOriginalCluster"], message: "The mixed-effects model must use the frozen original-cluster counts 1,233 and 612." });
+    const attempts = model.optimizerAttempts.filter((attempt) => attempt.optimizer === model.selectedOptimizer);
+    if (attempts.length !== 1 || !attempts[0].converged || attempts[0].error !== null) context.addIssue({ code: z.ZodIssueCode.custom, path: ["optimizerAttempts"], message: "The selected optimizer must have exactly one successful recorded attempt." });
+    const effects = Object.fromEntries(model.fixedEffects.map((effect) => [effect.term, effect]));
+    if (Object.keys(effects).length !== 4 || !effects.intercept || !effects.time || !effects.cluster || !effects.time_x_cluster) {
+      context.addIssue({ code: z.ZodIssueCode.custom, path: ["fixedEffects"], message: "All four pre-specified fixed effects must be present exactly once." });
+      return;
+    }
+    const primary = effects.time_x_cluster;
+    const matchesPrimary = ["estimate", "standardError", "zStatistic", "pValue"].every((key) => model.primaryResult[key as keyof typeof model.primaryResult] === primary[key as keyof typeof primary])
+      && model.primaryResult.confidenceInterval95.lower === primary.confidenceInterval95.lower
+      && model.primaryResult.confidenceInterval95.upper === primary.confidenceInterval95.upper;
+    if (!matchesPrimary) context.addIssue({ code: z.ZodIssueCode.custom, path: ["primaryResult"], message: "The primary result must exactly reference the Time × Cluster coefficient." });
+    if (model.primaryResult.significantAtAlpha !== (model.primaryResult.pValue < model.alpha)) context.addIssue({ code: z.ZodIssueCode.custom, path: ["primaryResult", "significantAtAlpha"], message: "Primary significance must be derived from the declared alpha." });
+    const annualChanges = Object.fromEntries(model.estimatedAnnualChangeByOriginalCluster.map((entry) => [entry.clusterId, entry.estimate]));
+    if (Math.abs(annualChanges[0] - effects.time.estimate) > 1e-12 || Math.abs(annualChanges[1] - (effects.time.estimate + primary.estimate)) > 1e-12) {
+      context.addIssue({ code: z.ZodIssueCode.custom, path: ["estimatedAnnualChangeByOriginalCluster"], message: "Annual changes must be derived from the fitted fixed effects." });
+    }
+  });
+
+const UnifiedLongitudinalSchema = z
+  .object({
+    measure: z.literal("ADAS-Cog13 TOTAL13"),
+    timeDefinition: z.string().min(1),
+    eligibilityRule: z.string().min(1),
+    assignmentSource: z.string().min(1),
+    eligibleParticipants: z.number().int().positive(),
+    observationCount: z.number().int().positive(),
+    byOriginalCluster: z.array(UnifiedLongitudinalClusterSummarySchema).length(2),
+    timeSeries: z.array(z.object({
+      clusterId: UnifiedClusterIdSchema,
+      yearStart: z.number().int().nonnegative(),
+      yearEnd: z.number().int().positive(),
+      participantCount: z.number().int().positive(),
+      observationCount: z.number().int().positive(),
+      meanElapsedYears: z.number().nonnegative(),
+      meanAdas13: z.number().nonnegative(),
+      medianAdas13: z.number().nonnegative(),
+      standardDeviationAdas13: z.number().nonnegative()
+    }).strict()).min(2),
+    participantSlopeMethod: z.string().min(1),
+    mixedEffects: UnifiedMixedEffectsModelSchema,
+    limitations: z.array(z.string().min(1)).min(1)
+  })
+  .strict()
+  .superRefine((longitudinal, context) => {
+    const uniqueClusters = new Set(longitudinal.byOriginalCluster.map((entry) => entry.clusterId));
+    const participantTotal = longitudinal.byOriginalCluster.reduce((sum, entry) => sum + entry.eligibleParticipants, 0);
+    const observationTotal = longitudinal.byOriginalCluster.reduce((sum, entry) => sum + entry.observationCount, 0);
+    if (uniqueClusters.size !== 2 || participantTotal !== longitudinal.eligibleParticipants || observationTotal !== longitudinal.observationCount) {
+      context.addIssue({ code: z.ZodIssueCode.custom, path: ["byOriginalCluster"], message: "Longitudinal cluster summaries must cover both original clusters and sum to the reported totals." });
+    }
+  });
+
+const UnifiedProvenanceSchema = z
+  .object({
+    inputSha256: z.record(sha256Schema),
+    assignmentArtifactAuthoritative: z.string().min(1),
+    legacyArtifactsPreservedForAudit: z.literal(true),
+    participantLevelOutput: z.object({ path: z.string().min(1), sha256: sha256Schema, webExposed: z.literal(false), gitignored: z.literal(true) }).strict(),
+    cohortAuditOutput: z.object({ path: z.string().min(1), sha256: sha256Schema }).strict(),
+    mixedModelOutput: z.object({
+      jsonPath: z.string().min(1),
+      jsonSha256: sha256Schema,
+      csvPath: z.string().min(1),
+      csvSha256: sha256Schema,
+      aggregateOnly: z.literal(true),
+      webExposed: z.literal(true)
+    }).strict(),
+    prohibitedLongitudinalOperations: z.object({ nbclustInvoked: z.literal(false), dpcSuitabilityInvoked: z.literal(false), kmeansInvoked: z.literal(false) }).strict()
+  })
+  .strict();
+
+export const UnifiedResearchArtifactSchema = z
+  .object({
+    contractVersion: z.literal("unified-research-run/v1"),
+    research: z.object({
+      title: z.string().min(1),
+      design: z.literal("one_continuous_pipeline"),
+      stage1: z.literal("Enhanced K-Means Cognitive-Functional Clustering"),
+      stage2: z.literal("Longitudinal Progression Analysis"),
+      interpretation: z.string().min(1)
+    }).strict(),
+    cohort: UnifiedCohortSchema,
+    preprocessing: UnifiedPreprocessingSchema,
+    pca: UnifiedPcaSchema,
+    kSelection: UnifiedKSelectionSchema,
+    initialization: UnifiedInitializationSchema,
+    enhancedClustering: UnifiedEnhancedClusteringSchema,
+    clusterProfiles: UnifiedClusterProfilesSchema,
+    baselineComparison: UnifiedBaselineComparisonSchema,
+    longitudinal: UnifiedLongitudinalSchema,
+    provenance: UnifiedProvenanceSchema
+  })
+  .strict();
+
+export const UnifiedResearchRunSchema = UnifiedResearchArtifactSchema
+  .extend({
+    ...RunMetadataShape,
+    pipeline: z.literal("unified")
+  })
+  .superRefine((run, context) => {
+    const clusterSizeTotal = run.enhancedClustering.clusterSizes.reduce((sum, entry) => sum + entry.nMembers, 0);
+    if (clusterSizeTotal !== run.cohort.parentN) context.addIssue({ code: z.ZodIssueCode.custom, path: ["enhancedClustering", "clusterSizes"], message: "Enhanced cluster sizes must sum to the parent cohort." });
+    if (run.longitudinal.eligibleParticipants !== run.cohort.longitudinalEligibleN) context.addIssue({ code: z.ZodIssueCode.custom, path: ["longitudinal", "eligibleParticipants"], message: "Longitudinal and cohort eligibility totals must match." });
+  });
+
+export const FrozenUnifiedStudyResultSchema = UnifiedResearchRunSchema.superRefine((run, context) => {
+  const expectClose = (actual: number, expected: number, path: (string | number)[], message: string): void => {
+    if (Math.abs(actual - expected) > 1e-12) context.addIssue({ code: z.ZodIssueCode.custom, path, message });
+  };
+  if (run.cohort.parentN !== 2437) context.addIssue({ code: z.ZodIssueCode.custom, path: ["cohort", "parentN"], message: "Frozen parent cohort contains 2,437 participants." });
+  if (run.cohort.atLeast3ObservationN !== 1917) context.addIssue({ code: z.ZodIssueCode.custom, path: ["cohort", "atLeast3ObservationN"], message: "Frozen >=3-observation audit contains 1,917 participants." });
+  if (run.cohort.atLeast12MonthN !== 1845) context.addIssue({ code: z.ZodIssueCode.custom, path: ["cohort", "atLeast12MonthN"], message: "Frozen >=12-month audit contains 1,845 participants." });
+  const expectedPhaseCounts = { ADNI1: 819, ADNIGO: 130, ADNI2: 789, ADNI3: 699 };
+  for (const [phase, expected] of Object.entries(expectedPhaseCounts)) {
+    if (run.cohort.studyEntryPhaseCounts[phase] !== expected) context.addIssue({ code: z.ZodIssueCode.custom, path: ["cohort", "studyEntryPhaseCounts", phase], message: `Frozen ${phase} count is ${expected}.` });
+  }
+  const sizes = [...run.enhancedClustering.clusterSizes].sort((left, right) => left.clusterId - right.clusterId).map((entry) => entry.nMembers);
+  if (sizes[0] !== 1553 || sizes[1] !== 884) context.addIssue({ code: z.ZodIssueCode.custom, path: ["enhancedClustering", "clusterSizes"], message: "Frozen original cluster sizes are 1,553 and 884." });
+  if (run.pca.components !== 6 || run.kSelection.selectedK !== 2 || run.kSelection.usableVotes !== 24 || run.kSelection.votesForSelectedK !== 9) context.addIssue({ code: z.ZodIssueCode.custom, message: "Frozen PCA/k-selection result disagrees." });
+  expectClose(run.pca.cumulativeExplainedVariance, 0.8747945923377831, ["pca", "cumulativeExplainedVariance"], "Frozen PCA explained variance disagrees.");
+  const enhanced = run.enhancedClustering.metrics;
+  expectClose(enhanced.silhouette, 0.3727004724250328, ["enhancedClustering", "metrics", "silhouette"], "Frozen enhanced silhouette disagrees.");
+  expectClose(enhanced.daviesBouldin, 1.0758850311620256, ["enhancedClustering", "metrics", "daviesBouldin"], "Frozen enhanced Davies-Bouldin score disagrees.");
+  expectClose(enhanced.calinskiHarabasz, 1800.0249578026046, ["enhancedClustering", "metrics", "calinskiHarabasz"], "Frozen enhanced Calinski-Harabasz score disagrees.");
+  const comparisons = Object.fromEntries(run.baselineComparison.metrics.map((metric) => [metric.metric, metric]));
+  const expectedComparisons = {
+    silhouette: [0.33187500971522454, 0.00023426851518023573, 0.33173611492709726, 0.33173611492709726, 0.33225697038257485, 0.3727004724250328, 12.30145733022796],
+    davies_bouldin: [1.2241160774005175, 0.00042412698636601766, 1.224367536833148, 1.2234245639607837, 1.224367536833148, 1.0758850311620256, -12.109231222031596],
+    calinski_harabasz: [1442.0231320417006, 0.013837712047094214, 1442.0313362431123, 1442.0005704878185, 1442.0313362431123, 1800.0249578026046, 24.826358038655325]
+  } as const;
+  for (const [metric, [baseline, standardDeviation, median, minimum, maximum, enhancedValue, change]] of Object.entries(expectedComparisons)) {
+    const comparison = comparisons[metric];
+    if (!comparison) continue;
+    expectClose(comparison.baselineValue, baseline, ["baselineComparison", "metrics", metric, "baselineValue"], `Frozen ${metric} baseline disagrees.`);
+    expectClose(comparison.baselineStandardDeviation, standardDeviation, ["baselineComparison", "metrics", metric, "baselineStandardDeviation"], `Frozen ${metric} baseline variability disagrees.`);
+    expectClose(comparison.baselineMedian, median, ["baselineComparison", "metrics", metric, "baselineMedian"], `Frozen ${metric} baseline median disagrees.`);
+    expectClose(comparison.baselineMinimum, minimum, ["baselineComparison", "metrics", metric, "baselineMinimum"], `Frozen ${metric} baseline minimum disagrees.`);
+    expectClose(comparison.baselineMaximum, maximum, ["baselineComparison", "metrics", metric, "baselineMaximum"], `Frozen ${metric} baseline maximum disagrees.`);
+    expectClose(comparison.enhancedValue, enhancedValue, ["baselineComparison", "metrics", metric, "enhancedValue"], `Frozen ${metric} enhanced result disagrees.`);
+    expectClose(comparison.signedRelativeChangePercent, change, ["baselineComparison", "metrics", metric, "signedRelativeChangePercent"], `Frozen ${metric} relative change disagrees.`);
+  }
+  const clusterFlow = [...run.cohort.byOriginalCluster].sort((left, right) => left.clusterId - right.clusterId);
+  const expectedFlow = [[1553, 1244, 1233, 7967], [884, 673, 612, 3144]] as const;
+  clusterFlow.forEach((entry, index) => {
+    const actual = [entry.parentParticipants, entry.atLeast3ObservationParticipants, entry.atLeast12MonthParticipants, entry.eligibleObservationCount];
+    if (actual.some((value, position) => value !== expectedFlow[index][position])) context.addIssue({ code: z.ZodIssueCode.custom, path: ["cohort", "byOriginalCluster", index], message: `Frozen longitudinal cohort flow for cluster ${index} disagrees.` });
+  });
+  const longitudinalSummaries = [...run.longitudinal.byOriginalCluster].sort((left, right) => left.clusterId - right.clusterId);
+  const expectedLongitudinal = [
+    {
+      eligibleParticipants: 1233,
+      observationCount: 7967,
+      observationsPerParticipant: { mean: 6.461476074614761 },
+      followupYears: { mean: 6.5189337481188385, median: 6.0041067761806985 },
+      baselineAdas13: { mean: 10.360567719754608, median: 10 },
+      slopePointsPerYear: { mean: 0.6432478685184373, median: 0.3450201017664959, standardDeviation: 1.712191241785866, interquartileRange: 1.1964188275255674, minimum: -8.650638551275676, maximum: 11.937889601157178 },
+      rSquared: { median: 0.33095285113384065 },
+      rmse: { median: 1.9089760904921544 }
+    },
+    {
+      eligibleParticipants: 612,
+      observationCount: 3144,
+      observationsPerParticipant: { mean: 5.137254901960785 },
+      followupYears: { mean: 3.309802132123669, median: 2.2039698836413417 },
+      baselineAdas13: { mean: 24.384411760342665, median: 23.67 },
+      slopePointsPerYear: { mean: 3.9532932593320345, median: 2.9744747397017415, standardDeviation: 4.453372925169758, interquartileRange: 4.82103688257269, minimum: -11.444912282051082, maximum: 29.997604534624987 },
+      rSquared: { median: 0.7041541531087447 },
+      rmse: { median: 2.2574482517371157 }
+    }
+  ] as const;
+  longitudinalSummaries.forEach((entry, index) => {
+    const expected = expectedLongitudinal[index];
+    if (entry.eligibleParticipants !== expected.eligibleParticipants || entry.observationCount !== expected.observationCount) {
+      context.addIssue({ code: z.ZodIssueCode.custom, path: ["longitudinal", "byOriginalCluster", index], message: `Frozen longitudinal totals for cluster ${entry.clusterId} disagree.` });
+    }
+    for (const [summaryName, expectedValues] of Object.entries(expected).filter(([name]) => name !== "eligibleParticipants" && name !== "observationCount")) {
+      const actualValues = entry[summaryName as keyof typeof entry] as Record<string, number>;
+      for (const [statistic, expectedValue] of Object.entries(expectedValues as Record<string, number>)) {
+        expectClose(actualValues[statistic], expectedValue, ["longitudinal", "byOriginalCluster", index, summaryName, statistic], `Frozen cluster ${entry.clusterId} ${summaryName} ${statistic} disagrees.`);
+      }
+    }
+  });
+  if (run.longitudinal.observationCount !== 11111) context.addIssue({ code: z.ZodIssueCode.custom, path: ["longitudinal", "observationCount"], message: "Frozen longitudinal cohort contains 11,111 observations." });
+});
+
 export const ClusteringRunSchema = z.union([
   AxisAClusteringRunSchema,
   AxisBClusteringRunSchema
 ]);
 
+export const ResearchResultSchema = z.union([UnifiedResearchRunSchema, ClusteringRunSchema]);
+
 export const RunListResponseSchema = z
   .object({
-    runs: z.array(ClusteringRunSchema)
+    runs: z.array(ResearchResultSchema)
   })
   .strict();
 
 export const RunResponseSchema = z
   .object({
-    run: ClusteringRunSchema
+    run: ResearchResultSchema
   })
   .strict();
 
@@ -385,29 +917,46 @@ export const ClusterRunResponseSchema = z
   .object({
     status: z.literal("complete"),
     persistence: z.enum(["durable", "memory_only"]),
-    axis_a_run_id: z.string().min(1),
-    axis_b_run_id: z.string().min(1)
+    run_id: z.string().min(1)
   })
-  .strict()
-  .refine((response) => response.axis_a_run_id !== response.axis_b_run_id, {
-    message: "Axis A and Axis B must reference separate result records."
-  });
+  .strict();
 
 const ResearchRunRequestBaseShape = {
   upload_ref: z.string().min(1),
   run_label: z.string().trim().min(1).max(120).optional()
 };
 
-export const ResearchRunRequestSchema = z.discriminatedUnion("axis", [
-  z.object({ axis: z.literal("Axis A"), ...ResearchRunRequestBaseShape }).strict(),
-  z.object({ axis: z.literal("Axis B"), ...ResearchRunRequestBaseShape }).strict()
-]);
+export const ResearchRunRequestSchema = z.object(ResearchRunRequestBaseShape).strict();
 
 const ResearchRunBaseShape = {
   run_id: z.string().min(1),
-  axis: AxisSchema,
+  pipeline: z.literal("unified"),
   created_at: z.string().datetime()
 };
+
+export const ResearchProgressStageSchema = z.enum([
+  "preparing_inputs",
+  "constructing_study_entry_cohort",
+  "preprocessing",
+  "pca",
+  "selecting_k",
+  "deterministic_initialization",
+  "enhanced_kmeans",
+  "cluster_profiling",
+  "baseline_comparison",
+  "matching_longitudinal_records",
+  "longitudinal_eligibility",
+  "longitudinal_analysis",
+  "aggregate_artifact_validation"
+]);
+
+export const ResearchProgressSchema = z
+  .object({
+    stage: ResearchProgressStageSchema,
+    completedStages: z.number().int().nonnegative(),
+    totalStages: z.number().int().positive()
+  })
+  .strict();
 
 export const ResearchRunQueuedSchema = z
   .object({
@@ -420,7 +969,8 @@ export const ResearchRunRunningSchema = z
   .object({
     ...ResearchRunBaseShape,
     status: z.literal("running"),
-    started_at: z.string().datetime()
+    started_at: z.string().datetime(),
+    progress: ResearchProgressSchema
   })
   .strict();
 
@@ -498,12 +1048,20 @@ export type AxisBDpcSuitability = z.infer<typeof AxisBDpcSuitabilitySchema>;
 export type AxisBFinalClustering = z.infer<typeof AxisBFinalClusteringSchema>;
 export type AxisBClusteringRun = z.infer<typeof AxisBClusteringRunSchema>;
 export type ClusteringRun = z.infer<typeof ClusteringRunSchema>;
+export type UnifiedClusterId = z.infer<typeof UnifiedClusterIdSchema>;
+export type DistributionSummary = z.infer<typeof DistributionSummarySchema>;
+export type UnifiedMixedEffectsModel = z.infer<typeof UnifiedMixedEffectsModelSchema>;
+export type UnifiedResearchArtifact = z.infer<typeof UnifiedResearchArtifactSchema>;
+export type UnifiedResearchRun = z.infer<typeof UnifiedResearchRunSchema>;
+export type ResearchResult = z.infer<typeof ResearchResultSchema>;
 export type RunListResponse = z.infer<typeof RunListResponseSchema>;
 export type RunResponse = z.infer<typeof RunResponseSchema>;
 export type UploadResponse = z.infer<typeof UploadResponseSchema>;
 export type ClusterRunRequest = z.infer<typeof ClusterRunRequestSchema>;
 export type ClusterRunResponse = z.infer<typeof ClusterRunResponseSchema>;
 export type ResearchRunRequest = z.infer<typeof ResearchRunRequestSchema>;
+export type ResearchProgressStage = z.infer<typeof ResearchProgressStageSchema>;
+export type ResearchProgress = z.infer<typeof ResearchProgressSchema>;
 export type ResearchRunQueued = z.infer<typeof ResearchRunQueuedSchema>;
 export type ResearchRunRunning = z.infer<typeof ResearchRunRunningSchema>;
 export type ResearchRunComplete = z.infer<typeof ResearchRunCompleteSchema>;

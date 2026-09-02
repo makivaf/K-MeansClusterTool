@@ -3,28 +3,28 @@ import path from "node:path";
 
 export type AnalysisInputFileSpec = {
   filename: string;
-  axis: "Axis A" | "Axis A and Axis B";
+  usedBy: "clustering" | "clustering_and_longitudinal";
   requiredColumns: readonly string[];
 };
 
 const commonColumns = ["RID", "PTID", "PHASE", "VISCODE", "VISCODE2", "VISDATE"] as const;
 
 export const analysisInputManifest: readonly AnalysisInputFileSpec[] = [
-  { filename: "All_Subjects_ADAS_10Aug2026.csv", axis: "Axis A and Axis B", requiredColumns: [...commonColumns, "TOTAL13"] },
-  { filename: "All_Subjects_CDR_10Aug2026.csv", axis: "Axis A", requiredColumns: [...commonColumns, "CDRSB"] },
-  { filename: "All_Subjects_FAQ_10Aug2026.csv", axis: "Axis A", requiredColumns: [...commonColumns, "FAQTOTAL"] },
-  { filename: "All_Subjects_MMSE_10Aug2026.csv", axis: "Axis A", requiredColumns: [...commonColumns, "MMSCORE"] },
+  { filename: "All_Subjects_ADAS_10Aug2026.csv", usedBy: "clustering_and_longitudinal", requiredColumns: [...commonColumns, "TOTAL13"] },
+  { filename: "All_Subjects_CDR_10Aug2026.csv", usedBy: "clustering", requiredColumns: [...commonColumns, "CDRSB"] },
+  { filename: "All_Subjects_FAQ_10Aug2026.csv", usedBy: "clustering", requiredColumns: [...commonColumns, "FAQTOTAL"] },
+  { filename: "All_Subjects_MMSE_10Aug2026.csv", usedBy: "clustering", requiredColumns: [...commonColumns, "MMSCORE"] },
   {
     filename: "All_Subjects_NEUROBAT_10Aug2026.csv",
-    axis: "Axis A",
+    usedBy: "clustering",
     requiredColumns: [
       ...commonColumns,
       "LIMMTOTAL", "LDELTOTAL", "TRAASCOR", "TRABSCOR", "CATANIMSC", "BNTTOTAL",
       "AVTOT1", "AVTOT2", "AVTOT3", "AVTOT4", "AVTOT5", "AVDEL30MIN"
     ]
   },
-  { filename: "All_Subjects_NPIQ_10Aug2026.csv", axis: "Axis A", requiredColumns: [...commonColumns, "NPISCORE"] },
-  { filename: "All_Subjects_GDSCALE_10Aug2026.csv", axis: "Axis A", requiredColumns: [...commonColumns, "GDTOTAL"] }
+  { filename: "All_Subjects_NPIQ_10Aug2026.csv", usedBy: "clustering", requiredColumns: [...commonColumns, "NPISCORE"] },
+  { filename: "All_Subjects_GDSCALE_10Aug2026.csv", usedBy: "clustering", requiredColumns: [...commonColumns, "GDTOTAL"] }
 ] as const;
 
 export class AnalysisInputError extends Error {
@@ -62,6 +62,7 @@ const readHeader = (filePath: string): string[] => {
     const buffer = Buffer.alloc(256 * 1024);
     const bytesRead = fs.readSync(descriptor, buffer, 0, buffer.length, 0);
     const prefix = buffer.subarray(0, bytesRead).toString("utf8");
+    if (prefix.includes("\u0000") || prefix.includes("\uFFFD")) throw new AnalysisInputError(`${path.basename(filePath)} is not a supported UTF-8 CSV file.`);
     const newline = prefix.search(/[\r\n]/);
     if (newline < 0) throw new AnalysisInputError(`${path.basename(filePath)} has no readable CSV header row.`);
     return parseCsvHeader(prefix.slice(0, newline));
@@ -86,7 +87,11 @@ export const validateAnalysisInputManifest = (uploadDirectory: string): void => 
   }
 
   for (const specification of analysisInputManifest) {
-    const headers = new Set(readHeader(path.join(uploadDirectory, specification.filename)));
+    const parsedHeaders = readHeader(path.join(uploadDirectory, specification.filename));
+    if (parsedHeaders.some((column) => column.length === 0) || new Set(parsedHeaders).size !== parsedHeaders.length) {
+      throw new AnalysisInputError(`${specification.filename} has empty or duplicate CSV header names.`);
+    }
+    const headers = new Set(parsedHeaders);
     const missingColumns = specification.requiredColumns.filter((column) => !headers.has(column));
     if (missingColumns.length > 0) {
       throw new AnalysisInputError(`${specification.filename} is missing required columns: ${missingColumns.join(", ")}.`);

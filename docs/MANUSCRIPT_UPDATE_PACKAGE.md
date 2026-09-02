@@ -1,5 +1,7 @@
 # Manuscript Update Package
 
+> **LEGACY / HISTORICAL — NOT CURRENT METHODOLOGY:** This draft package predates the unified longitudinal continuation and is retained for manuscript change history. It must be rewritten from `UNIFIED_RESEARCH_PIPELINE.md` and `UNIFIED_RESULTS_AUDIT.md` before use.
+
 Use this text as a repository-grounded basis for the Google Docs manuscript. Bracketed items require human confirmation before being represented as approved.
 
 ## Chapter 3 replacement text

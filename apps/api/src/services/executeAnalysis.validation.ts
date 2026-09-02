@@ -1,18 +1,25 @@
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
-import { axisADevelopmentFixture, axisBDevelopmentFixture } from "../../../../packages/shared/src/dummyRuns";
+import { fileURLToPath } from "node:url";
+import { adaptUnifiedResult } from "./unifiedResultAdapter";
 import { executeAnalysis } from "./executeAnalysis";
 
-const workspace = fs.mkdtempSync(path.join(os.tmpdir(), "execute-analysis-"));
+const repositoryRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../../../..");
+const artifactDirectory = path.join(repositoryRoot, "data", "interim");
+const workspace = fs.mkdtempSync(path.join(os.tmpdir(), "execute-unified-analysis-"));
 const response = await executeAnalysis("unused-upload", "Validation run", {
-  orchestrate: async () => ({ executionId: "analysis-test", workspace, axisAArtifactDirectory: workspace, axisBArtifactDirectory: workspace }),
-  adaptAxisA: (_directory, options) => ({ ...axisADevelopmentFixture, run_id: options.runId, title: options.title ?? axisADevelopmentFixture.title, created_at: options.createdAt }),
-  adaptAxisB: (_directory, options) => ({ ...axisBDevelopmentFixture, run_id: options.runId, title: options.title ?? axisBDevelopmentFixture.title, created_at: options.createdAt }),
-  persist: async (axisA, axisB) => ({ axisA: axisA as typeof axisADevelopmentFixture, axisB: axisB as typeof axisBDevelopmentFixture, persistence: "memory_only" })
+  orchestrate: async () => ({ executionId: "analysis-test", workspace, artifactDirectory }),
+  adapt: (_directory, options) => adaptUnifiedResult(artifactDirectory, {
+    runId: options.runId,
+    title: options.title,
+    createdAt: options.createdAt
+  }),
+  persist: async (payload) => payload as ReturnType<typeof adaptUnifiedResult>,
+  persistenceMode: () => "memory_only"
 });
 
-if (response.axis_a_run_id !== "analysis-test-axis-a" || response.axis_b_run_id !== "analysis-test-axis-b") throw new Error("Coordinated run IDs were not returned");
+if (response.run_id !== "analysis-test-unified") throw new Error("Unified run ID was not returned");
 if (response.persistence !== "memory_only") throw new Error("Non-durable execution was misreported");
 if (fs.existsSync(workspace)) throw new Error("Execution workspace was not cleaned");
-console.log("PASS execution service: orchestrator, adapters, persistence, response, and cleanup coordinated");
+console.log("PASS execution service: one unified artifact is adapted, persisted, linked, and cleaned");

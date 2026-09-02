@@ -1,0 +1,6 @@
+# Direct dependencies for the unified longitudinal mixed-effects stage.
+# Install with: python -m pip install -r scripts/research/requirements-mixed-effects.txt
+numpy==2.5.2
+pandas==3.0.5
+scipy==1.18.0
+statsmodels==0.15.0
