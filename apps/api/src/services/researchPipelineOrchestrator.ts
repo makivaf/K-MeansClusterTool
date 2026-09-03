@@ -16,6 +16,7 @@ import {
   ResearchSourceMaterializationError,
   verifyCanonicalDpcSource
 } from "./researchSourceMaterializer";
+import { researchWorkRoot } from "./localResearchWorkspaceStore";
 
 export type ResearchStage = { script: string; group: ResearchStageGroup };
 export type StageRunner = (stage: ResearchStage, context: ExecutionContext) => Promise<void>;
@@ -42,7 +43,6 @@ export type ResearchProgressCallback = (
 const serviceDirectory = path.dirname(fileURLToPath(import.meta.url));
 const repositoryRoot = path.resolve(serviceDirectory, "../../../..");
 const authoritativeScripts = path.join(repositoryRoot, "scripts", "research");
-const workRoot = path.resolve(serviceDirectory, "../../work");
 export const UNIFIED_AGGREGATE_FILENAME = "unified_research_result.json";
 
 export const getResearchRPathEntries = (rHome: string, platform: NodeJS.Platform = process.platform): string[] =>
@@ -154,7 +154,7 @@ export const prepareWorkspace = (
   expectedDpcSourceSha256 = DPC_INITIALIZER_CANONICAL_SHA256
 ): string => {
   validateAnalysisInputManifest(uploadDirectory);
-  const workspace = path.join(workRoot, executionId);
+  const workspace = path.join(researchWorkRoot, executionId);
   try {
     const workspaceResearchScripts = path.join(workspace, "scripts", "research");
     materializeCanonicalResearchSources(researchScriptsDirectory, workspaceResearchScripts);

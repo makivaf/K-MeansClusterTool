@@ -10,13 +10,13 @@ export const RunSelector = ({ runs, selectedRunId, onRunChange }: RunSelectorPro
   const selectedRunMissing = Boolean(selectedRunId) && !runs.some((run) => run.run_id === selectedRunId);
 
   return (
-    <label className="flex min-w-0 items-center gap-2 text-sm font-medium">
-      <span className="hidden text-muted sm:inline">Research run</span>
+    <label className="grid min-w-0 gap-1 text-sm font-medium">
+      <span className="text-[11px] font-semibold uppercase tracking-[0.08em] text-muted">Research run</span>
       <select
         aria-label="Research run"
         value={selectedRunId}
         onChange={(event) => onRunChange(event.target.value)}
-        className="h-10 min-w-0 max-w-80 rounded-lg border border-line bg-white px-3 text-sm shadow-sm outline-none focus:border-teal-600"
+        className="h-9 w-[min(32rem,68vw)] min-w-0 rounded-sm border border-line bg-white px-3 text-sm text-ink outline-none focus:border-teal-600 sm:w-[clamp(16rem,34vw,32rem)]"
       >
         {selectedRunMissing ? <option value={selectedRunId}>Run not found</option> : null}
         {runs.length === 0 ? <option value="">No unified run available</option> : null}

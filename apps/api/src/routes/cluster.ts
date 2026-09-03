@@ -1,31 +1,26 @@
 // DUA compliance: uploaded CSV files may contain raw participant-level research data.
 // These local-only routes are mounted only outside production, and raw CSVs stay on local disk only.
-import fs from "node:fs";
 import path from "node:path";
 import express, { type Request } from "express";
 import multer from "multer";
-import {
-  ClusterRunRequestSchema,
-  ClusterRunResponseSchema,
-  UploadResponseSchema
-} from "../../../../packages/shared/src/schema";
+import { UploadResponseSchema } from "../../../../packages/shared/src/schema";
 import { AnalysisInputError, validateAnalysisInputManifest } from "../services/analysisInputManifest";
-import { ArtifactValidationError } from "../services/artifactReaders";
-import { executeAnalysis } from "../services/executeAnalysis";
 import {
   createUploadDirectory,
   removeUploadDirectory,
   resolveUploadDirectory
 } from "../services/localUploadStore";
-import { ResearchExecutionError } from "../services/researchPipelineOrchestrator";
-import { ZodError } from "zod";
 import { createFixedWindowRateLimiter, requireTrustedBrowserOrigin } from "../httpSecurity";
 
 type UploadRequest = Request & {
   uploadBatchId?: string;
 };
 
-const maxCsvBytes = Number(process.env.RESEARCH_MAX_CSV_BYTES ?? 500 * 1024 * 1024);
+const defaultMaxCsvBytes = 64 * 1024 * 1024;
+const configuredMaxCsvBytes = Number(process.env.RESEARCH_MAX_CSV_BYTES ?? defaultMaxCsvBytes);
+const maxCsvBytes = Number.isSafeInteger(configuredMaxCsvBytes) && configuredMaxCsvBytes > 0
+  ? configuredMaxCsvBytes
+  : defaultMaxCsvBytes;
 const maxUploadRequestBytes = (maxCsvBytes * 7) + (1024 * 1024);
 
 const sanitizeFilename = (filename: string) =>
@@ -57,7 +52,9 @@ const csvUpload = multer({
   storage,
   limits: {
     fileSize: maxCsvBytes,
-    files: 7
+    files: 7,
+    fields: 0,
+    parts: 7
   },
   fileFilter: (_request, file, callback) => {
     if (path.extname(file.originalname).toLowerCase() !== ".csv") {
@@ -69,7 +66,6 @@ const csvUpload = multer({
 }).array("files");
 
 export const clusterRouter = express.Router();
-let synchronousRunActive = false;
 
 clusterRouter.use(requireTrustedBrowserOrigin);
 clusterRouter.use(createFixedWindowRateLimiter({
@@ -95,8 +91,10 @@ clusterRouter.post("/api/upload", assignUploadBatch, (request: UploadRequest, re
       }
       const message = error instanceof multer.MulterError && error.code === "LIMIT_FILE_SIZE"
         ? "A CSV file exceeds the configured size limit."
-        : error instanceof multer.MulterError && error.code === "LIMIT_FILE_COUNT"
+        : error instanceof multer.MulterError && ["LIMIT_FILE_COUNT", "LIMIT_PART_COUNT", "LIMIT_UNEXPECTED_FILE"].includes(error.code)
           ? "Exactly seven CSV files are allowed."
+          : error instanceof multer.MulterError && error.code === "LIMIT_FIELD_COUNT"
+            ? "Only the seven CSV file parts are accepted."
           : error instanceof Error && ["Only .csv dataset files are accepted.", "A dataset filename is invalid."].includes(error.message)
             ? error.message
             : "Unable to store the uploaded CSV files.";
@@ -110,6 +108,9 @@ clusterRouter.post("/api/upload", assignUploadBatch, (request: UploadRequest, re
 clusterRouter.post("/api/upload", (request: UploadRequest, response) => {
   const files = Array.isArray(request.files) ? request.files : [];
   if (files.length === 0 || !request.uploadBatchId) {
+    if (request.uploadBatchId) {
+      try { removeUploadDirectory(resolveUploadDirectory(request.uploadBatchId)); } catch { /* best-effort cleanup */ }
+    }
     response.status(400).json({ error: "At least one .csv file is required." });
     return;
   }
@@ -126,46 +127,4 @@ clusterRouter.post("/api/upload", (request: UploadRequest, response) => {
   const payload = UploadResponseSchema.parse({ upload_ref: request.uploadBatchId, filenames: files.map((file) => file.originalname), file_count: files.length });
 
   response.status(201).json(payload);
-});
-
-clusterRouter.post("/api/cluster/run", (request, response, next) => {
-  if (synchronousRunActive) {
-    response.status(429).json({ error: "A local research analysis is already running." });
-    return;
-  }
-  synchronousRunActive = true;
-  next();
-}, async (request, response, next) => {
-  try {
-    const { upload_ref, run_label } = ClusterRunRequestSchema.parse(request.body);
-    const uploadDir = resolveUploadDirectory(upload_ref);
-    if (!fs.existsSync(uploadDir)) {
-      response.status(404).json({ error: "Upload reference was not found on local disk." });
-      return;
-    }
-
-    try {
-      const result = await executeAnalysis(uploadDir, run_label);
-      response.json(ClusterRunResponseSchema.parse(result));
-    } finally {
-      removeUploadDirectory(uploadDir);
-    }
-  } catch (error) {
-    if (error instanceof ZodError || error instanceof AnalysisInputError) {
-      response.status(400).json({ error: "The analysis request or uploaded input manifest is invalid." });
-      return;
-    }
-    if (error instanceof ArtifactValidationError) {
-      response.status(422).json({ error: "Research artifacts failed aggregate validation." });
-      return;
-    }
-    if (error instanceof ResearchExecutionError) {
-      const status = error.code === "EXECUTION_TIMEOUT" ? 504 : error.code === "ENVIRONMENT_FAILURE" ? 503 : 422;
-      response.status(status).json({ error: error.message });
-      return;
-    }
-    next(error);
-  } finally {
-    synchronousRunActive = false;
-  }
 });

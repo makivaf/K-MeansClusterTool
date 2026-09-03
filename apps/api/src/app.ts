@@ -10,13 +10,16 @@ import { allowedBrowserOrigins } from "./httpSecurity";
 export const app = express();
 
 app.disable("x-powered-by");
-app.use((_request, response, next) => {
+app.use((request, response, next) => {
   response.setHeader("X-Content-Type-Options", "nosniff");
   response.setHeader("X-Frame-Options", "DENY");
   response.setHeader("Referrer-Policy", "no-referrer");
   response.setHeader("Permissions-Policy", "camera=(), microphone=(), geolocation=()");
   response.setHeader("Content-Security-Policy", "default-src 'none'; frame-ancestors 'none'; base-uri 'none'");
-  if (process.env.NODE_ENV === "production") response.setHeader("Strict-Transport-Security", "max-age=31536000; includeSubDomains");
+  if (process.env.NODE_ENV === "production" && process.env.ENABLE_HSTS === "true") {
+    response.setHeader("Strict-Transport-Security", "max-age=31536000; includeSubDomains");
+  }
+  if (request.path.startsWith("/api/")) response.setHeader("Cache-Control", "no-store");
   next();
 });
 app.use(cors({
@@ -64,6 +67,10 @@ app.use((error: unknown, _request: express.Request, response: express.Response, 
     return;
   }
 
-  console.error(error);
+  if (process.env.NODE_ENV === "production") {
+    console.error(`[api] Unhandled ${error instanceof Error ? error.name : "non-Error exception"}`);
+  } else {
+    console.error(error);
+  }
   response.status(500).json({ error: "Unexpected API error" });
 });

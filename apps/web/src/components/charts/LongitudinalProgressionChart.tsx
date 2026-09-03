@@ -10,7 +10,7 @@ const SupportTooltip = ({ active, payload }: { active?: boolean; payload?: Array
   const point = payload?.[0]?.payload;
   if (!active || !point) return null;
   return (
-    <div className="rounded-lg border border-line bg-white p-3 text-xs shadow-panel">
+    <div className="rounded-sm border border-line bg-white p-3 text-xs shadow-sm">
       <div className="font-semibold">Cluster {point.clusterId}, year {point.yearStart}–{point.yearEnd}</div>
       <dl className="mt-2 space-y-1 text-muted">
         <div><dt className="inline">Mean ADAS-Cog13: </dt><dd className="inline font-semibold text-ink">{point.meanAdas13.toFixed(2)}</dd></div>
@@ -28,16 +28,16 @@ export const LongitudinalProgressionChart = ({ data }: LongitudinalProgressionCh
   }), [data]);
 
   return (
-    <div className="h-80 w-full" role="img" aria-label="Descriptive mean ADAS-Cog13 points by elapsed-year bin and original cluster. Points are not connected; participant and observation counts are available in the accompanying support table.">
+    <div className="h-80 w-full sm:h-96" role="img" aria-label="Descriptive mean ADAS-Cog13 points by elapsed-year bin and original cluster. Points are not connected; participant and observation counts are available in the accompanying support table.">
       <ResponsiveContainer width="100%" height="100%">
-        <ScatterChart margin={{ top: 10, right: 16, left: 0, bottom: 8 }}>
-          <CartesianGrid strokeDasharray="3 3" stroke="#e5ecec" />
-          <XAxis type="number" dataKey="elapsedYear" domain={[0, "dataMax"]} tickLine={false} axisLine={false} label={{ value: "Mean elapsed years within bin", position: "insideBottom", offset: -4 }} />
-          <YAxis type="number" dataKey="meanAdas13" tickLine={false} axisLine={false} label={{ value: "Mean ADAS-Cog13", angle: -90, position: "insideLeft" }} />
+        <ScatterChart margin={{ top: 18, right: 20, left: 8, bottom: 16 }}>
+          <CartesianGrid vertical={false} stroke="#dbe4e4" />
+          <XAxis type="number" dataKey="elapsedYear" domain={[0, "dataMax"]} tickLine={false} axisLine={{ stroke: "#aebcbc" }} tickMargin={8} label={{ value: "Mean elapsed years within bin", position: "insideBottom", offset: -10, fill: "#657579", fontSize: 11 }} />
+          <YAxis type="number" dataKey="meanAdas13" tickLine={false} axisLine={{ stroke: "#aebcbc" }} tickMargin={8} label={{ value: "Mean ADAS-Cog13", angle: -90, position: "insideLeft", fill: "#657579", fontSize: 11 }} />
           <Tooltip content={<SupportTooltip />} />
-          <Legend verticalAlign="top" height={32} />
-          <Scatter data={byCluster.cluster0} name="Original Cluster 0" fill="#0f7977" />
-          <Scatter data={byCluster.cluster1} name="Original Cluster 1" fill="#d88a00" />
+          <Legend verticalAlign="top" align="right" height={38} iconType="circle" iconSize={8} wrapperStyle={{ fontSize: 11 }} />
+          <Scatter data={byCluster.cluster0} name="Original Cluster 0" fill="#0f7977" isAnimationActive={false} />
+          <Scatter data={byCluster.cluster1} name="Original Cluster 1" fill="#d88a00" isAnimationActive={false} />
         </ScatterChart>
       </ResponsiveContainer>
     </div>

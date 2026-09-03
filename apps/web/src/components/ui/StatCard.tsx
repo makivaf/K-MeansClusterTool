@@ -8,15 +8,15 @@ type StatCardProps = {
 };
 
 const accents = {
-  teal: "border-teal-100 bg-teal-50/60",
-  amber: "border-amber-100 bg-amber-50/60",
-  slate: "border-line bg-white"
+  teal: "border-line border-l-teal-600 bg-teal-50/40",
+  amber: "border-line border-l-amber-500 bg-amber-50/40",
+  slate: "border-line border-l-slate-300 bg-white"
 };
 
 export const StatCard = ({ label, value, detail, accent = "slate" }: StatCardProps) => (
-  <div className={`rounded-xl border p-4 shadow-sm ${accents[accent]}`}>
-    <div className="text-xs font-semibold uppercase tracking-wide text-muted">{label}</div>
-    <div className="mt-2 text-2xl font-semibold text-ink sm:text-3xl">{value}</div>
-    {detail ? <div className="mt-2 text-xs leading-5 text-muted">{detail}</div> : null}
+  <div className={`rounded-sm border border-l-2 px-3.5 py-3 ${accents[accent]}`}>
+    <div className="text-[11px] font-semibold uppercase tracking-[0.08em] text-muted">{label}</div>
+    <div className="mt-1.5 text-xl font-semibold tracking-tight text-ink tabular-nums sm:text-2xl">{value}</div>
+    {detail ? <div className="mt-1.5 text-xs leading-5 text-muted">{detail}</div> : null}
   </div>
 );
