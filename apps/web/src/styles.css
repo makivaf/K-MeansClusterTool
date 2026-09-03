@@ -15,6 +15,12 @@ body {
   margin: 0;
   min-width: 320px;
   min-height: 100vh;
+  line-height: 1.5;
+}
+
+::selection {
+  background: #c9ebe8;
+  color: #083c3d;
 }
 
 button,
@@ -32,5 +38,40 @@ input:focus-visible {
 }
 
 .recharts-wrapper text {
-  font-size: 12px;
+  fill: #657579;
+  font-size: 11px;
+}
+
+@layer components {
+  .research-disclosure {
+    @apply mt-5 border-y border-line bg-transparent;
+  }
+
+  .research-disclosure > summary {
+    @apply cursor-pointer py-3.5 text-sm font-semibold text-ink transition hover:text-teal-700;
+  }
+
+  .research-disclosure[open] > summary {
+    @apply border-b border-line;
+  }
+
+  .research-table {
+    @apply w-full text-left text-sm;
+  }
+
+  .research-table thead {
+    @apply border-y border-line bg-slate-50/70 text-[11px] font-semibold uppercase tracking-[0.08em] text-muted;
+  }
+
+  .research-table th {
+    @apply px-3 py-2.5;
+  }
+
+  .research-table td {
+    @apply border-b border-line px-3 py-2.5 align-top;
+  }
+
+  .research-table tbody tr:last-child td {
+    @apply border-b-0;
+  }
 }

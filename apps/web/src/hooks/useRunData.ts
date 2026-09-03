@@ -5,6 +5,7 @@ import {
   type UnifiedResearchRun
 } from "../../../../packages/shared/src";
 import { API_BASE_URL } from "../config/api";
+import { RESEARCH_RUN_COMPLETE_EVENT } from "../components/run/runEvents";
 
 export type RunDataState = {
   runs: UnifiedResearchRun[];
@@ -64,6 +65,34 @@ export const useRunData = (): RunDataState => {
       setSelectedRunId(requestedRunId);
     }
   }, [requestedRunId, runs]);
+
+  useEffect(() => {
+    const abortController = new AbortController();
+    const refreshCompletedRun = (event: Event) => {
+      const runId = (event as CustomEvent<{ runId?: string }>).detail?.runId;
+      if (!runId) return;
+      void (async () => {
+        try {
+          const response = await fetch(`${API_BASE_URL}/api/runs`, { signal: abortController.signal });
+          if (!response.ok) throw new Error(`API returned ${response.status}`);
+          const payload = RunListResponseSchema.parse(await response.json());
+          const unifiedRuns = payload.runs.filter(
+            (run): run is UnifiedResearchRun => "pipeline" in run && run.pipeline === "unified"
+          );
+          setRuns(unifiedRuns);
+          if (unifiedRuns.some((run) => run.run_id === runId)) setSelectedRunId(runId);
+        } catch (caught) {
+          if (caught instanceof DOMException && caught.name === "AbortError") return;
+          setError(caught instanceof Error ? caught.message : "Unable to refresh unified research runs");
+        }
+      })();
+    };
+    window.addEventListener(RESEARCH_RUN_COMPLETE_EVENT, refreshCompletedRun);
+    return () => {
+      abortController.abort();
+      window.removeEventListener(RESEARCH_RUN_COMPLETE_EVENT, refreshCompletedRun);
+    };
+  }, []);
 
   const selectedRun = useMemo(
     () => runs.find((run) => run.run_id === selectedRunId) ?? null,
