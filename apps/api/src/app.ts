@@ -1,11 +1,12 @@
 import cors from "cors";
 import express from "express";
 import { ZodError } from "zod";
-import { RunListResponseSchema, RunResponseSchema } from "../../../packages/shared/src/schema";
+import { RunListResponseSchema, RunResponseSchema, SopEvaluationResponseSchema } from "../../../packages/shared/src/schema";
 import { clusterRouter } from "./routes/cluster";
 import { researchRunsRouter } from "./routes/researchRuns";
 import { getRunById, listRuns } from "./services/runRepository";
 import { allowedBrowserOrigins } from "./httpSecurity";
+import { loadSopEvaluation } from "./services/sopEvaluationArtifact";
 
 export const app = express();
 
@@ -51,6 +52,19 @@ app.get("/api/runs/:runId", async (request, response, next) => {
       return;
     }
     response.json(RunResponseSchema.parse({ run }));
+  } catch (error) {
+    next(error);
+  }
+});
+
+app.get("/api/sop-evaluation", (_request, response, next) => {
+  try {
+    const evaluation = loadSopEvaluation();
+    if (!evaluation) {
+      response.status(404).json({ error: "Aggregate SOP evaluation artifact not found" });
+      return;
+    }
+    response.json(SopEvaluationResponseSchema.parse({ evaluation }));
   } catch (error) {
     next(error);
   }

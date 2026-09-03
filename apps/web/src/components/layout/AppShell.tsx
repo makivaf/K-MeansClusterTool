@@ -3,7 +3,6 @@ import {
   BarChart3,
   Brain,
   GitCompare,
-  Home,
   UploadCloud,
   Users
 } from "lucide-react";
@@ -13,7 +12,7 @@ import type { RunDataState } from "../../hooks/useRunData";
 import { RunSelector } from "../run/RunSelector";
 import { researchPages } from "./researchNavigation";
 
-const navIcons = [Home, BarChart3, Users, GitCompare, Activity];
+const navIcons = [BarChart3, GitCompare, Users, Activity];
 const navItems = researchPages.map((page, index) => ({ ...page, icon: navIcons[index] }));
 
 type AppShellProps = RunDataState & { children: ReactNode; allowWithoutRun?: boolean };
@@ -68,12 +67,6 @@ export const AppShell = ({
             </NavLink>
           ))}
         </nav>
-        <div className="mx-4 mb-4 border-t border-line pt-4 text-xs leading-5">
-          <div className="font-semibold text-ink">Parent cohort</div>
-          <div className="text-muted">{selectedRun?.cohort.parentN.toLocaleString() ?? "—"} clustered participants</div>
-          <div className="mt-3 font-semibold text-ink">Longitudinal subset</div>
-          <div className="text-muted">{selectedRun?.cohort.longitudinalEligibleN.toLocaleString() ?? "—"} eligible participants</div>
-        </div>
       </div>
     </aside>
 
@@ -86,20 +79,6 @@ export const AppShell = ({
             </div>
             <RunSelector runs={runs} selectedRunId={selectedRunId} onRunChange={setSelectedRunId} />
           </div>
-          <dl className="hidden grid-cols-3 divide-x divide-line text-sm md:grid">
-            <div className="px-4">
-              <dt className="text-[10px] font-semibold uppercase tracking-[0.08em] text-muted">Selected k</dt>
-              <dd className="mt-0.5 font-semibold tabular-nums">{selectedRun?.kSelection.selectedK ?? "—"}</dd>
-            </div>
-            <div className="px-4">
-              <dt className="text-[10px] font-semibold uppercase tracking-[0.08em] text-muted">PCA variance</dt>
-              <dd className="mt-0.5 font-semibold tabular-nums">{selectedRun ? `${(selectedRun.pca.cumulativeExplainedVariance * 100).toFixed(1)}%` : "—"}</dd>
-            </div>
-            <div className="px-4 pr-0">
-              <dt className="text-[10px] font-semibold uppercase tracking-[0.08em] text-muted">Eligible</dt>
-              <dd className="mt-0.5 font-semibold tabular-nums">{selectedRun?.longitudinal.eligibleParticipants.toLocaleString() ?? "—"}</dd>
-            </div>
-          </dl>
         </div>
         <div className="border-t border-line px-3 py-2 lg:hidden">
           <NavLink to="/upload-run" className={primaryActionClass}>
@@ -107,7 +86,7 @@ export const AppShell = ({
             Run Analysis
           </NavLink>
         </div>
-        <nav className="grid grid-cols-2 gap-1 border-t border-line px-3 py-2 sm:grid-cols-3 lg:hidden" aria-label="Research sections">
+        <nav className="grid grid-cols-2 gap-1 border-t border-line px-3 py-2 sm:grid-cols-4 lg:hidden" aria-label="Research sections">
           {navItems.map(({ path, step, label, icon: Icon }) => (
             <NavLink key={path} to={path} className={navigationClass}>
               <Icon size={16} />

@@ -74,4 +74,136 @@ input:focus-visible {
   .research-table tbody tr:last-child td {
     @apply border-b-0;
   }
+
+  .sop-tabs {
+    @apply grid grid-cols-2 border-y border-line bg-white sm:grid-cols-4;
+  }
+
+  .sop-tabs button {
+    @apply flex items-center justify-between border-b-2 border-transparent px-3 py-3 text-left text-xs font-semibold text-muted transition hover:bg-slate-50 hover:text-ink sm:px-4 sm:text-sm;
+  }
+
+  .sop-tabs button[aria-selected="true"] {
+    @apply border-teal-700 bg-teal-50/60 text-teal-900;
+  }
+
+  .sop-flow {
+    @apply mt-6 border-t border-line;
+  }
+
+  .sop-stage {
+    @apply grid gap-3 border-b border-line py-5 lg:grid-cols-[190px_1fr] lg:gap-8;
+  }
+
+  .sop-stage-title {
+    @apply flex items-center gap-3 self-start;
+  }
+
+  .sop-stage-title span {
+    @apply flex h-7 w-7 shrink-0 items-center justify-center bg-slate-100 text-xs font-semibold tabular-nums text-muted;
+  }
+
+  .sop-stage-title h2 {
+    @apply text-sm font-semibold text-ink;
+  }
+
+  .sop-stage-body {
+    @apply min-w-0;
+  }
+
+  .sop-big-number {
+    @apply text-5xl font-semibold leading-none tracking-tight text-ink;
+  }
+
+  .sop-mini-stat {
+    @apply border-l-2 border-line pl-3;
+  }
+
+  .sop-mini-stat span {
+    @apply block text-lg font-semibold tabular-nums text-ink;
+  }
+
+  .sop-mini-stat small {
+    @apply mt-0.5 block text-[11px] leading-4 text-muted;
+  }
+
+  .sop-dimension-block {
+    @apply flex h-20 w-32 flex-col justify-center border border-line bg-white px-4;
+  }
+
+  .sop-dimension-block strong {
+    @apply text-2xl font-semibold tracking-tight;
+  }
+
+  .sop-dimension-block span {
+    @apply text-xs text-muted;
+  }
+
+  .sop-dimension-block-active {
+    @apply border-teal-700 bg-teal-50/60 text-teal-900;
+  }
+
+  .sop-conclusion {
+    @apply flex items-start gap-3 border-l-2 border-teal-700 bg-teal-50/60 px-4 py-3 text-sm font-medium leading-6 text-teal-900;
+  }
+
+  .sop-conclusion svg {
+    @apply mt-0.5 shrink-0;
+  }
+
+  .sop-k-card {
+    @apply border border-line bg-white p-4;
+  }
+
+  .sop-k-card-selected {
+    @apply border-teal-700 bg-teal-50/40;
+  }
+
+  .sop-k-card h3 {
+    @apply text-xl font-semibold;
+  }
+
+  .sop-k-card > div > span {
+    @apply text-xs tabular-nums text-muted;
+  }
+
+  .sop-k-card dt {
+    @apply text-muted;
+  }
+
+  .sop-k-card dd {
+    @apply mt-0.5 font-semibold tabular-nums;
+  }
+
+  .sop-selection {
+    @apply flex flex-col border-l-2 border-slate-300 bg-white px-4 py-3;
+  }
+
+  .sop-selection small {
+    @apply text-xs font-semibold text-muted;
+  }
+
+  .sop-selection strong {
+    @apply mt-1 text-3xl font-semibold tracking-tight;
+  }
+
+  .sop-selection span {
+    @apply text-xs text-muted;
+  }
+
+  .sop-selection-active {
+    @apply border-teal-700 bg-teal-50/60 text-teal-900;
+  }
+
+  .sop-seed-run {
+    @apply space-y-3 border-y border-line py-3;
+  }
+
+  .sop-seed-run h3 {
+    @apply text-sm font-semibold;
+  }
+
+  .sop-seed-run > div:first-child span {
+    @apply text-[11px] text-muted;
+  }
 }

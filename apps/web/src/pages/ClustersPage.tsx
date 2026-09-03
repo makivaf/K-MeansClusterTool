@@ -12,7 +12,7 @@ export const ClustersPage = ({ run }: ClustersPageProps) => {
   const profiles = [...run.clusterProfiles.profiles].sort((left, right) => left.clusterId - right.clusterId);
   return (
     <>
-      <PageHeading title="Cluster Findings" description="The enhanced K-Means result separates the study-entry cohort into two fixed groups with distinct aggregate cognitive-functional profiles." />
+      <PageHeading title="Cluster Findings" description="The final frozen clustering separates the study-entry cohort into two fixed groups with distinct aggregate cognitive-functional profiles." />
       <div className="grid gap-3 sm:grid-cols-2">
         <StatCard label="Cluster 0" value={`${profiles[0]?.nMembers.toLocaleString()} participants`} detail="63.7% · relatively lower-impairment cognitive-functional profile" accent="teal" />
         <StatCard label="Cluster 1" value={`${profiles[1]?.nMembers.toLocaleString()} participants`} detail="36.3% · relatively higher-impairment cognitive-functional profile" accent="amber" />
@@ -41,17 +41,6 @@ export const ClustersPage = ({ run }: ClustersPageProps) => {
           ))}
         </ol>
         <p className="mt-2 text-right text-[11px] text-muted">Values shown as SMD (Cluster 1 − Cluster 0).</p>
-      </Panel>
-
-      <Panel title="PCA representation and aggregate reporting" className="mt-8" variant="section">
-        <div className="grid gap-3 sm:grid-cols-2">
-          <StatCard label="Retained representation" value={`${run.pca.components} PCs`} accent="teal" />
-          <StatCard label="Cumulative variance" value={`${(run.pca.cumulativeExplainedVariance * 100).toFixed(6)}%`} />
-        </div>
-        <p className="mt-4 text-sm leading-6 text-muted">
-          Participant-level PCA coordinates are not displayed in the web application. Cluster Findings are presented using validated aggregate cognitive-functional profiles to preserve aggregate-only result exposure.
-        </p>
-        <p className="mt-3 text-xs leading-5 text-muted">PCA remains part of the frozen enhanced K-Means pipeline; the final clustering used the full six-dimensional PCA space.</p>
       </Panel>
 
       <details className="research-disclosure">

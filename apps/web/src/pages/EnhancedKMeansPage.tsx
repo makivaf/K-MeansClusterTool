@@ -114,7 +114,7 @@ export const EnhancedKMeansPage = ({ run }: EnhancedKMeansPageProps) => {
           </div>
         </div>
       </details>
-      <ResearchPageNavigation currentPath="/enhanced-kmeans" />
+      <ResearchPageNavigation currentPath="/overview" />
     </>
   );
 };

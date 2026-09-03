@@ -1,4 +1,4 @@
-import { AlertTriangle, ArrowDown, CheckCircle2 } from "lucide-react";
+import { AlertTriangle, CheckCircle2 } from "lucide-react";
 import type { UnifiedResearchRun } from "../../../../packages/shared/src";
 import { LongitudinalProgressionChart } from "../components/charts/LongitudinalProgressionChart";
 import { ResearchPageNavigation } from "../components/layout/ResearchPageNavigation";
@@ -43,7 +43,7 @@ export const LongitudinalProgressionPage = ({ run }: LongitudinalProgressionPage
   const annualChangeByCluster = new Map(mixedModel.estimatedAnnualChangeByOriginalCluster.map((entry) => [entry.clusterId, entry]));
   return (
     <>
-      <PageHeading title="Longitudinal Follow-Up" description="Eligible members of the original enhanced K-Means clusters are followed over actual assessment dates and compared using ADAS-Cog13. No second clustering is performed." />
+      <PageHeading title="Longitudinal Progression" description="Eligible members of the original fixed clusters are followed over actual assessment dates and compared using ADAS-Cog13. No second clustering is performed." />
 
       <Panel title="Primary longitudinal result" variant="result">
         <div className="grid gap-3 lg:grid-cols-3">
@@ -54,17 +54,6 @@ export const LongitudinalProgressionPage = ({ run }: LongitudinalProgressionPage
         <p className="mt-4 text-sm leading-6 text-ink">Among longitudinally eligible participants, Cluster 1 showed a significantly greater average annual increase in ADAS-Cog13 than Cluster 0.</p>
         <p className="mt-1 text-sm leading-6 text-muted">Higher ADAS-Cog13 indicates poorer cognitive performance.</p>
         <p className="mt-1 text-xs leading-5 text-muted">These are observed group differences. They do not establish causation, individual prediction, clinical diagnosis, or prognosis.</p>
-      </Panel>
-
-      <Panel title="Assignment-preserving continuation" className="mt-8" variant="section">
-        <div className="grid items-center gap-3 text-sm md:grid-cols-[1fr_auto_1fr_auto_1fr]">
-          <div className="border-l-2 border-teal-600 bg-teal-50/60 px-4 py-3 font-semibold text-teal-950">Enhanced K-Means creates Cluster 0 and Cluster 1</div>
-          <ArrowDown className="mx-auto text-slate-400 md:-rotate-90" size={18} aria-hidden="true" />
-          <div className="border-l-2 border-slate-300 px-4 py-3 font-semibold">Eligible members of those same clusters are followed over time</div>
-          <ArrowDown className="mx-auto text-slate-400 md:-rotate-90" size={18} aria-hidden="true" />
-          <div className="border-l-2 border-slate-300 px-4 py-3 font-semibold">ADAS-Cog13 progression patterns are compared by original cluster</div>
-        </div>
-        <div className="mt-4 flex items-center justify-center gap-2 text-sm font-medium text-emerald-700"><CheckCircle2 size={18} />Original assignments preserved; longitudinal K-Means not invoked</div>
       </Panel>
 
       <Panel title="Auditable cohort flow" className="mt-8" variant="section">
@@ -88,13 +77,13 @@ export const LongitudinalProgressionPage = ({ run }: LongitudinalProgressionPage
       </Panel>
 
       <Panel title="Primary mixed-effects model" className="mt-8" variant="section">
-        <code className="block overflow-x-auto rounded-sm bg-slate-950 px-4 py-3 text-xs text-slate-100">{mixedModel.modelFormula}</code>
-        <p className="mt-4 text-sm leading-6 text-ink">The mixed-effects model indicated a statistically significant difference in annual ADAS-Cog13 change between the two original clusters. Cluster 1 had an estimated {primary.estimate.toFixed(6)}-point/year greater annual increase than Cluster 0.</p>
+        <p className="text-sm leading-6 text-ink">The mixed-effects model indicated a statistically significant difference in annual ADAS-Cog13 change between the two original clusters. Cluster 1 had an estimated {primary.estimate.toFixed(6)}-point/year greater annual increase than Cluster 0.</p>
         <p className="mt-2 text-xs leading-5 text-muted">{mixedModel.interpretation.causalCaution}</p>
 
         <details className="research-disclosure">
           <summary>Fixed effects and model diagnostics</summary>
           <div className="py-5">
+            <code className="mb-4 block overflow-x-auto rounded-sm bg-slate-950 px-4 py-3 text-xs text-slate-100">{mixedModel.modelFormula}</code>
             <div className="flex flex-col gap-3 border-l-2 border-emerald-600 bg-emerald-50 px-4 py-3 sm:flex-row sm:items-start sm:justify-between">
               <div><div className="flex items-center gap-2 font-semibold text-emerald-950"><CheckCircle2 size={19} />Primary random-intercept model converged</div><p className="mt-1 text-sm leading-6 text-emerald-900">{mixedModel.library.name} {mixedModel.library.version} · optimizer {mixedModel.selectedOptimizer} · α = {mixedModel.alpha}</p></div>
               <div className="text-sm font-semibold text-emerald-900">{mixedModel.participantCount.toLocaleString()} participants · {mixedModel.observationCount.toLocaleString()} observations</div>
@@ -115,12 +104,10 @@ export const LongitudinalProgressionPage = ({ run }: LongitudinalProgressionPage
         </details>
       </Panel>
 
-      <section className="mt-8" aria-labelledby="descriptive-ols-heading">
-        <div className="mb-3 border-l-2 border-slate-400 bg-slate-50 px-4 py-3">
-          <h2 id="descriptive-ols-heading" className="font-semibold">Descriptive participant-level OLS summaries</h2>
-          <p className="mt-1 text-sm leading-6 text-muted"><span className="font-semibold text-ink">Descriptive only:</span> these slopes support interpretation but are not the primary inferential model and were not reclustered.</p>
-        </div>
-        <div className="grid gap-4 xl:grid-cols-2">
+      <details className="research-disclosure">
+        <summary>Descriptive participant-level OLS summaries</summary>
+        <p className="pt-4 text-sm leading-6 text-muted"><span className="font-semibold text-ink">Descriptive only:</span> these slopes support interpretation but are not the primary inferential model and were not reclustered.</p>
+        <div className="grid gap-4 py-4 xl:grid-cols-2">
           {summaries.map((summary) => (
             <Panel key={summary.clusterId} title={`Original Cluster ${summary.clusterId} longitudinal subset`} variant="section">
               <div className="grid gap-3 sm:grid-cols-2">
@@ -138,7 +125,7 @@ export const LongitudinalProgressionPage = ({ run }: LongitudinalProgressionPage
             </Panel>
           ))}
         </div>
-      </section>
+      </details>
 
       <Panel title="Descriptive mean ADAS-Cog13 by elapsed-time bin" className="mt-8" variant="section">
         <LongitudinalProgressionChart data={run.longitudinal.timeSeries} />

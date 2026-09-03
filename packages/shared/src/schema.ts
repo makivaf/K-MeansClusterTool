@@ -1022,6 +1022,135 @@ export const ResearchRunResponseSchema = z
   })
   .strict();
 
+const SopMetricSummarySchema = z.object({
+  mean: z.number(),
+  standardDeviation: z.number().nonnegative(),
+  minimum: z.number(),
+  maximum: z.number()
+}).strict();
+
+const SopClusteringMetricsSchema = z.object({
+  silhouette: z.number(),
+  daviesBouldin: z.number(),
+  calinskiHarabasz: z.number()
+}).strict();
+
+const SopCandidateSchema = SopClusteringMetricsSchema.extend({
+  k: z.number().int().min(2).max(10),
+  clusterSizes: z.array(z.number().int().positive()).min(2),
+  inertia: z.number().positive(),
+  iterations: z.number().int().positive()
+}).strict().superRefine((candidate, context) => {
+  if (candidate.clusterSizes.length !== candidate.k || candidate.clusterSizes.reduce((sum, size) => sum + size, 0) !== 2437) {
+    context.addIssue({ code: z.ZodIssueCode.custom, path: ["clusterSizes"], message: "SOP candidate cluster sizes must cover the frozen cohort." });
+  }
+});
+
+export const SopEvaluationSchema = z.object({
+  contractVersion: z.literal("sop-evaluation/v1"),
+  scope: z.literal("Aggregate-only controlled evaluation; isolated from frozen official results"),
+  cohortN: z.literal(2437),
+  sop1: z.object({
+    redundancy: z.object({
+      featureCount: z.literal(13),
+      pairCount: z.literal(78),
+      meanAbsoluteCorrelation: z.number().min(0).max(1),
+      medianAbsoluteCorrelation: z.number().min(0).max(1),
+      maximumAbsoluteCorrelation: z.number().min(0).max(1),
+      pairsAtOrAbove050: z.number().int().nonnegative(),
+      pairsAtOrAbove070: z.number().int().nonnegative(),
+      topCorrelatedPairs: z.array(z.object({
+        featureA: z.string().min(1),
+        featureB: z.string().min(1),
+        correlation: z.number().min(-1).max(1),
+        absoluteCorrelation: z.number().min(0).max(1)
+      }).strict()).length(8)
+    }).strict(),
+    distanceBehavior: z.array(z.object({
+      representation: z.string().min(1),
+      dimensions: z.number().int().positive(),
+      pairCount: z.number().int().positive(),
+      mean: z.number().positive(),
+      standardDeviation: z.number().positive(),
+      coefficientOfVariation: z.number().positive(),
+      fifthPercentile: z.number().positive(),
+      median: z.number().positive(),
+      ninetyFifthPercentile: z.number().positive()
+    }).strict()).length(2),
+    ablation: z.object({
+      settings: z.object({
+        cohortN: z.literal(2437), k: z.literal(2), initialization: z.literal("random"), nInit: z.literal(1),
+        maxIter: z.literal(300), tolerance: z.literal(0.0001), algorithm: z.literal("lloyd"),
+        seeds: z.array(z.number().int().min(0).max(29)).length(30)
+      }).strict(),
+      conditions: z.array(z.object({
+        representation: z.string().min(1), dimensions: z.number().int().positive(),
+        varianceRetained: z.number().min(0).max(1), runCount: z.literal(30),
+        metrics: z.object({
+          silhouette: SopMetricSummarySchema,
+          davies_bouldin: SopMetricSummarySchema,
+          calinski_harabasz: SopMetricSummarySchema
+        }).strict()
+      }).strict()).length(2),
+      metricChanges: z.object({
+        silhouette: z.object({ absoluteMeanChange: z.number(), relativeMeanChangePercent: z.number() }).strict(),
+        davies_bouldin: z.object({ absoluteMeanChange: z.number(), relativeMeanChangePercent: z.number() }).strict(),
+        calinski_harabasz: z.object({ absoluteMeanChange: z.number(), relativeMeanChangePercent: z.number() }).strict()
+      }).strict()
+    }).strict()
+  }).strict(),
+  sop2: z.object({
+    settings: z.object({
+      cohortN: z.literal(2437), representation: z.literal("PC1-PC6"), seed: z.literal(0),
+      initialization: z.literal("random"), nInit: z.literal(1), maxIter: z.literal(300),
+      tolerance: z.literal(0.0001), algorithm: z.literal("lloyd")
+    }).strict(),
+    demonstratedK: z.array(SopCandidateSchema).length(3),
+    candidates: z.array(SopCandidateSchema).length(9),
+    maximumSilhouetteSelectedK: z.literal(2),
+    nbclust: z.object({
+      selectedK: z.literal(2), usableIndices: z.literal(24), votesForSelectedK: z.literal(9),
+      voteDistribution: z.array(z.object({ k: z.number().int().min(2).max(10), votes: z.number().int().nonnegative() }).strict()).length(9)
+    }).strict()
+  }).strict(),
+  sop3: z.object({
+    settings: z.object({
+      cohortN: z.literal(2437), representation: z.literal("PC1-PC6"), k: z.literal(2), nInit: z.literal(1),
+      maxIter: z.literal(300), tolerance: z.literal(0.0001), algorithm: z.literal("lloyd"),
+      randomSeeds: z.array(z.number().int().min(0).max(29)).length(30)
+    }).strict(),
+    firstThreeRandomRuns: z.array(SopClusteringMetricsSchema.extend({
+      runNumber: z.number().int().min(1).max(3), seed: z.number().int().min(0).max(2),
+      clusterSizes: z.array(z.number().int().positive()).length(2), iterations: z.number().int().positive()
+    }).strict()).length(3),
+    randomRunSummary: z.object({
+      silhouette: SopMetricSummarySchema,
+      davies_bouldin: SopMetricSummarySchema,
+      calinski_harabasz: SopMetricSummarySchema,
+      inertia: SopMetricSummarySchema,
+      iterations: SopMetricSummarySchema
+    }).strict(),
+    partitionStability: z.object({
+      distinctLabelInvariantPartitions: z.number().int().positive(),
+      meanPairwiseAdjustedRandIndex: z.number().min(-1).max(1),
+      minimumPairwiseAdjustedRandIndex: z.number().min(-1).max(1),
+      maximumPairwiseAdjustedRandIndex: z.number().min(-1).max(1)
+    }).strict(),
+    dpcDeterminism: z.object({
+      repeatedChecks: z.literal(3), identicalInitialization: z.literal(true), identicalOutput: z.literal(true),
+      clusterSizes: z.array(z.number().int().positive()).length(2), iterations: z.number().int().positive(),
+      metrics: SopClusteringMetricsSchema
+    }).strict()
+  }).strict(),
+  provenance: z.object({
+    officialResultsModified: z.literal(false),
+    participantLevelOutput: z.literal(false),
+    sourceSha256: z.record(sha256Schema)
+  }).strict()
+}).strict();
+
+export const SopEvaluationResponseSchema = z.object({ evaluation: SopEvaluationSchema }).strict();
+
 export type Axis = z.infer<typeof AxisSchema>;
 export type ResultSource = z.infer<typeof ResultSourceSchema>;
 export type Condition = z.infer<typeof ConditionSchema>;
@@ -1069,3 +1198,5 @@ export type ResearchRunFailureCode = z.infer<typeof ResearchRunFailureCodeSchema
 export type ResearchRunFailed = z.infer<typeof ResearchRunFailedSchema>;
 export type ResearchRunStatus = z.infer<typeof ResearchRunStatusSchema>;
 export type ResearchRunResponse = z.infer<typeof ResearchRunResponseSchema>;
+export type SopEvaluation = z.infer<typeof SopEvaluationSchema>;
+export type SopEvaluationResponse = z.infer<typeof SopEvaluationResponseSchema>;
