@@ -4,7 +4,6 @@ import { AppShell } from "./components/layout/AppShell";
 import { useRunData } from "./hooks/useRunData";
 
 const OverviewPage = lazy(() => import("./pages/OverviewPage").then((module) => ({ default: module.OverviewPage })));
-const EnhancedKMeansPage = lazy(() => import("./pages/EnhancedKMeansPage").then((module) => ({ default: module.EnhancedKMeansPage })));
 const ClustersPage = lazy(() => import("./pages/ClustersPage").then((module) => ({ default: module.ClustersPage })));
 const BaselineVsEnhancedPage = lazy(() => import("./pages/BaselineVsEnhancedPage").then((module) => ({ default: module.BaselineVsEnhancedPage })));
 const LongitudinalProgressionPage = lazy(() => import("./pages/LongitudinalProgressionPage").then((module) => ({ default: module.LongitudinalProgressionPage })));
@@ -26,14 +25,14 @@ export default function App() {
         <Routes>
           <Route path="/" element={<Navigate to="/overview" replace />} />
           <Route path="/overview" element={<OverviewPage run={run} />} />
-          <Route path="/enhanced-kmeans" element={<EnhancedKMeansPage run={run} />} />
+          <Route path="/enhanced-kmeans" element={<LegacyRouteRedirect to="/overview" />} />
           <Route path="/cluster-findings" element={<ClustersPage run={run} />} />
           <Route path="/enhancement-evaluation" element={<BaselineVsEnhancedPage run={run} />} />
           <Route path="/longitudinal-follow-up" element={<LongitudinalProgressionPage run={run} />} />
           <Route path="/clusters" element={<LegacyRouteRedirect to="/cluster-findings" />} />
           <Route path="/baseline-vs-enhanced" element={<LegacyRouteRedirect to="/enhancement-evaluation" />} />
           <Route path="/longitudinal" element={<LegacyRouteRedirect to="/longitudinal-follow-up" />} />
-          <Route path="/data-preparation" element={<Navigate to="/enhanced-kmeans#data-preparation" replace />} />
+          <Route path="/data-preparation" element={<Navigate to="/overview#technical-pipeline" replace />} />
           <Route path="/validation" element={<Navigate to="/longitudinal-follow-up#validation-limitations" replace />} />
           <Route path="/upload-run" element={<UploadAndCluster />} />
           <Route path="*" element={<Navigate to="/overview" replace />} />

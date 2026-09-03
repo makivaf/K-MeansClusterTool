@@ -1,0 +1,597 @@
+{
+  "contractVersion": "sop-evaluation/v1",
+  "scope": "Aggregate-only controlled evaluation; isolated from frozen official results",
+  "cohortN": 2437,
+  "sop1": {
+    "redundancy": {
+      "featureCount": 13,
+      "pairCount": 78,
+      "meanAbsoluteCorrelation": 0.45040930016769476,
+      "medianAbsoluteCorrelation": 0.4878227460633193,
+      "maximumAbsoluteCorrelation": 0.8911186671380106,
+      "pairsAtOrAbove050": 38,
+      "pairsAtOrAbove070": 9,
+      "topCorrelatedPairs": [
+        {
+          "featureA": "LMI",
+          "featureB": "LMD",
+          "correlation": 0.8911186671380106,
+          "absoluteCorrelation": 0.8911186671380106
+        },
+        {
+          "featureA": "CDRSB",
+          "featureB": "FAQ",
+          "correlation": 0.8340516677266787,
+          "absoluteCorrelation": 0.8340516677266787
+        },
+        {
+          "featureA": "RAVLT_IMMEDIATE",
+          "featureB": "RAVLT_DELAYED",
+          "correlation": 0.8201333332616647,
+          "absoluteCorrelation": 0.8201333332616647
+        },
+        {
+          "featureA": "ADAS13",
+          "featureB": "RAVLT_IMMEDIATE",
+          "correlation": -0.7719053083571643,
+          "absoluteCorrelation": 0.7719053083571643
+        },
+        {
+          "featureA": "MMSE",
+          "featureB": "ADAS13",
+          "correlation": -0.7434659086245172,
+          "absoluteCorrelation": 0.7434659086245172
+        },
+        {
+          "featureA": "ADAS13",
+          "featureB": "CDRSB",
+          "correlation": 0.7406990768866123,
+          "absoluteCorrelation": 0.7406990768866123
+        },
+        {
+          "featureA": "MMSE",
+          "featureB": "CDRSB",
+          "correlation": -0.7261310999483273,
+          "absoluteCorrelation": 0.7261310999483273
+        },
+        {
+          "featureA": "ADAS13",
+          "featureB": "LMD",
+          "correlation": -0.7252592822750344,
+          "absoluteCorrelation": 0.7252592822750344
+        }
+      ]
+    },
+    "distanceBehavior": [
+      {
+        "representation": "13 standardized features",
+        "dimensions": 13,
+        "pairCount": 2968266,
+        "mean": 4.731305401396252,
+        "standardDeviation": 1.9040545304492404,
+        "coefficientOfVariation": 0.40243746047070567,
+        "fifthPercentile": 2.2150459805596934,
+        "median": 4.389884716123062,
+        "ninetyFifthPercentile": 8.425995764035221
+      },
+      {
+        "representation": "6 principal components",
+        "dimensions": 6,
+        "pairCount": 2968266,
+        "mean": 4.34321877498932,
+        "standardDeviation": 1.9724219305560988,
+        "coefficientOfVariation": 0.45413828608275647,
+        "fifthPercentile": 1.7190995549912518,
+        "median": 4.000639644247062,
+        "ninetyFifthPercentile": 8.151267700072655
+      }
+    ],
+    "ablation": {
+      "settings": {
+        "cohortN": 2437,
+        "k": 2,
+        "initialization": "random",
+        "nInit": 1,
+        "maxIter": 300,
+        "tolerance": 0.0001,
+        "algorithm": "lloyd",
+        "seeds": [
+          0,
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8,
+          9,
+          10,
+          11,
+          12,
+          13,
+          14,
+          15,
+          16,
+          17,
+          18,
+          19,
+          20,
+          21,
+          22,
+          23,
+          24,
+          25,
+          26,
+          27,
+          28,
+          29
+        ]
+      },
+      "conditions": [
+        {
+          "representation": "13 standardized features",
+          "dimensions": 13,
+          "varianceRetained": 1.0,
+          "runCount": 30,
+          "metrics": {
+            "silhouette": {
+              "mean": 0.33187500971522454,
+              "standardDeviation": 0.00023426851518023573,
+              "minimum": 0.33173611492709726,
+              "maximum": 0.33225697038257485
+            },
+            "davies_bouldin": {
+              "mean": 1.2241160774005175,
+              "standardDeviation": 0.00042412698636601766,
+              "minimum": 1.2234245639607837,
+              "maximum": 1.224367536833148
+            },
+            "calinski_harabasz": {
+              "mean": 1442.0231320417006,
+              "standardDeviation": 0.013837712047094214,
+              "minimum": 1442.0005704878185,
+              "maximum": 1442.0313362431123
+            }
+          }
+        },
+        {
+          "representation": "PC1-PC6",
+          "dimensions": 6,
+          "varianceRetained": 0.8747945923377831,
+          "runCount": 30,
+          "metrics": {
+            "silhouette": {
+              "mean": 0.3727704309093196,
+              "standardDeviation": 0.00011124244171464769,
+              "minimum": 0.3727004724250328,
+              "maximum": 0.37301323144314236
+            },
+            "davies_bouldin": {
+              "mean": 1.075643860715465,
+              "standardDeviation": 0.00037606647915655795,
+              "minimum": 1.0749732416051911,
+              "maximum": 1.0758850311620256
+            },
+            "calinski_harabasz": {
+              "mean": 1800.0166092714587,
+              "standardDeviation": 0.014560835305713627,
+              "minimum": 1799.9749087140085,
+              "maximum": 1800.0249578026046
+            }
+          }
+        }
+      ],
+      "metricChanges": {
+        "silhouette": {
+          "absoluteMeanChange": 0.04089542119409506,
+          "relativeMeanChangePercent": 12.322537098887507
+        },
+        "davies_bouldin": {
+          "absoluteMeanChange": -0.1484722166850525,
+          "relativeMeanChangePercent": -12.12893282149696
+        },
+        "calinski_harabasz": {
+          "absoluteMeanChange": 357.9934772297581,
+          "relativeMeanChangePercent": 24.82577909293938
+        }
+      }
+    }
+  },
+  "sop2": {
+    "settings": {
+      "cohortN": 2437,
+      "representation": "PC1-PC6",
+      "seed": 0,
+      "initialization": "random",
+      "nInit": 1,
+      "maxIter": 300,
+      "tolerance": 0.0001,
+      "algorithm": "lloyd"
+    },
+    "demonstratedK": [
+      {
+        "k": 2,
+        "clusterSizes": [
+          1553,
+          884
+        ],
+        "silhouette": 0.3727004724250328,
+        "daviesBouldin": 1.0758850311620256,
+        "calinskiHarabasz": 1800.0249578026046,
+        "inertia": 15934.849377713674,
+        "iterations": 11
+      },
+      {
+        "k": 3,
+        "clusterSizes": [
+          962,
+          984,
+          491
+        ],
+        "silhouette": 0.27167528558338805,
+        "daviesBouldin": 1.246114043746874,
+        "calinskiHarabasz": 1479.6580938923319,
+        "inertia": 12507.47556739691,
+        "iterations": 24
+      },
+      {
+        "k": 5,
+        "clusterSizes": [
+          605,
+          450,
+          240,
+          572,
+          570
+        ],
+        "silhouette": 0.1886974176537283,
+        "daviesBouldin": 1.600753527508229,
+        "calinskiHarabasz": 1049.5488002072132,
+        "inertia": 10165.81558602942,
+        "iterations": 21
+      }
+    ],
+    "candidates": [
+      {
+        "k": 2,
+        "clusterSizes": [
+          1553,
+          884
+        ],
+        "silhouette": 0.3727004724250328,
+        "daviesBouldin": 1.0758850311620256,
+        "calinskiHarabasz": 1800.0249578026046,
+        "inertia": 15934.849377713674,
+        "iterations": 11
+      },
+      {
+        "k": 3,
+        "clusterSizes": [
+          962,
+          984,
+          491
+        ],
+        "silhouette": 0.27167528558338805,
+        "daviesBouldin": 1.246114043746874,
+        "calinskiHarabasz": 1479.6580938923319,
+        "inertia": 12507.47556739691,
+        "iterations": 24
+      },
+      {
+        "k": 4,
+        "clusterSizes": [
+          636,
+          663,
+          335,
+          803
+        ],
+        "silhouette": 0.21844111279621883,
+        "daviesBouldin": 1.4044519412668186,
+        "calinskiHarabasz": 1243.1314364958105,
+        "inertia": 10942.022319907586,
+        "iterations": 24
+      },
+      {
+        "k": 5,
+        "clusterSizes": [
+          605,
+          450,
+          240,
+          572,
+          570
+        ],
+        "silhouette": 0.1886974176537283,
+        "daviesBouldin": 1.600753527508229,
+        "calinskiHarabasz": 1049.5488002072132,
+        "inertia": 10165.81558602942,
+        "iterations": 21
+      },
+      {
+        "k": 6,
+        "clusterSizes": [
+          523,
+          418,
+          220,
+          494,
+          433,
+          349
+        ],
+        "silhouette": 0.18397727144347037,
+        "daviesBouldin": 1.56570756853915,
+        "calinskiHarabasz": 926.4420568867728,
+        "inertia": 9538.931112527544,
+        "iterations": 14
+      },
+      {
+        "k": 7,
+        "clusterSizes": [
+          515,
+          234,
+          180,
+          407,
+          443,
+          443,
+          215
+        ],
+        "silhouette": 0.18882474616139547,
+        "daviesBouldin": 1.571782227540394,
+        "calinskiHarabasz": 858.395479289976,
+        "inertia": 8884.342970227483,
+        "iterations": 27
+      },
+      {
+        "k": 8,
+        "clusterSizes": [
+          442,
+          222,
+          176,
+          403,
+          416,
+          391,
+          214,
+          173
+        ],
+        "silhouette": 0.1857771416156357,
+        "daviesBouldin": 1.5872958428504096,
+        "calinskiHarabasz": 786.1733582856344,
+        "inertia": 8486.700698320521,
+        "iterations": 28
+      },
+      {
+        "k": 9,
+        "clusterSizes": [
+          414,
+          175,
+          150,
+          325,
+          332,
+          358,
+          196,
+          166,
+          321
+        ],
+        "silhouette": 0.17816402612178645,
+        "daviesBouldin": 1.4633540715434004,
+        "calinskiHarabasz": 742.4441434510142,
+        "inertia": 8041.835295700372,
+        "iterations": 49
+      },
+      {
+        "k": 10,
+        "clusterSizes": [
+          333,
+          200,
+          115,
+          341,
+          259,
+          335,
+          173,
+          162,
+          340,
+          179
+        ],
+        "silhouette": 0.17322363142074343,
+        "daviesBouldin": 1.4218703662061605,
+        "calinskiHarabasz": 723.7102205370632,
+        "inertia": 7523.469886746349,
+        "iterations": 37
+      }
+    ],
+    "maximumSilhouetteSelectedK": 2,
+    "nbclust": {
+      "selectedK": 2,
+      "usableIndices": 24,
+      "votesForSelectedK": 9,
+      "voteDistribution": [
+        {
+          "k": 2,
+          "votes": 9
+        },
+        {
+          "k": 3,
+          "votes": 6
+        },
+        {
+          "k": 4,
+          "votes": 5
+        },
+        {
+          "k": 5,
+          "votes": 0
+        },
+        {
+          "k": 6,
+          "votes": 1
+        },
+        {
+          "k": 7,
+          "votes": 1
+        },
+        {
+          "k": 8,
+          "votes": 1
+        },
+        {
+          "k": 9,
+          "votes": 0
+        },
+        {
+          "k": 10,
+          "votes": 1
+        }
+      ]
+    }
+  },
+  "sop3": {
+    "settings": {
+      "cohortN": 2437,
+      "representation": "PC1-PC6",
+      "k": 2,
+      "nInit": 1,
+      "maxIter": 300,
+      "tolerance": 0.0001,
+      "algorithm": "lloyd",
+      "randomSeeds": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16,
+        17,
+        18,
+        19,
+        20,
+        21,
+        22,
+        23,
+        24,
+        25,
+        26,
+        27,
+        28,
+        29
+      ]
+    },
+    "firstThreeRandomRuns": [
+      {
+        "runNumber": 1,
+        "seed": 0,
+        "clusterSizes": [
+          1553,
+          884
+        ],
+        "silhouette": 0.3727004724250328,
+        "daviesBouldin": 1.0758850311620256,
+        "calinskiHarabasz": 1800.0249578026046,
+        "iterations": 11
+      },
+      {
+        "runNumber": 2,
+        "seed": 1,
+        "clusterSizes": [
+          884,
+          1553
+        ],
+        "silhouette": 0.3727004724250328,
+        "daviesBouldin": 1.0758850311620256,
+        "calinskiHarabasz": 1800.0249578026046,
+        "iterations": 8
+      },
+      {
+        "runNumber": 3,
+        "seed": 2,
+        "clusterSizes": [
+          884,
+          1553
+        ],
+        "silhouette": 0.3727004724250328,
+        "daviesBouldin": 1.0758850311620256,
+        "calinskiHarabasz": 1800.0249578026046,
+        "iterations": 10
+      }
+    ],
+    "randomRunSummary": {
+      "silhouette": {
+        "mean": 0.3727704309093196,
+        "standardDeviation": 0.00011124244171464769,
+        "minimum": 0.3727004724250328,
+        "maximum": 0.37301323144314236
+      },
+      "davies_bouldin": {
+        "mean": 1.075643860715465,
+        "standardDeviation": 0.00037606647915655795,
+        "minimum": 1.0749732416051911,
+        "maximum": 1.0758850311620256
+      },
+      "calinski_harabasz": {
+        "mean": 1800.0166092714587,
+        "standardDeviation": 0.014560835305713627,
+        "minimum": 1799.9749087140085,
+        "maximum": 1800.0249578026046
+      },
+      "inertia": {
+        "mean": 15934.910803558596,
+        "standardDeviation": 0.12464161959632508,
+        "minimum": 15934.849377713675,
+        "maximum": 15935.267398368695
+      },
+      "iterations": {
+        "mean": 10.6,
+        "standardDeviation": 1.9226418606016906,
+        "minimum": 4.0,
+        "maximum": 14.0
+      }
+    },
+    "partitionStability": {
+      "distinctLabelInvariantPartitions": 3,
+      "meanPairwiseAdjustedRandIndex": 0.9976378643414556,
+      "minimumPairwiseAdjustedRandIndex": 0.99340465973853,
+      "maximumPairwiseAdjustedRandIndex": 1.0
+    },
+    "dpcDeterminism": {
+      "repeatedChecks": 3,
+      "identicalInitialization": true,
+      "identicalOutput": true,
+      "clusterSizes": [
+        1553,
+        884
+      ],
+      "iterations": 12,
+      "metrics": {
+        "silhouette": 0.3727004724250328,
+        "daviesBouldin": 1.0758850311620256,
+        "calinskiHarabasz": 1800.0249578026046
+      }
+    }
+  },
+  "provenance": {
+    "officialResultsModified": false,
+    "participantLevelOutput": false,
+    "sourceSha256": {
+      "data/interim/clustering_features_standardized.csv": "0267afadb86434c203321529cd039ef03b843e76ab56430d9e9d677fee232783",
+      "data/interim/clustering_pca_scores.csv": "abf2c7a98c65f7d0b609bd14389b20be930d5850bc8a4f213d383a8eb432f4b0",
+      "data/interim/clustering_pca_explained_variance.csv": "769216258e22de504fc8ca39d1f898f7c4ce1e1d37cd7dd9876dc0571d67f33f",
+      "data/interim/baseline_kmeans_runs.csv": "453e1a161f7a23f58fab251ed62d4ef1aafb019da384410e44e8eb5cfacc135b",
+      "data/interim/dpc_comparison_random_runs.csv": "27a98a52d1302cde2cf054ccee7f196fc82eb1672dbeed8c3c56ec9d31b20b04",
+      "data/interim/dpc_comparison_random_summary.csv": "65205e6f392abc998e021c181413195cc7895284eac128376ab2ea1bb0fb86e6",
+      "data/interim/dpc_comparison_random_stability.csv": "05e40c929b877c6e3e99101cc8b44a698e5f8cada6e4f65f3e3bba9f22280bce",
+      "data/interim/clustering_nbclust_summary.csv": "67cd64c991544e6bc3c5166a10d100a8da120d85028da34516f26f7ca817bf23",
+      "data/interim/clustering_selected_k.csv": "3bee43b1454424c3346b161e7acb99e58298b67335652854fadb84f26d5ac8d6",
+      "data/interim/clustering_dpc_determinism_check.csv": "961eaaec1702367dc6dfc6a66d84b86be3b28d7e5b0cfa52c7253934079e78b1",
+      "data/interim/enhanced_kmeans_metrics.csv": "ed89860e62d3fed1ff761576b905f4d81d7e51c19d2b4d8b21335def6561aa8b",
+      "data/interim/enhanced_kmeans_run_summary.csv": "e77c01dab12b7bae13501a35c2d720965cacb1b0d64c1099694b7685f0a91088"
+    }
+  }
+}
