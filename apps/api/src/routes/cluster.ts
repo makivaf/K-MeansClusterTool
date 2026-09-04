@@ -53,8 +53,7 @@ const csvUpload = multer({
   limits: {
     fileSize: maxCsvBytes,
     files: 7,
-    fields: 0,
-    parts: 7
+    fields: 0
   },
   fileFilter: (_request, file, callback) => {
     if (path.extname(file.originalname).toLowerCase() !== ".csv") {
@@ -65,40 +64,39 @@ const csvUpload = multer({
   }
 }).array("files");
 
+const uploadErrorMessage = (error: unknown): string => {
+  if (error instanceof multer.MulterError && error.code === "LIMIT_FILE_SIZE") return "A CSV file exceeds the configured size limit.";
+  if (error instanceof multer.MulterError && ["LIMIT_FILE_COUNT", "LIMIT_UNEXPECTED_FILE"].includes(error.code)) return "Upload contains more than seven CSV files.";
+  if (error instanceof multer.MulterError && error.code === "LIMIT_PART_COUNT") return "The upload request contains too many multipart parts.";
+  if (error instanceof multer.MulterError && error.code === "LIMIT_FIELD_COUNT") return "Only the seven CSV file parts are accepted.";
+  if (error instanceof Error && ["Only .csv dataset files are accepted.", "A dataset filename is invalid."].includes(error.message)) return error.message;
+  return "Unable to store the uploaded CSV files.";
+};
+
 export const clusterRouter = express.Router();
 
-clusterRouter.use(requireTrustedBrowserOrigin);
-clusterRouter.use(createFixedWindowRateLimiter({
+const uploadRateLimiter = createFixedWindowRateLimiter({
   windowMs: 60 * 60 * 1000,
   maximumRequests: 4,
   message: "Too many local research requests. Try again later."
-}));
+});
 
-clusterRouter.use((request, response, next) => {
+const requireUploadSizeLimit: express.RequestHandler = (request, response, next) => {
   const contentLength = Number(request.get("content-length") ?? 0);
   if (Number.isFinite(contentLength) && contentLength > maxUploadRequestBytes) {
     response.status(413).json({ error: "The upload request exceeds the configured size limit." });
     return;
   }
   next();
-});
+};
 
-clusterRouter.post("/api/upload", assignUploadBatch, (request: UploadRequest, response, next) => {
+clusterRouter.post("/api/upload", requireTrustedBrowserOrigin, uploadRateLimiter, requireUploadSizeLimit, assignUploadBatch, (request: UploadRequest, response, next) => {
   csvUpload(request, response, (error) => {
     if (error) {
       if (request.uploadBatchId) {
         try { removeUploadDirectory(resolveUploadDirectory(request.uploadBatchId)); } catch { /* best-effort cleanup */ }
       }
-      const message = error instanceof multer.MulterError && error.code === "LIMIT_FILE_SIZE"
-        ? "A CSV file exceeds the configured size limit."
-        : error instanceof multer.MulterError && ["LIMIT_FILE_COUNT", "LIMIT_PART_COUNT", "LIMIT_UNEXPECTED_FILE"].includes(error.code)
-          ? "Exactly seven CSV files are allowed."
-          : error instanceof multer.MulterError && error.code === "LIMIT_FIELD_COUNT"
-            ? "Only the seven CSV file parts are accepted."
-          : error instanceof Error && ["Only .csv dataset files are accepted.", "A dataset filename is invalid."].includes(error.message)
-            ? error.message
-            : "Unable to store the uploaded CSV files.";
-      response.status(400).json({ error: message });
+      response.status(400).json({ error: uploadErrorMessage(error) });
       return;
     }
     next();

@@ -460,7 +460,7 @@ const UnifiedPcaSchema = z
 
 const UnifiedKSelectionSchema = z
   .object({
-    method: z.literal("NbClust majority rule"),
+    method: z.literal("NbClust index voting"),
     candidateK: z.array(z.number().int().positive()).min(1),
     selectedK: z.number().int().positive(),
     usableVotes: z.number().int().positive(),

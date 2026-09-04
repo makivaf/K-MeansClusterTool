@@ -57,7 +57,8 @@ export const buildResearchEnvironment = (
   const environment: NodeJS.ProcessEnv = { PYTHONUNBUFFERED: "1" };
   const passThroughKeys = [
     "PATH", "PATHEXT", "SYSTEMROOT", "WINDIR", "COMSPEC", "TEMP", "TMP",
-    "USERPROFILE", "HOME", "LANG", "LC_ALL", "TZ", "R_LIBS", "R_LIBS_USER"
+    "USERPROFILE", "HOME", "LOCALAPPDATA", "APPDATA", "LANG", "LC_ALL", "TZ",
+    "R_LIBS", "R_LIBS_USER", "R_USER"
   ] as const;
   for (const key of passThroughKeys) if (source[key]) environment[key] = source[key];
   const rHome = source.RESEARCH_R_HOME ?? source.R_HOME;

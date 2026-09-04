@@ -56,7 +56,6 @@ export const AppShell = ({
             </span>
             <span>
               <span className="block">Run Analysis</span>
-              <span className="mt-0.5 block text-xs font-medium text-teal-50">Seven-file unified pipeline</span>
             </span>
           </NavLink>
           <div className="my-3 border-t border-line" />
