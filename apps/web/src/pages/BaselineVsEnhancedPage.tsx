@@ -191,6 +191,6 @@ export const BaselineVsEnhancedPage = ({ run }: BaselineVsEnhancedPageProps) => 
     <div id={`panel-${activeTab}`} role="tabpanel" tabIndex={0} className="min-h-[420px]">
       {activeTab === "overall" ? <OverallView run={run} /> : !evaluation ? <div className={`mt-6 border-l-2 px-4 py-3 text-sm ${error ? "border-red-400 bg-red-50 text-red-800" : "border-slate-300 bg-white text-muted"}`}>{error ?? "Loading aggregate SOP evaluation…"}</div> : activeTab === "sop1" ? <Sop1View evaluation={evaluation} /> : activeTab === "sop2" ? <Sop2View evaluation={evaluation} /> : <Sop3View evaluation={evaluation} />}
     </div>
-    <ResearchPageNavigation currentPath="/enhancement-evaluation" />
+    <ResearchPageNavigation currentPath="/existing-algorithm" />
   </>;
 };
