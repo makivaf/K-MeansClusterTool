@@ -6,7 +6,7 @@ import { clusterRouter } from "./routes/cluster";
 import { researchRunsRouter } from "./routes/researchRuns";
 import { getRunById, listRuns } from "./services/runRepository";
 import { allowedBrowserOrigins } from "./httpSecurity";
-import { loadSopEvaluation } from "./services/sopEvaluationArtifact";
+import { loadBaselineCandidateSweep, loadSopEvaluation } from "./services/sopEvaluationArtifact";
 
 export const app = express();
 
@@ -64,7 +64,7 @@ app.get("/api/sop-evaluation", (_request, response, next) => {
       response.status(404).json({ error: "Aggregate SOP evaluation artifact not found" });
       return;
     }
-    response.json(SopEvaluationResponseSchema.parse({ evaluation }));
+    response.json(SopEvaluationResponseSchema.parse({ evaluation, baselineSweep: loadBaselineCandidateSweep(evaluation) }));
   } catch (error) {
     next(error);
   }

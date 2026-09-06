@@ -1,0 +1,154 @@
+{
+  "representation": "13 standardized features; no PCA, NbClust or DPC",
+  "seed": 0,
+  "candidates": [
+    {
+      "k": 2,
+      "silhouette": 0.33173611492709726,
+      "daviesBouldin": 1.224367536833148,
+      "calinskiHarabasz": 1442.0313362431123,
+      "inertia": 19897.501028390612,
+      "iterations": 11,
+      "clusterSizes": [
+        1554,
+        883
+      ]
+    },
+    {
+      "k": 3,
+      "silhouette": 0.22567940067764303,
+      "daviesBouldin": 1.4475687584447259,
+      "calinskiHarabasz": 1125.2081617732126,
+      "inertia": 16461.293931625038,
+      "iterations": 24,
+      "clusterSizes": [
+        962,
+        983,
+        492
+      ]
+    },
+    {
+      "k": 4,
+      "silhouette": 0.17357756345787867,
+      "daviesBouldin": 1.6523030651187163,
+      "calinskiHarabasz": 914.5644695063464,
+      "inertia": 14889.789082960435,
+      "iterations": 20,
+      "clusterSizes": [
+        643,
+        668,
+        315,
+        811
+      ]
+    },
+    {
+      "k": 5,
+      "silhouette": 0.14698032047963142,
+      "daviesBouldin": 1.8692987347742083,
+      "calinskiHarabasz": 759.0125405881927,
+      "inertia": 14090.615431890625,
+      "iterations": 19,
+      "clusterSizes": [
+        601,
+        398,
+        200,
+        608,
+        630
+      ]
+    },
+    {
+      "k": 6,
+      "silhouette": 0.1469747089176171,
+      "daviesBouldin": 1.8854797960862202,
+      "calinskiHarabasz": 661.3200325093835,
+      "inertia": 13423.122702543358,
+      "iterations": 21,
+      "clusterSizes": [
+        529,
+        382,
+        178,
+        516,
+        478,
+        354
+      ]
+    },
+    {
+      "k": 7,
+      "silhouette": 0.13764256848252976,
+      "daviesBouldin": 1.849199949788217,
+      "calinskiHarabasz": 599.1701621160156,
+      "inertia": 12777.520667376297,
+      "iterations": 27,
+      "clusterSizes": [
+        470,
+        210,
+        108,
+        438,
+        427,
+        370,
+        414
+      ]
+    },
+    {
+      "k": 8,
+      "silhouette": 0.1364370679654951,
+      "daviesBouldin": 1.8250193141312439,
+      "calinskiHarabasz": 550.1300158989882,
+      "inertia": 12253.89393607429,
+      "iterations": 55,
+      "clusterSizes": [
+        453,
+        199,
+        89,
+        436,
+        383,
+        186,
+        357,
+        334
+      ]
+    },
+    {
+      "k": 9,
+      "silhouette": 0.13815113899808035,
+      "daviesBouldin": 1.8499842219031382,
+      "calinskiHarabasz": 511.3184048320444,
+      "inertia": 11800.400485531423,
+      "iterations": 24,
+      "clusterSizes": [
+        408,
+        233,
+        101,
+        449,
+        246,
+        163,
+        177,
+        268,
+        392
+      ]
+    },
+    {
+      "k": 10,
+      "silhouette": 0.12820049768970135,
+      "daviesBouldin": 1.7741820973227778,
+      "calinskiHarabasz": 481.1326013413505,
+      "inertia": 11378.953111306762,
+      "iterations": 28,
+      "clusterSizes": [
+        360,
+        187,
+        88,
+        389,
+        198,
+        161,
+        286,
+        245,
+        350,
+        173
+      ]
+    }
+  ],
+  "sourceSha256": {
+    "data/interim/baseline_kmeans_k_selection.csv": "aeedc58565ed5fd13b447fd7da2da3f6cd43b231f22720bac263f67aa326c01f",
+    "data/interim/clustering_features_standardized.csv": "0267afadb86434c203321529cd039ef03b843e76ab56430d9e9d677fee232783"
+  }
+}

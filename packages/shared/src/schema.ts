@@ -1249,7 +1249,16 @@ export const SopEvaluationSchema = z.object({
   return evaluation;
 });
 
-export const SopEvaluationResponseSchema = z.object({ evaluation: SopEvaluationSchema }).strict();
+export const BaselineCandidateSweepSchema = z.object({
+  representation: z.literal("13 standardized features; no PCA, NbClust or DPC"),
+  seed: z.literal(0),
+  candidates: z.array(SopCandidateSchema).length(9).refine((rows) => rows.every((row, i) => row.k === i + 2 &&
+    [row.silhouette, row.daviesBouldin, row.calinskiHarabasz, row.inertia].every(Number.isFinite) &&
+    row.silhouette >= -1 && row.silhouette <= 1 && row.daviesBouldin >= 0 && row.calinskiHarabasz >= 0)),
+  sourceSha256: z.record(z.string(), sha256Schema)
+}).strict();
+export type BaselineCandidateSweep = z.infer<typeof BaselineCandidateSweepSchema>;
+export const SopEvaluationResponseSchema = z.object({ evaluation: SopEvaluationSchema, baselineSweep: BaselineCandidateSweepSchema.nullable().optional() }).strict();
 
 export type Axis = z.infer<typeof AxisSchema>;
 export type ResultSource = z.infer<typeof ResultSourceSchema>;
