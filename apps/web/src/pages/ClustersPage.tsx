@@ -105,21 +105,17 @@ const fromSop1Condition = (condition: SopEvaluation["sop1"]["ablation"]["conditi
   metrics: condition.metrics
 });
 
-const fromSop2Candidate = (candidate: SopEvaluation["sop2"]["candidates"][number]): SopRunResult => ({
-  representation: `PC1-PC6, k=${candidate.k}`,
-  dimensions: 6,
-  runCount: 1,
-  metrics: {
-    silhouette: { mean: candidate.silhouette },
-    davies_bouldin: { mean: candidate.daviesBouldin },
-    calinski_harabasz: { mean: candidate.calinskiHarabasz }
-  }
+const fromSop2Condition = (condition: NonNullable<SopEvaluation["sop2"]["controlledComparison"]>["control"]): SopRunResult => ({
+  representation: `${condition.representation}, k=${condition.selectedK}`,
+  dimensions: condition.dimensions,
+  runCount: condition.runCount,
+  metrics: condition.metrics
 });
 
-const fromSop3DpcResult = (result: SopEvaluation["sop3"]["dpcDeterminism"]): SopRunResult => ({
-  representation: "PC1-PC6, DPC initialization",
-  dimensions: 6,
-  runCount: result.repeatedChecks,
+const fromSop3DpcResult = (result: NonNullable<SopEvaluation["sop3"]["controlledComparison"]>): SopRunResult => ({
+  representation: "13 standardized features, DPC initialization",
+  dimensions: 13,
+  runCount: `${result.repeatedChecks} deterministic checks`,
   metrics: {
     silhouette: { mean: result.metrics.silhouette },
     davies_bouldin: { mean: result.metrics.daviesBouldin },
@@ -478,7 +474,7 @@ const SopRunPanel = ({
       ) : isComplete ? (
         <div className="summary-sop-panel-metrics">
           <StatCard label="Representation" value={condition.dimensions ? `${condition.dimensions}D` : condition.representation} detail={condition.dimensions ? condition.representation : undefined} accent={side === "enhanced" ? "teal" : "slate"} />
-          <StatCard label="Run count" value={condition.runCount} detail="Predetermined random seeds" />
+          <StatCard label="Run count" value={condition.runCount} detail={typeof condition.runCount === "number" ? "Predetermined random seeds" : "Repeated identical initialization and output"} />
           <StatCard label="Silhouette mean" value={condition.metrics.silhouette.mean.toFixed(5)} detail={condition.metrics.silhouette.standardDeviation === undefined ? undefined : `SD ${condition.metrics.silhouette.standardDeviation.toFixed(5)}`} accent={side === "enhanced" ? "teal" : "slate"} />
         </div>
       ) : (
@@ -625,8 +621,12 @@ const PcaTab = ({ run, evaluation, error }: { run: UnifiedResearchRun; evaluatio
 
 const NbClustTab = ({ run, evaluation, error }: { run: UnifiedResearchRun; evaluation: SopEvaluation | null; error: string | null }) => {
   const { existingProgress, enhancedProgress, replayRun } = useSopRunReplay();
-  const voteDenominator = Math.max(...run.kSelection.voteDistribution.map((entry) => entry.votes), 1);
   const sop2 = evaluation?.sop2;
+  const controlled = sop2?.controlledComparison;
+  const selection = controlled?.selection ?? sop2?.nbclust;
+  const votes = selection?.voteDistribution ?? run.kSelection.voteDistribution;
+  const selectedK = controlled?.nbclustOnly.selectedK ?? sop2?.nbclust.selectedK;
+  const voteDenominator = Math.max(...votes.map((entry) => entry.votes), 1);
 
   if (!sop2 || !evaluation?.sop1.ablation) {
     return (
@@ -637,7 +637,8 @@ const NbClustTab = ({ run, evaluation, error }: { run: UnifiedResearchRun; evalu
   }
 
   const [baselineCondition] = evaluation.sop1.ablation.conditions;
-  const existingCandidate = sop2.candidates.find((candidate) => candidate.k === sop2.maximumSilhouetteSelectedK) ?? sop2.candidates[0];
+  const controlResult = controlled ? fromSop2Condition(controlled.control) : fromSop1Condition(baselineCondition);
+  const nbclustResult = controlled ? fromSop2Condition(controlled.nbclustOnly) : null;
   const metricKeys = Object.keys(sopMetricLabels) as SopMetric[];
 
   return (
@@ -660,7 +661,7 @@ const NbClustTab = ({ run, evaluation, error }: { run: UnifiedResearchRun; evalu
           title="Baseline K-Means"
           subtitle="No PCA • No NbClust • No DPC"
           label="Control configuration"
-          condition={fromSop1Condition(baselineCondition)}
+          condition={controlResult}
           progress={existingProgress}
           onRun={() => replayRun("existing")}
         />
@@ -670,10 +671,10 @@ const NbClustTab = ({ run, evaluation, error }: { run: UnifiedResearchRun; evalu
           title="NbClust-Only K-Means"
           subtitle="No PCA • NbClust • No DPC"
           label="Only NbClust is introduced"
-          condition={fromSop2Candidate(existingCandidate)}
+          condition={nbclustResult ?? controlResult}
           progress={enhancedProgress}
           onRun={() => replayRun("enhanced")}
-          resultPending
+          resultPending={!nbclustResult}
         />
       </section>
 
@@ -685,21 +686,21 @@ const NbClustTab = ({ run, evaluation, error }: { run: UnifiedResearchRun; evalu
           </div>
         </div>
         <div className="grid gap-3 sm:grid-cols-2">
-          <StatCard label="Baseline selection" value={`k=${baselineCondition.dimensions ? evaluation.sop1.ablation.settings.k : "—"}`} detail="Control condition" />
-          <StatCard label="NbClust-based selection" value={`k=${sop2.nbclust.selectedK}`} detail={`${sop2.nbclust.votesForSelectedK}/${sop2.nbclust.usableIndices} usable votes exposed in current data`} accent="teal" />
+          <StatCard label="Baseline selection" value={`k=${controlled?.control.selectedK ?? evaluation.sop1.ablation.settings.k}`} detail="Maximum Silhouette over k=2–10, seed 0" />
+          <StatCard label="NbClust-based selection" value={`k=${selectedK}`} detail={`${selection?.votesForSelectedK}/${selection?.usableIndices} usable votes (${controlled ? "13 original features" : "PCA-based evidence"})`} accent="teal" />
         </div>
         <div className="mt-5 space-y-3">
-          {run.kSelection.voteDistribution.map((entry) => (
+          {votes.map((entry) => (
             <div key={entry.k} className="grid grid-cols-[2.75rem_1fr_2.5rem] items-center gap-3 text-sm">
-              <span className={entry.k === run.kSelection.selectedK ? "font-semibold text-teal-800" : "text-muted"}>k={entry.k}</span>
+              <span className={entry.k === selectedK ? "font-semibold text-teal-800" : "text-muted"}>k={entry.k}</span>
               <div className="h-2 overflow-hidden rounded-full bg-slate-100">
-                <div className={entry.k === run.kSelection.selectedK ? "h-full rounded-full bg-teal-700" : "h-full rounded-full bg-slate-300"} style={{ width: `${(entry.votes / voteDenominator) * 100}%` }} />
+                <div className={entry.k === selectedK ? "h-full rounded-full bg-teal-700" : "h-full rounded-full bg-slate-300"} style={{ width: `${(entry.votes / voteDenominator) * 100}%` }} />
               </div>
               <span className="text-right font-semibold tabular-nums">{entry.votes}</span>
             </div>
           ))}
         </div>
-        <p className="existing-note">The available NbClust vote distribution is stored aggregate evidence. A no-PCA/no-DPC NbClust-only controlled clustering result is not exposed.</p>
+        <p className="existing-note">{controlled ? "NbClust votes were computed on the same 13 standardized features and reproduced in two checks. Both selected cluster counts feed the same 30-seed random-initialization Lloyd procedure." : "The available vote distribution is PCA-based evidence. The no-PCA/no-DPC NbClust-only controlled result is pending."}</p>
       </section>
 
       <section className="existing-card">
@@ -716,16 +717,18 @@ const NbClustTab = ({ run, evaluation, error }: { run: UnifiedResearchRun; evalu
             <span>NbClust-Only K-Means</span>
           </div>
           {metricKeys.map((metric) => {
-            const existingValue = baselineCondition.metrics[metric].mean;
+            const existingValue = controlResult.metrics[metric].mean;
+            const nbclustValue = nbclustResult?.metrics[metric].mean;
             return (
               <div key={metric} className="summary-sop-metric-row">
                 <strong>{formatSopMetric(metric, existingValue)}</strong>
                 <div>
                   <span>{sopMetricLabels[metric]}</span>
                   <small>{metric === "davies_bouldin" ? "Lower is better" : "Higher is better"}</small>
-                  <em>Pending</em>
+                  <em>{nbclustValue === undefined ? "Pending" : Math.abs(nbclustValue - existingValue) < 1e-12 ? "Equal to control mean" :
+                    (nbclustValue < existingValue) === (metric === "davies_bouldin") ? "Better than control mean" : "Worse than control mean"}</em>
                 </div>
-                <strong>—</strong>
+                <strong>{nbclustValue === undefined ? "—" : formatSopMetric(metric, nbclustValue)}</strong>
               </div>
             );
           })}
@@ -733,7 +736,7 @@ const NbClustTab = ({ run, evaluation, error }: { run: UnifiedResearchRun; evalu
       </section>
 
       <FindingNote>
-        The available data supports that NbClust selected k={sop2.nbclust.selectedK} from {sop2.nbclust.usableIndices} usable internal-validity indices. The corrected NbClust-only controlled result is pending because the stored SOP 2 clustering outputs are PCA-based.
+        {controlled ? `On the same 13 standardized features without PCA or DPC, baseline selection chose k=${controlled.control.selectedK} and NbClust chose k=${controlled.nbclustOnly.selectedK}. Only k-selection changes; both use the same 30 random seeds and Lloyd settings. ${controlled.control.selectedK === controlled.nbclustOnly.selectedK ? "Both methods selected the same k, so the paired runs and metrics are identical; no clustering-metric improvement is claimed." : "The displayed metrics summarize all 30 runs for each selected k."}` : "The corrected NbClust-only controlled result is pending because the stored SOP 2 clustering outputs are PCA-based."}
       </FindingNote>
     </div>
   );
@@ -742,6 +745,8 @@ const NbClustTab = ({ run, evaluation, error }: { run: UnifiedResearchRun; evalu
 const DpcTab = ({ run, evaluation, error }: { run: UnifiedResearchRun; evaluation: SopEvaluation | null; error: string | null }) => {
   const { existingProgress, enhancedProgress, replayRun } = useSopRunReplay();
   const dpcDeterminism = evaluation?.sop3.dpcDeterminism;
+  const controlled = evaluation?.sop3.controlledComparison;
+  const controlledResult = controlled ? fromSop3DpcResult(controlled) : null;
   const baselineCondition = evaluation?.sop1.ablation.conditions[0];
 
   if (!baselineCondition || !dpcDeterminism) {
@@ -782,10 +787,10 @@ const DpcTab = ({ run, evaluation, error }: { run: UnifiedResearchRun; evaluatio
           title="DPC-Only K-Means"
           subtitle="No PCA • No NbClust • DPC"
           label="Only DPC initialization is introduced"
-          condition={fromSop3DpcResult(dpcDeterminism)}
+          condition={controlledResult ?? fromSop1Condition(baselineCondition)}
           progress={enhancedProgress}
           onRun={() => replayRun("enhanced")}
-          resultPending
+          resultPending={!controlledResult}
         />
       </section>
 
@@ -793,12 +798,12 @@ const DpcTab = ({ run, evaluation, error }: { run: UnifiedResearchRun; evaluatio
         <div className="existing-card-header">
           <div>
             <p>SOP 3 — DPC</p>
-            <h2>Available DPC deterministic seed evidence</h2>
+            <h2>{controlled ? "DPC-only deterministic seed evidence (13 standardized features)" : "Available PCA-based DPC deterministic seed evidence"}</h2>
           </div>
         </div>
         <div className="grid gap-3 sm:grid-cols-2">
-          {run.initialization.selectedCentroids.map((centroid) => (
-            <div key={centroid.candidateId} className="border-l-2 border-teal-700 bg-teal-50/50 px-4 py-3 text-sm">
+          {(controlled?.selectedCentroids ?? run.initialization.selectedCentroids).map((centroid) => (
+            <div key={centroid.assignedCluster} className="border-l-2 border-teal-700 bg-teal-50/50 px-4 py-3 text-sm">
               <div className="font-semibold text-ink">Cluster {centroid.assignedCluster} seed</div>
               <dl className="mt-3 grid grid-cols-3 gap-2 text-xs">
                 <div><dt className="text-muted">Density rho</dt><dd className="font-semibold tabular-nums">{centroid.rho.toFixed(5)}</dd></div>
@@ -825,15 +830,18 @@ const DpcTab = ({ run, evaluation, error }: { run: UnifiedResearchRun; evaluatio
                 <tr key={metric}>
                   <td className="font-medium">{sopMetricLabels[metric]}</td>
                   <td className="text-right tabular-nums">{formatSopMetric(metric, baselineCondition.metrics[metric].mean)}</td>
-                  <td className="text-right tabular-nums">—</td>
-                  <td className="text-right text-muted">Validated controlled result pending</td>
+                  <td className="text-right tabular-nums">{controlledResult ? formatSopMetric(metric, controlledResult.metrics[metric].mean) : "—"}</td>
+                  <td className="text-right text-muted">{controlledResult ? (
+                    Math.abs(controlledResult.metrics[metric].mean - baselineCondition.metrics[metric].mean) < 1e-12 ? "Equal to control mean" :
+                    (controlledResult.metrics[metric].mean < baselineCondition.metrics[metric].mean) === (metric === "davies_bouldin") ? "Better than control mean" : "Worse than control mean"
+                  ) : "Validated controlled result pending"}</td>
                 </tr>
               ))}
             </tbody>
           </table>
         </div>
         <FindingNote>
-          DPC deterministic checks are available in the current aggregate contract, but the corrected no-PCA/no-NbClust DPC-only controlled result is pending. No metric improvement is claimed for SOP 3 here.
+          {controlled ? "The comparison uses the same 13 standardized features, fixed k=2, and Lloyd settings without PCA or NbClust. Only initialization changes. DPC seeds and outputs were identical across three checks; metric assessments compare against all 30 random control runs." : "DPC deterministic checks are available in the current aggregate contract, but the corrected no-PCA/no-NbClust DPC-only controlled result is pending. No metric improvement is claimed for SOP 3 here."}
         </FindingNote>
       </section>
     </div>

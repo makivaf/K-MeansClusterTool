@@ -1046,6 +1046,90 @@ const SopCandidateSchema = SopClusteringMetricsSchema.extend({
   }
 });
 
+const SopDpcOnlySchema = z.object({
+  settings: z.object({
+    cohortN: z.literal(2437), representation: z.literal("13 standardized features"),
+    features: z.tuple([z.literal("MMSE"), z.literal("ADAS13"), z.literal("LMI"), z.literal("LMD"),
+      z.literal("TMT_A"), z.literal("TMT_B"), z.literal("CATEGORY_FLUENCY_ANIMALS"),
+      z.literal("RAVLT_IMMEDIATE"), z.literal("RAVLT_DELAYED"), z.literal("RAVLT_FORGETTING"),
+      z.literal("CDRSB"), z.literal("FAQ"), z.literal("GDS")]),
+    pca: z.literal(false), nbclust: z.literal(false), k: z.literal(2), kSelection: z.literal("fixed"),
+    nInit: z.literal(1), maxIter: z.literal(300), tolerance: z.literal(0.0001), algorithm: z.literal("lloyd"),
+    controlInitialization: z.literal("random"), dpcInitialization: z.literal("deterministic DPC"),
+    randomSeeds: z.array(z.number()).refine((seeds) => seeds.length === 30 && seeds.every((seed, i) => seed === i)),
+    dpcRandomState: z.literal(0), inputSha256: sha256Schema, cutoffPercentile: z.literal(0.02)
+  }).strict(),
+  repeatedChecks: z.literal(3), identicalInitialization: z.literal(true), identicalOutput: z.literal(true),
+  clusterSizes: z.array(z.number().int().positive()).length(2).refine((sizes) => sizes.reduce((a, b) => a + b, 0) === 2437),
+  iterations: z.number().int().positive().max(300),
+  metrics: z.object({ silhouette: z.number().finite().min(-1).max(1),
+    daviesBouldin: z.number().finite().nonnegative(), calinskiHarabasz: z.number().finite().nonnegative() }).strict(),
+  selectedCentroids: z.array(z.object({ assignedCluster: z.number().int().min(0).max(1),
+    rho: z.number().int().nonnegative(), delta: z.number().finite().nonnegative(),
+    gamma: z.number().finite().nonnegative() }).strict()).length(2)
+}).strict();
+
+const SopNbClustMetricSummarySchema = SopMetricSummarySchema.refine((summary) =>
+  Object.values(summary).every(Number.isFinite) && summary.minimum <= summary.mean && summary.mean <= summary.maximum);
+const SopNbClustConditionSchema = z.object({
+  selectedK: z.number().int().min(2).max(10), representation: z.literal("13 standardized features"),
+  dimensions: z.literal(13), runCount: z.literal(30),
+  metrics: z.object({ silhouette: SopNbClustMetricSummarySchema,
+    davies_bouldin: SopNbClustMetricSummarySchema, calinski_harabasz: SopNbClustMetricSummarySchema }).strict()
+}).strict();
+const SopNbClustOnlySchema = z.object({
+  settings: z.object({
+    cohortN: z.literal(2437), representation: z.literal("13 standardized features"),
+    features: SopDpcOnlySchema.shape.settings.shape.features,
+    pca: z.literal(false), dpc: z.literal(false), controlNbclust: z.literal(false), comparisonNbclust: z.literal(true),
+    controlKSelection: z.literal("maximum silhouette; ties choose smaller k"),
+    comparisonKSelection: z.literal("NbClust index voting; Chapter 3 rank-sum tie-break"),
+    candidateK: z.array(z.number()).refine((ks) => ks.length === 9 && ks.every((k, i) => k === i + 2)),
+    baselineSelectionSeed: z.literal(0), nbclustSelectionSeed: z.literal(20260811),
+    initialization: z.literal("random"), nInit: z.literal(1), maxIter: z.literal(300),
+    tolerance: z.literal(0.0001), algorithm: z.literal("lloyd"),
+    randomSeeds: z.array(z.number()).refine((seeds) => seeds.length === 30 && seeds.every((seed, i) => seed === i)),
+    inputSha256: sha256Schema
+  }).strict(),
+  control: SopNbClustConditionSchema, nbclustOnly: SopNbClustConditionSchema,
+  baselineCandidates: z.array(z.object({ k: z.number().int().min(2).max(10),
+    silhouette: z.number().finite().min(-1).max(1) }).strict()).length(9),
+  selection: z.object({
+    repeatedChecks: z.literal(2), reproducible: z.literal(true), packageVersion: z.literal("3.0.1"),
+    usableIndices: z.number().int().min(1).max(26), votesForSelectedK: z.number().int().min(1).max(26),
+    voteDistribution: z.array(z.object({ k: z.number().int().min(2).max(10),
+      votes: z.number().int().min(0).max(26) }).strict()).length(9),
+    indexResults: z.array(z.object({
+      index: z.enum(["kl", "ch", "hartigan", "ccc", "scott", "marriot", "trcovw", "tracew", "friedman", "rubin",
+        "cindex", "db", "silhouette", "duda", "pseudot2", "beale", "ratkowsky", "ball", "ptbiserial", "frey",
+        "mcclain", "dunn", "hubert", "sdindex", "dindex", "sdbw"]),
+      status: z.enum(["success", "failed", "unavailable"]), recommended_k: z.number().int().min(2).max(10).nullable(),
+      criterion_value: z.number().finite().nullable(), reason: z.string(), warnings: z.string()
+    }).strict()).length(26),
+    leaders: z.array(z.number().int().min(2).max(10)).min(1),
+    tieBreakRows: z.array(z.object({
+      k: z.number().int().min(2).max(10), silhouette: z.number().finite(), davies_bouldin: z.number().finite(),
+      calinski_harabasz: z.number().finite(), silhouette_rank: z.number().positive(),
+      davies_bouldin_rank: z.number().positive(), calinski_harabasz_rank: z.number().positive(),
+      rank_sum: z.number().positive(), selected: z.boolean()
+    }).strict())
+  }).strict()
+}).strict().refine((comparison) => {
+  const { selection, baselineCandidates, control, nbclustOnly } = comparison;
+  const candidates = [...baselineCandidates].sort((a, b) => b.silhouette - a.silhouette || a.k - b.k);
+  const usable = selection.indexResults.filter((result) => result.status === "success");
+  const leaders = selection.voteDistribution.filter((vote) => vote.votes === Math.max(...selection.voteDistribution.map((v) => v.votes))).map((v) => v.k);
+  const selectedVote = selection.voteDistribution.find((vote) => vote.k === nbclustOnly.selectedK);
+  const tieRows = [...selection.tieBreakRows].sort((a, b) => a.rank_sum - b.rank_sum || a.k - b.k);
+  return baselineCandidates.every((candidate, i) => candidate.k === i + 2) && candidates[0].k === control.selectedK &&
+    new Set(selection.indexResults.map((result) => result.index)).size === 26 && usable.length === selection.usableIndices &&
+    usable.every((result) => result.recommended_k !== null) &&
+    selection.voteDistribution.every((vote, i) => vote.k === i + 2 && vote.votes === usable.filter((r) => r.recommended_k === vote.k).length) &&
+    leaders.join(",") === selection.leaders.join(",") && leaders.includes(nbclustOnly.selectedK) &&
+    selectedVote?.votes === selection.votesForSelectedK &&
+    (leaders.length === 1 ? tieRows.length === 0 : tieRows.length === leaders.length && tieRows[0].k === nbclustOnly.selectedK);
+});
+
 export const SopEvaluationSchema = z.object({
   contractVersion: z.literal("sop-evaluation/v1"),
   scope: z.literal("Aggregate-only controlled evaluation; isolated from frozen official results"),
@@ -1100,6 +1184,7 @@ export const SopEvaluationSchema = z.object({
     }).strict()
   }).strict(),
   sop2: z.object({
+    controlledComparison: SopNbClustOnlySchema.optional().catch(undefined),
     settings: z.object({
       cohortN: z.literal(2437), representation: z.literal("PC1-PC6"), seed: z.literal(0),
       initialization: z.literal("random"), nInit: z.literal(1), maxIter: z.literal(300),
@@ -1114,6 +1199,8 @@ export const SopEvaluationSchema = z.object({
     }).strict()
   }).strict(),
   sop3: z.object({
+    // Legacy or non-controlled artifacts remain usable, but cannot supply DPC-only metrics.
+    controlledComparison: SopDpcOnlySchema.optional().catch(undefined),
     settings: z.object({
       cohortN: z.literal(2437), representation: z.literal("PC1-PC6"), k: z.literal(2), nInit: z.literal(1),
       maxIter: z.literal(300), tolerance: z.literal(0.0001), algorithm: z.literal("lloyd"),
@@ -1147,7 +1234,20 @@ export const SopEvaluationSchema = z.object({
     participantLevelOutput: z.literal(false),
     sourceSha256: z.record(sha256Schema)
   }).strict()
-}).strict();
+}).strict().transform((evaluation) => {
+  const controlled = evaluation.sop3.controlledComparison;
+  const control = evaluation.sop1.ablation.conditions[0];
+  if (controlled && (
+    controlled.settings.inputSha256 !== evaluation.provenance.sourceSha256["data/interim/clustering_features_standardized.csv"] ||
+    control.representation !== controlled.settings.representation || control.dimensions !== 13 ||
+    evaluation.sop1.ablation.settings.seeds.some((seed, i) => seed !== controlled.settings.randomSeeds[i])
+  )) evaluation.sop3.controlledComparison = undefined;
+  const nbclust = evaluation.sop2.controlledComparison;
+  if (nbclust && nbclust.settings.inputSha256 !== evaluation.provenance.sourceSha256["data/interim/clustering_features_standardized.csv"]) {
+    evaluation.sop2.controlledComparison = undefined;
+  }
+  return evaluation;
+});
 
 export const SopEvaluationResponseSchema = z.object({ evaluation: SopEvaluationSchema }).strict();
 

@@ -22,8 +22,8 @@ const baselineSteps = [
     description: "Use the retained study-entry cognitive and functional measures."
   },
   {
-    title: "Manual k specification",
-    description: "Choose a cluster count before fitting standard K-Means."
+    title: "Baseline k selection",
+    description: "Select k by maximum Silhouette over k=2..10, then freeze it for baseline runs."
   },
   {
     title: "Random initialization",
@@ -167,8 +167,10 @@ export const OverviewPage = ({ run }: OverviewPageProps) => {
           <h1>Standard K-Means Clustering</h1>
           <p>
             This view represents the existing baseline K-Means workflow: retained
-            standardized measures, manually specified cluster count, random
-            initialization, Lloyd iteration, and aggregate internal validation.
+            standardized measures, k selected by maximum Silhouette over k=2..10
+            and then frozen for baseline runs, random initialization, Lloyd iteration,
+            and aggregate internal validation. This page replays the selected k;
+            slider changes are for simulation only.
           </p>
         </div>
         <div className="existing-hero-summary" aria-label="Baseline method summary">
@@ -209,8 +211,8 @@ export const OverviewPage = ({ run }: OverviewPageProps) => {
         <article className="existing-card">
           <div className="existing-card-header">
             <div>
-              <p>K Specification (Manual Input)</p>
-              <h2>Selected k: {manualK}</h2>
+              <p>K Replay / Simulation Only</p>
+              <h2>Simulation k: {manualK}</h2>
             </div>
           </div>
           <div className="existing-slider-value">
@@ -219,7 +221,7 @@ export const OverviewPage = ({ run }: OverviewPageProps) => {
             <span>{K_MAX}</span>
           </div>
           <input
-            aria-label="Manual cluster count"
+            aria-label="Replay/simulation cluster count only"
             className="baseline-k-slider"
             type="range"
             min={K_MIN}
@@ -241,11 +243,11 @@ export const OverviewPage = ({ run }: OverviewPageProps) => {
             disabled={isRunning}
             onClick={runIllustrativeWorkflow}
           >
-            {isRunning ? "Running Workflow..." : "Run Algorithm"}
+            {isRunning ? "Running Simulation..." : "Run Simulation"}
           </button>
           {showVisualizationStatus ? (
             <p className="existing-run-status" role="status">
-              Workflow visualization completed for k={attemptedK}. Validated
+              Simulation completed for k={attemptedK}. Validated
               baseline metrics remain tied to frozen k={selectedK} outputs.
             </p>
           ) : null}
@@ -357,13 +359,13 @@ export const OverviewPage = ({ run }: OverviewPageProps) => {
             </div>
             <aside className="existing-run-details" aria-label="Run visualization details">
               <div>
-                <span>Selected k</span>
+                <span>Simulation k</span>
                 <strong>{attemptedK ?? manualK}</strong>
               </div>
               <div>
                 <span>Iteration count</span>
                 <strong>—</strong>
-                <small>Not exposed for selected-k replay</small>
+                <small>Not exposed for simulation replay</small>
               </div>
               <div>
                 <span>Runtime</span>
@@ -372,7 +374,7 @@ export const OverviewPage = ({ run }: OverviewPageProps) => {
               </div>
               <div>
                 <span>Configuration</span>
-                <p>{baselineMethod.algorithm}, random initialization, manual k range {K_MIN}-{K_MAX}</p>
+                <p>{baselineMethod.algorithm}, random initialization, replay/simulation k range {K_MIN}-{K_MAX}; validated baseline k={selectedK} remains frozen.</p>
               </div>
               <div>
                 <span>Run state</span>

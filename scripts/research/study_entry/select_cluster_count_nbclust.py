@@ -134,7 +134,7 @@ def _as_r_matrix(matrix: list[list[float]]) -> ro.vectors.Matrix:
     return ro.r["matrix"](
         ro.FloatVector(flattened),
         nrow=len(matrix),
-        ncol=len(FEATURES),
+        ncol=len(matrix[0]),
         byrow=True,
     )
 
@@ -342,12 +342,19 @@ def _apply_tie_break(
 
 
 def select_k_nbclust(
-    matrix: list[list[float]], seed: int = RANDOM_SEED
+    matrix: list[list[float]], seed: int = RANDOM_SEED,
+    *, expected_shape: tuple[int, int] = EXPECTED_SHAPE,
 ) -> SelectionResult:
-    """Run SOP 2 and return the majority-rule cluster count selection."""
+    """Run the existing voting rule; controlled ablations may explicitly set input shape.
+
+    The default remains the frozen six-PC contract used by the official pipeline.
+    """
     shape = (len(matrix), len(matrix[0]) if matrix else 0)
-    if shape != EXPECTED_SHAPE:
-        raise AssertionError(f"NbClust matrix shape is {shape}; expected {EXPECTED_SHAPE}")
+    if shape != expected_shape:
+        raise AssertionError(f"NbClust matrix shape is {shape}; expected {expected_shape}")
+    if any(len(row) != expected_shape[1] or not all(math.isfinite(value) for value in row)
+           for row in matrix):
+        raise AssertionError("NbClust input contains ragged or non-finite rows")
 
     importr("stats")
     importr("cluster")
