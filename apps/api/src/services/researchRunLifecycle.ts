@@ -14,6 +14,7 @@ import {
 import { removeUploadDirectory } from "./localUploadStore";
 import { ResearchExecutionError } from "./researchPipelineOrchestrator";
 import { ResearchRunJobRepository } from "./researchRunRepository";
+import { approvedResearchScripts } from "./researchStageManifest";
 
 type QueuedTask = {
   runId: string;
@@ -63,7 +64,8 @@ const controlledExecutionDiagnosticPatterns = [
  * exception text that could contain participant identifiers or private paths. */
 export const formatResearchFailureDiagnostic = (error: unknown): string => {
   if (error instanceof ResearchExecutionError) {
-    const detail = controlledExecutionDiagnosticPatterns.some((pattern) => pattern.test(error.message))
+    const stage = /^Research stage failed: (.+)\.$/.exec(error.message)?.[1];
+    const detail = (stage !== undefined && approvedResearchScripts.has(stage)) || controlledExecutionDiagnosticPatterns.some((pattern) => pattern.test(error.message))
       ? `: ${error.message}`
       : "";
     return `${error.code}${detail}`;

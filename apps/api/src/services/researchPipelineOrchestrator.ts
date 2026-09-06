@@ -1,4 +1,4 @@
-import { spawn } from "node:child_process";
+import { spawn, spawnSync } from "node:child_process";
 import crypto from "node:crypto";
 import fs from "node:fs";
 import path from "node:path";
@@ -60,13 +60,29 @@ export const buildResearchEnvironment = (
     "USERPROFILE", "HOME", "LOCALAPPDATA", "APPDATA", "LANG", "LC_ALL", "TZ",
     "R_LIBS", "R_LIBS_USER", "R_USER"
   ] as const;
-  for (const key of passThroughKeys) if (source[key]) environment[key] = source[key];
-  const rHome = source.RESEARCH_R_HOME ?? source.R_HOME;
+  for (const key of passThroughKeys) {
+    const sourceKey = platform === "win32" ? Object.keys(source).find((entry) => entry.toUpperCase() === key) : key;
+    if (sourceKey && source[sourceKey]) environment[key] = source[sourceKey];
+  }
+  const rHome = source.RESEARCH_R_HOME ?? source.R_HOME ?? discoverResearchRHome(environment, platform);
   if (rHome) {
-    environment.R_HOME = rHome;
-    environment.PATH = [...getResearchRPathEntries(rHome, platform), environment.PATH ?? ""].join(path.delimiter);
+    environment.R_HOME = path.resolve(repositoryRoot, rHome);
+    environment.PATH = [...getResearchRPathEntries(environment.R_HOME, platform), environment.PATH ?? ""].join(platform === "win32" ? ";" : ":");
   }
   return environment;
+};
+
+/** Resolve the installed R on every fresh execution; never mutate the parent environment. */
+export const discoverResearchRHome = (environment: NodeJS.ProcessEnv, platform: NodeJS.Platform = process.platform): string | undefined => {
+  const executableName = platform === "win32" ? "R.exe" : "R";
+  const executable = (environment.PATH ?? "").split(platform === "win32" ? ";" : ":")
+    .map((entry) => path.join(entry.replace(/^"|"$/g, ""), executableName))
+    .find((entry) => fs.existsSync(entry));
+  if (!executable) return undefined;
+  const result = spawnSync(executable, ["RHOME"], { env: environment, encoding: "utf8", windowsHide: true, timeout: 10000, shell: false });
+  if (result.status !== 0) return undefined;
+  const resolved = result.stdout.trim().split(/\r?\n/).at(-1);
+  return resolved && fs.existsSync(path.join(resolved, "bin")) ? resolved : undefined;
 };
 
 export class ResearchExecutionError extends Error {
@@ -93,8 +109,8 @@ export const resolveResearchScriptPath = (workspace: string, script: string): st
   return resolved;
 };
 
-const resolvePython = (): string => {
-  if (process.env.RESEARCH_PYTHON) return path.resolve(process.env.RESEARCH_PYTHON);
+export const resolvePython = (source: NodeJS.ProcessEnv = process.env): string => {
+  if (source.RESEARCH_PYTHON) return path.resolve(repositoryRoot, source.RESEARCH_PYTHON);
   return process.platform === "win32"
     ? path.join(repositoryRoot, ".venv", "Scripts", "python.exe")
     : path.join(repositoryRoot, ".venv", "bin", "python");
@@ -110,7 +126,7 @@ export type ResearchPipelineOptions = {
   onProgress?: ResearchProgressCallback;
 };
 
-const defaultStageRunner: StageRunner = (stage, context) => new Promise((resolve, reject) => {
+export const defaultStageRunner: StageRunner = (stage, context) => new Promise((resolve, reject) => {
   let scriptPath: string;
   try {
     scriptPath = resolveResearchScriptPath(context.workspace, stage.script);
@@ -141,7 +157,12 @@ const defaultStageRunner: StageRunner = (stage, context) => new Promise((resolve
     clearTimeout(timer);
     if (code === 0) resolve();
     else {
-      void diagnostic;
+      // Only classify known runtime failures; raw research output can contain private data.
+      const reason = /stats\.dll|LoadLibrary failure/.test(diagnostic) ? "R_DLL_LOAD_FAILURE"
+        : /No module named ['"]rpy2/.test(diagnostic) ? "RPY2_MISSING"
+        : /there is no package called ['‘]NbClust/.test(diagnostic) ? "NBCLUST_PACKAGE_MISSING"
+        : /not the project \.venv/.test(diagnostic) ? "PROJECT_VENV_MISMATCH" : "NONZERO_EXIT";
+      console.error(`[research] Stage ${stage.script} exited ${code}; ${reason}`);
       reject(new ResearchExecutionError("EXECUTION_FAILURE", `Research stage failed: ${stage.script}.`));
     }
   });

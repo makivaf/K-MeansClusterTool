@@ -1,6 +1,8 @@
-import { useEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import { CheckCircle2 } from "lucide-react";
-import type { SopEvaluation, UnifiedResearchRun } from "../../../../packages/shared/src";
+import type { BaselineCandidateSweep, SopEvaluation, UnifiedResearchRun } from "../../../../packages/shared/src";
+import { BaselineCandidateControl } from "../components/BaselineCandidateControl";
+import { DpcSeedFigure, ClusterDifferenceFigure, FinalNbClustFigure, InternalValidationFigure, PcaVarianceFigure } from "../components/charts/FinalFindingsCharts";
 import { LongitudinalProgressionChart } from "../components/charts/LongitudinalProgressionChart";
 import { ResearchPageNavigation } from "../components/layout/ResearchPageNavigation";
 import { StatCard } from "../components/ui/StatCard";
@@ -47,56 +49,6 @@ const sopMetricLabels: Record<SopMetric, string> = {
 };
 
 const formatSopMetric = (_metric: SopMetric, value: number) => value.toFixed(5);
-
-const easeOutCubic = (value: number) => 1 - Math.pow(1 - value, 3);
-
-const clusterColors = ["#0f7977", "#d88a00"];
-
-const sopPointColor = (cluster: 0 | 1, id: number, progress: number) => {
-  const revealThreshold = 0.18 + (id % 18) * 0.04;
-  return progress >= 1 || progress >= revealThreshold ? clusterColors[cluster] : "#aebcbc";
-};
-
-type SopScatterPoint = {
-  id: number;
-  cluster: 0 | 1;
-  startX: number;
-  startY: number;
-  finalX: number;
-  finalY: number;
-};
-
-const buildSopScatterPoints = (side: SopRunSide): SopScatterPoint[] =>
-  Array.from({ length: 90 }, (_, index) => {
-    const cluster = (index % 2) as 0 | 1;
-    const localAngle = ((index * 137.5) % 360) * (Math.PI / 180);
-    const radius = 3 + ((index * 9) % 18) * 0.62;
-    const originalCenter = cluster === 0 ? { x: 43, y: 52 } : { x: 57, y: 46 };
-    const pcaCenter = cluster === 0 ? { x: 34, y: 60 } : { x: 68, y: 37 };
-    const center = side === "existing" ? originalCenter : pcaCenter;
-    const spreadX = side === "existing" ? 1.55 : 1;
-    const spreadY = side === "existing" ? 1.05 : 0.82;
-
-    return {
-      id: side === "existing" ? index : index + 1000,
-      cluster,
-      startX: 50 + Math.cos(localAngle) * 5,
-      startY: 50 + Math.sin(localAngle) * 4,
-      finalX: center.x + Math.cos(localAngle) * radius * spreadX,
-      finalY: center.y + Math.sin(localAngle) * radius * spreadY
-    };
-  });
-
-const sopCentroids = {
-  existing: [
-    { x: 43, y: 52 },
-    { x: 57, y: 46 }
-  ],
-  enhanced: [
-    { x: 34, y: 60 },
-    { x: 68, y: 37 }
-  ]
-} as const;
 
 const fromSop1Condition = (condition: SopEvaluation["sop1"]["ablation"]["conditions"][number]): SopRunResult => ({
   representation: condition.representation,
@@ -289,6 +241,7 @@ const MetricsTab = ({ run }: { run: UnifiedResearchRun }) => (
           <h2>Internal validation comparison</h2>
         </div>
       </div>
+      <InternalValidationFigure run={run} />
       <div className="summary-comparison-list">
         {run.baselineComparison.metrics.map((metric) => (
           <article key={metric.metric}>
@@ -352,77 +305,6 @@ const MetricsTab = ({ run }: { run: UnifiedResearchRun }) => (
   </div>
 );
 
-const SopScatterPlot = ({ side, progress }: { side: SopRunSide; progress: number }) => {
-  const points = useMemo(() => buildSopScatterPoints(side), [side]);
-  const animationPosition = easeOutCubic(progress / 100);
-
-  return (
-    <div className="summary-sop-scatter">
-      <div
-        className="existing-scatter-plot summary-sop-scatter-plot"
-        aria-label={`${side === "existing" ? "Existing without PCA" : "Enhanced with PCA"} visualization-only scatter plot`}
-      >
-        <div className="existing-scatter-grid" aria-hidden="true" />
-        <span className="existing-axis-label existing-axis-label-x">Projection Dimension 1</span>
-        <span className="existing-axis-label existing-axis-label-y">Projection Dimension 2</span>
-        {sopCentroids[side].map((centroid, index) => (
-          <span
-            key={`${side}-centroid-${index}`}
-            className="existing-centroid"
-            style={{
-              left: `${centroid.x}%`,
-              top: `${centroid.y}%`,
-              opacity: animationPosition >= 0.75 ? 1 : 0
-            } as CSSProperties}
-          >
-            ★
-          </span>
-        ))}
-        {points.map((point) => (
-          <span
-            key={point.id}
-            className="existing-scatter-point"
-            style={{
-              "--point-color": sopPointColor(point.cluster, point.id, animationPosition),
-              left: `${point.finalX}%`,
-              top: `${point.finalY}%`
-            } as CSSProperties}
-          />
-        ))}
-      </div>
-      <div className="existing-cluster-legend summary-compact-legend">
-        <div>
-          <span aria-hidden="true" style={{ backgroundColor: clusterColors[0] }} />
-          <strong>Cluster 0</strong>
-        </div>
-        <div>
-          <span aria-hidden="true" style={{ backgroundColor: clusterColors[1] }} />
-          <strong>Cluster 1</strong>
-        </div>
-        <div className="existing-centroid-legend">
-            <span
-              aria-hidden="true"
-              style={{
-                display: "inline-block",
-                width: "auto",
-                height: "auto",
-                borderRadius: 0,
-                background: "none",
-                backgroundColor: "transparent",
-                color: "red",
-                fontSize: "14px",
-                lineHeight: 1,
-              }}
-            >
-              ★
-            </span>
-            <strong>Centroid</strong>
-          </div>
-      </div>
-    </div>
-  );
-};
-
 const SopRunPanel = ({
   side,
   title,
@@ -463,7 +345,7 @@ const SopRunPanel = ({
         <strong>{progress}%</strong>
       </div>
 
-      <SopScatterPlot side={side} progress={progress} />
+
 
       {isComplete && resultPending ? (
         <div className="summary-sop-panel-metrics">
@@ -486,15 +368,15 @@ const SopRunPanel = ({
   );
 };
 
-const PcaTab = ({ run, evaluation, error }: { run: UnifiedResearchRun; evaluation: SopEvaluation | null; error: string | null }) => {
-  const retainedScree = run.pca.scree.filter((point) => point.retained);
+const PcaTab = ({ run, evaluation, error, baselineSweep }: { run: UnifiedResearchRun; evaluation: SopEvaluation | null; error: string | null; baselineSweep: BaselineCandidateSweep | null }) => {
   const ablation = evaluation?.sop1.ablation;
-  const { existingProgress, enhancedProgress, replayRun } = useSopRunReplay();
+  const { enhancedProgress, replayRun } = useSopRunReplay();
 
   if (!ablation) {
     return (
       <div className="summary-tab-panel">
         <div className="existing-note">{error ?? "Loading aggregate PCA evaluation details..."}</div>
+        <section className="existing-card"><h2>PCA Cumulative Explained Variance</h2><PcaVarianceFigure run={run} /></section>
       </div>
     );
   }
@@ -508,6 +390,7 @@ const PcaTab = ({ run, evaluation, error }: { run: UnifiedResearchRun; evaluatio
         <p>SOP 1</p>
         <h2>PCA-Based Dimensionality Reduction</h2>
       </section>
+      <section className="existing-card"><div className="existing-card-header"><div><p>Final PCA representation</p><h2>PCA Cumulative Explained Variance</h2></div></div><PcaVarianceFigure run={run} /></section>
 
       <section className="summary-controlled-strip" aria-label="Controlled SOP 1 settings">
         <div><span>Frozen cohort</span><strong>n = {ablation.settings.cohortN.toLocaleString()}</strong></div>
@@ -516,34 +399,27 @@ const PcaTab = ({ run, evaluation, error }: { run: UnifiedResearchRun; evaluatio
         <div><span>Controlled change</span><strong>Only PCA is introduced</strong></div>
       </section>
 
+      <p className="existing-note">The interactive baseline candidate is independent of the enhanced-side experiment. Controlled tables below retain the validated fixed configurations and 30-run summaries.</p>
       <section className="summary-sop-comparison">
-        <SopRunPanel
-          side="existing"
-          title="Baseline K-Means"
-          subtitle="No PCA • No NbClust • No DPC"
-          label="Control configuration"
-          condition={fromSop1Condition(originalCondition)}
-          progress={existingProgress}
-          onRun={() => replayRun("existing")}
-        />
+        <BaselineCandidateControl sweep={baselineSweep} error={error} />
         <div className="summary-vs" aria-hidden="true">vs</div>
         <SopRunPanel
           side="enhanced"
           title="PCA-Only K-Means"
           subtitle="PCA • No NbClust • No DPC"
-          label="Only PCA is introduced"
+          label={`Frozen experiment ? k=${ablation.settings.k}`}
           condition={fromSop1Condition(pcaCondition)}
           progress={enhancedProgress}
           onRun={() => replayRun("enhanced")}
         />
       </section>
 
-      <section className="summary-sop-pca-section">
+      <section className="space-y-5">
         <article className="existing-card">
           <div className="existing-card-header">
             <div>
               <p>PCA Transformation</p>
-              <h2>13 variables to 6 components</h2>
+              <h2>{run.preprocessing.retainedFeatures.length} variables to {run.pca.components} components</h2>
             </div>
           </div>
           <div className="summary-pca-flow">
@@ -561,29 +437,13 @@ const PcaTab = ({ run, evaluation, error }: { run: UnifiedResearchRun; evaluatio
           </div>
         </article>
 
-        <article className="existing-card">
-          <div className="existing-card-header">
-            <div>
-              <p>Cumulative Explained Variance</p>
-              <h2>Retained component curve</h2>
-            </div>
-          </div>
-          <div className="summary-bar-list">
-            {retainedScree.map((point) => (
-              <div key={point.component}>
-                <span>PC{point.component}</span>
-                <div><i style={{ width: `${Math.min(100, point.cumulativeVariance * 100)}%` }} /></div>
-                <strong>{formatPercent(point.cumulativeVariance)}</strong>
-              </div>
-            ))}
-          </div>
-        </article>
+
       </section>
 
       <section className="existing-card">
         <div className="existing-card-header">
           <div>
-            <p>Controlled Validation</p>
+            <p>Frozen Controlled Validation</p>
             <h2>k and initialization held constant</h2>
           </div>
         </div>
@@ -619,14 +479,12 @@ const PcaTab = ({ run, evaluation, error }: { run: UnifiedResearchRun; evaluatio
   );
 };
 
-const NbClustTab = ({ run, evaluation, error }: { run: UnifiedResearchRun; evaluation: SopEvaluation | null; error: string | null }) => {
-  const { existingProgress, enhancedProgress, replayRun } = useSopRunReplay();
+const NbClustTab = ({ run, evaluation, error, baselineSweep }: { run: UnifiedResearchRun; evaluation: SopEvaluation | null; error: string | null; baselineSweep: BaselineCandidateSweep | null }) => {
+  const { enhancedProgress, replayRun } = useSopRunReplay();
   const sop2 = evaluation?.sop2;
   const controlled = sop2?.controlledComparison;
   const selection = controlled?.selection ?? sop2?.nbclust;
-  const votes = selection?.voteDistribution ?? run.kSelection.voteDistribution;
   const selectedK = controlled?.nbclustOnly.selectedK ?? sop2?.nbclust.selectedK;
-  const voteDenominator = Math.max(...votes.map((entry) => entry.votes), 1);
 
   if (!sop2 || !evaluation?.sop1.ablation) {
     return (
@@ -655,22 +513,15 @@ const NbClustTab = ({ run, evaluation, error }: { run: UnifiedResearchRun; evalu
         <div><span>Controlled change</span><strong>Only NbClust is introduced</strong></div>
       </section>
 
+      <p className="existing-note">The interactive baseline candidate is independent of the enhanced-side experiment. Controlled tables below retain the validated fixed configurations and 30-run summaries.</p>
       <section className="summary-sop-comparison">
-        <SopRunPanel
-          side="existing"
-          title="Baseline K-Means"
-          subtitle="No PCA • No NbClust • No DPC"
-          label="Control configuration"
-          condition={controlResult}
-          progress={existingProgress}
-          onRun={() => replayRun("existing")}
-        />
+        <BaselineCandidateControl sweep={baselineSweep} error={error} />
         <div className="summary-vs" aria-hidden="true">vs</div>
         <SopRunPanel
           side="enhanced"
           title="NbClust-Only K-Means"
           subtitle="No PCA • NbClust • No DPC"
-          label="Only NbClust is introduced"
+          label={`Frozen experiment ? k=${selectedK}`}
           condition={nbclustResult ?? controlResult}
           progress={enhancedProgress}
           onRun={() => replayRun("enhanced")}
@@ -682,23 +533,12 @@ const NbClustTab = ({ run, evaluation, error }: { run: UnifiedResearchRun; evalu
         <div className="existing-card-header">
           <div>
             <p>SOP 2 — NBCLUST</p>
-            <h2>Baseline cluster-number selection versus NbClust</h2>
+            <h2>Controlled ablation: original-feature NbClust</h2>
           </div>
         </div>
         <div className="grid gap-3 sm:grid-cols-2">
           <StatCard label="Baseline selection" value={`k=${controlled?.control.selectedK ?? evaluation.sop1.ablation.settings.k}`} detail="Maximum Silhouette over k=2–10, seed 0" />
           <StatCard label="NbClust-based selection" value={`k=${selectedK}`} detail={`${selection?.votesForSelectedK}/${selection?.usableIndices} usable votes (${controlled ? "13 original features" : "PCA-based evidence"})`} accent="teal" />
-        </div>
-        <div className="mt-5 space-y-3">
-          {votes.map((entry) => (
-            <div key={entry.k} className="grid grid-cols-[2.75rem_1fr_2.5rem] items-center gap-3 text-sm">
-              <span className={entry.k === selectedK ? "font-semibold text-teal-800" : "text-muted"}>k={entry.k}</span>
-              <div className="h-2 overflow-hidden rounded-full bg-slate-100">
-                <div className={entry.k === selectedK ? "h-full rounded-full bg-teal-700" : "h-full rounded-full bg-slate-300"} style={{ width: `${(entry.votes / voteDenominator) * 100}%` }} />
-              </div>
-              <span className="text-right font-semibold tabular-nums">{entry.votes}</span>
-            </div>
-          ))}
         </div>
         <p className="existing-note">{controlled ? "NbClust votes were computed on the same 13 standardized features and reproduced in two checks. Both selected cluster counts feed the same 30-seed random-initialization Lloyd procedure." : "The available vote distribution is PCA-based evidence. The no-PCA/no-DPC NbClust-only controlled result is pending."}</p>
       </section>
@@ -706,7 +546,7 @@ const NbClustTab = ({ run, evaluation, error }: { run: UnifiedResearchRun; evalu
       <section className="existing-card">
         <div className="existing-card-header">
           <div>
-            <p>Controlled Validation</p>
+            <p>Frozen Controlled Validation</p>
             <h2>PCA and initialization held constant</h2>
           </div>
         </div>
@@ -742,8 +582,8 @@ const NbClustTab = ({ run, evaluation, error }: { run: UnifiedResearchRun; evalu
   );
 };
 
-const DpcTab = ({ run, evaluation, error }: { run: UnifiedResearchRun; evaluation: SopEvaluation | null; error: string | null }) => {
-  const { existingProgress, enhancedProgress, replayRun } = useSopRunReplay();
+const DpcTab = ({ run, evaluation, error, baselineSweep }: { run: UnifiedResearchRun; evaluation: SopEvaluation | null; error: string | null; baselineSweep: BaselineCandidateSweep | null }) => {
+  const { enhancedProgress, replayRun } = useSopRunReplay();
   const dpcDeterminism = evaluation?.sop3.dpcDeterminism;
   const controlled = evaluation?.sop3.controlledComparison;
   const controlledResult = controlled ? fromSop3DpcResult(controlled) : null;
@@ -753,6 +593,7 @@ const DpcTab = ({ run, evaluation, error }: { run: UnifiedResearchRun; evaluatio
     return (
       <div className="summary-tab-panel">
         <div className="existing-note">{error ?? "Loading aggregate DPC evaluation details..."}</div>
+        <DpcSeedFigure run={run} />
       </div>
     );
   }
@@ -763,6 +604,7 @@ const DpcTab = ({ run, evaluation, error }: { run: UnifiedResearchRun; evaluatio
         <p>SOP 3</p>
         <h2>Density-Peak-Based Deterministic Initialization</h2>
       </section>
+      <DpcSeedFigure run={run} />
 
       <section className="summary-controlled-strip" aria-label="Controlled SOP 3 settings">
         <div><span>Frozen cohort</span><strong>n = {run.cohort.parentN.toLocaleString()}</strong></div>
@@ -771,22 +613,15 @@ const DpcTab = ({ run, evaluation, error }: { run: UnifiedResearchRun; evaluatio
         <div><span>Controlled change</span><strong>Only DPC initialization is introduced</strong></div>
       </section>
 
+      <p className="existing-note">The interactive baseline candidate is independent of the enhanced-side experiment. Controlled tables below retain the validated fixed configurations and 30-run summaries.</p>
       <section className="summary-sop-comparison">
-        <SopRunPanel
-          side="existing"
-          title="Baseline K-Means"
-          subtitle="No PCA • No NbClust • No DPC"
-          label="Control configuration"
-          condition={fromSop1Condition(baselineCondition)}
-          progress={existingProgress}
-          onRun={() => replayRun("existing")}
-        />
+        <BaselineCandidateControl sweep={baselineSweep} error={error} />
         <div className="summary-vs" aria-hidden="true">vs</div>
         <SopRunPanel
           side="enhanced"
           title="DPC-Only K-Means"
           subtitle="No PCA • No NbClust • DPC"
-          label="Only DPC initialization is introduced"
+          label={`Frozen experiment ? k=${controlled?.settings.k ?? run.kSelection.selectedK}`}
           condition={controlledResult ?? fromSop1Condition(baselineCondition)}
           progress={enhancedProgress}
           onRun={() => replayRun("enhanced")}
@@ -885,16 +720,7 @@ const ProfilesTab = ({ run }: { run: UnifiedResearchRun }) => {
             <h2>Standardized mean-difference ranking</h2>
           </div>
         </div>
-        <ol className="grid gap-x-8 sm:grid-cols-2">
-          {run.clusterProfiles.smdRanking.slice(0, 10).map((row, index) => (
-            <li key={row.variable} className="grid grid-cols-[2rem_1fr_auto] items-baseline gap-3 border-b border-line py-2.5 text-sm">
-              <span className="text-[11px] font-semibold tabular-nums text-muted">{String(index + 1).padStart(2, "0")}</span>
-              <span className="font-medium">{getMeasureLabel(row.variable)}</span>
-              <span className="text-xs font-semibold tabular-nums text-muted">{row.standardizedMeanDifferenceCluster1Minus0.toFixed(5)}</span>
-            </li>
-          ))}
-        </ol>
-        <p className="mt-3 text-right text-[11px] text-muted">Values shown as SMD (Cluster 1 minus Cluster 0).</p>
+        <ClusterDifferenceFigure run={run} />
       </section>
 
       <section className="existing-card">
@@ -975,7 +801,7 @@ const LongitudinalTab = ({ run }: { run: UnifiedResearchRun }) => {
               <h2>Longitudinal ADAS-Cog13 Trajectories by Study-Entry Cluster</h2>
             </div>
           </div>
-          <LongitudinalProgressionChart data={run.longitudinal.timeSeries} />
+          <LongitudinalProgressionChart defense data={run.longitudinal.timeSeries} />
         </article>
 
         <aside className="existing-card summary-lme-panel">
@@ -1035,7 +861,7 @@ const LongitudinalTab = ({ run }: { run: UnifiedResearchRun }) => {
       </section>
 
       <p className="summary-longitudinal-note">
-        Higher ADAS-Cog13 indicates greater cognitive impairment. Longitudinal differences are observational and do not establish causality or individual prognosis. No second longitudinal K-Means clustering is performed.
+        The same study-entry cluster assignments are followed over time. Points show observed means within elapsed-year bins, not fitted trajectories; follow-up support varies by bin. Higher ADAS-Cog13 indicates greater cognitive impairment. Longitudinal differences are observational and do not establish causality or individual prognosis. No second longitudinal K-Means clustering is performed.
       </p>
     </div>
   );
@@ -1043,15 +869,15 @@ const LongitudinalTab = ({ run }: { run: UnifiedResearchRun }) => {
 
 const FullComparisonTab = ({ run }: { run: UnifiedResearchRun }) => (
   <>
-    <OverviewTab run={run} />
     <MetricsTab run={run} />
+    <OverviewTab run={run} />
   </>
 );
 
-const renderTab = (activeTab: SummaryTab, run: UnifiedResearchRun, evaluation: SopEvaluation | null, error: string | null) => {
-  if (activeTab === "pca") return <PcaTab run={run} evaluation={evaluation} error={error} />;
-  if (activeTab === "nbclust") return <NbClustTab run={run} evaluation={evaluation} error={error} />;
-  if (activeTab === "dpc") return <DpcTab run={run} evaluation={evaluation} error={error} />;
+const renderTab = (activeTab: SummaryTab, run: UnifiedResearchRun, evaluation: SopEvaluation | null, error: string | null, baselineSweep: BaselineCandidateSweep | null) => {
+  if (activeTab === "pca") return <PcaTab run={run} evaluation={evaluation} error={error} baselineSweep={baselineSweep} />;
+  if (activeTab === "nbclust") return <div className="summary-tab-panel"><FinalNbClustFigure run={run} /><NbClustTab run={run} evaluation={evaluation} error={error} baselineSweep={baselineSweep} /></div>;
+  if (activeTab === "dpc") return <DpcTab run={run} evaluation={evaluation} error={error} baselineSweep={baselineSweep} />;
   if (activeTab === "fullComparison") return <FullComparisonTab run={run} />;
   if (activeTab === "profiles") return <ProfilesTab run={run} />;
   return <LongitudinalTab run={run} />;
@@ -1059,7 +885,7 @@ const renderTab = (activeTab: SummaryTab, run: UnifiedResearchRun, evaluation: S
 
 export const ClustersPage = ({ run }: ClustersPageProps) => {
   const [activeTab, setActiveTab] = useState<SummaryTab>("pca");
-  const { evaluation, error } = useSopEvaluation();
+  const { evaluation, baselineSweep, error } = useSopEvaluation();
 
   if (!run) return null;
 
@@ -1099,7 +925,7 @@ export const ClustersPage = ({ run }: ClustersPageProps) => {
         tabIndex={0}
         aria-labelledby={`summary-tab-${activeTab}`}
       >
-        {renderTab(activeTab, run, evaluation, error)}
+        {renderTab(activeTab, run, evaluation, error, baselineSweep)}
       </div>
       <ResearchPageNavigation currentPath="/summary-of-findings" />
     </div>

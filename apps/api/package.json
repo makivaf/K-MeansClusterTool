@@ -18,6 +18,8 @@
     "test:research-runs": "tsx src/services/researchRunLifecycle.validation.ts",
     "test:local-artifacts": "tsx src/services/localAggregateArtifacts.validation.ts",
     "test:frontend-contract": "tsx src/services/frontendContract.validation.ts",
+    "test:baseline-candidates": "tsx src/services/baselineCandidateSweep.validation.ts",
+    "test:research-environment": "tsx src/services/researchEnvironment.validation.ts",
     "test:sop-evaluation": "tsx src/services/sopEvaluationArtifact.validation.ts",
     "test:security": "tsx src/services/deploymentSecurity.validation.ts",
     "start": "tsx src/server.ts",

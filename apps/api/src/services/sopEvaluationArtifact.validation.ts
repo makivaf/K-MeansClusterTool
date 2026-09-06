@@ -1,3 +1,4 @@
+import { isDeepStrictEqual } from "node:util";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
@@ -109,7 +110,7 @@ for (const binding of ["evaluation?.sop3.controlledComparison", "resultPending={
   if (!clustersPage.includes(binding)) throw new Error(`SOP 3 controlled-result rendering is disconnected: ${binding}`);
 }
 const interimArtifact = path.join(repositoryRoot, "data/interim/sop_evaluation_summary.json");
-if (fs.existsSync(interimArtifact) && fs.readFileSync(interimArtifact, "utf8") !== fs.readFileSync(runtimeArtifact, "utf8")) {
+if (fs.existsSync(interimArtifact) && !isDeepStrictEqual(JSON.parse(fs.readFileSync(interimArtifact, "utf8")), JSON.parse(fs.readFileSync(runtimeArtifact, "utf8")))) {
   throw new Error("Runtime and interim SOP aggregates differ");
 }
 console.log("PASS SOP 3: original-space DPC metrics, controlled protocol, frontend binding, and invalid-artifact pending fallback");
