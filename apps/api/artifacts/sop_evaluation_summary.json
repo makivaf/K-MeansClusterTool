@@ -440,6 +440,433 @@
           "votes": 1
         }
       ]
+    },
+    "controlledComparison": {
+      "settings": {
+        "cohortN": 2437,
+        "representation": "13 standardized features",
+        "features": [
+          "MMSE",
+          "ADAS13",
+          "LMI",
+          "LMD",
+          "TMT_A",
+          "TMT_B",
+          "CATEGORY_FLUENCY_ANIMALS",
+          "RAVLT_IMMEDIATE",
+          "RAVLT_DELAYED",
+          "RAVLT_FORGETTING",
+          "CDRSB",
+          "FAQ",
+          "GDS"
+        ],
+        "pca": false,
+        "dpc": false,
+        "controlNbclust": false,
+        "comparisonNbclust": true,
+        "controlKSelection": "maximum silhouette; ties choose smaller k",
+        "comparisonKSelection": "NbClust index voting; Chapter 3 rank-sum tie-break",
+        "candidateK": [
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8,
+          9,
+          10
+        ],
+        "baselineSelectionSeed": 0,
+        "nbclustSelectionSeed": 20260811,
+        "initialization": "random",
+        "nInit": 1,
+        "maxIter": 300,
+        "tolerance": 0.0001,
+        "algorithm": "lloyd",
+        "randomSeeds": [
+          0,
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8,
+          9,
+          10,
+          11,
+          12,
+          13,
+          14,
+          15,
+          16,
+          17,
+          18,
+          19,
+          20,
+          21,
+          22,
+          23,
+          24,
+          25,
+          26,
+          27,
+          28,
+          29
+        ],
+        "inputSha256": "0267afadb86434c203321529cd039ef03b843e76ab56430d9e9d677fee232783"
+      },
+      "control": {
+        "selectedK": 2,
+        "representation": "13 standardized features",
+        "dimensions": 13,
+        "runCount": 30,
+        "metrics": {
+          "silhouette": {
+            "mean": 0.33187500971522454,
+            "standardDeviation": 0.00023426851518023573,
+            "minimum": 0.33173611492709726,
+            "maximum": 0.33225697038257485
+          },
+          "davies_bouldin": {
+            "mean": 1.2241160774005175,
+            "standardDeviation": 0.00042412698636601766,
+            "minimum": 1.2234245639607837,
+            "maximum": 1.224367536833148
+          },
+          "calinski_harabasz": {
+            "mean": 1442.0231320417006,
+            "standardDeviation": 0.013837712047094214,
+            "minimum": 1442.0005704878185,
+            "maximum": 1442.0313362431123
+          }
+        }
+      },
+      "nbclustOnly": {
+        "selectedK": 2,
+        "representation": "13 standardized features",
+        "dimensions": 13,
+        "runCount": 30,
+        "metrics": {
+          "silhouette": {
+            "mean": 0.33187500971522454,
+            "standardDeviation": 0.00023426851518023573,
+            "minimum": 0.33173611492709726,
+            "maximum": 0.33225697038257485
+          },
+          "davies_bouldin": {
+            "mean": 1.2241160774005175,
+            "standardDeviation": 0.00042412698636601766,
+            "minimum": 1.2234245639607837,
+            "maximum": 1.224367536833148
+          },
+          "calinski_harabasz": {
+            "mean": 1442.0231320417006,
+            "standardDeviation": 0.013837712047094214,
+            "minimum": 1442.0005704878185,
+            "maximum": 1442.0313362431123
+          }
+        }
+      },
+      "baselineCandidates": [
+        {
+          "k": 2,
+          "silhouette": 0.33173611492709726
+        },
+        {
+          "k": 3,
+          "silhouette": 0.22567940067764303
+        },
+        {
+          "k": 4,
+          "silhouette": 0.17357756345787867
+        },
+        {
+          "k": 5,
+          "silhouette": 0.14698032047963142
+        },
+        {
+          "k": 6,
+          "silhouette": 0.1469747089176171
+        },
+        {
+          "k": 7,
+          "silhouette": 0.13764256848252976
+        },
+        {
+          "k": 8,
+          "silhouette": 0.1364370679654951
+        },
+        {
+          "k": 9,
+          "silhouette": 0.13815113899808035
+        },
+        {
+          "k": 10,
+          "silhouette": 0.12820049768970135
+        }
+      ],
+      "selection": {
+        "repeatedChecks": 2,
+        "reproducible": true,
+        "packageVersion": "3.0.1",
+        "usableIndices": 24,
+        "votesForSelectedK": 11,
+        "voteDistribution": [
+          {
+            "k": 2,
+            "votes": 11
+          },
+          {
+            "k": 3,
+            "votes": 7
+          },
+          {
+            "k": 4,
+            "votes": 2
+          },
+          {
+            "k": 5,
+            "votes": 0
+          },
+          {
+            "k": 6,
+            "votes": 0
+          },
+          {
+            "k": 7,
+            "votes": 1
+          },
+          {
+            "k": 8,
+            "votes": 0
+          },
+          {
+            "k": 9,
+            "votes": 0
+          },
+          {
+            "k": 10,
+            "votes": 3
+          }
+        ],
+        "indexResults": [
+          {
+            "index": "kl",
+            "status": "success",
+            "recommended_k": 2,
+            "criterion_value": 3.6097,
+            "reason": "",
+            "warnings": ""
+          },
+          {
+            "index": "ch",
+            "status": "success",
+            "recommended_k": 2,
+            "criterion_value": 1442.0313,
+            "reason": "",
+            "warnings": ""
+          },
+          {
+            "index": "hartigan",
+            "status": "success",
+            "recommended_k": 3,
+            "criterion_value": 250.9502,
+            "reason": "",
+            "warnings": ""
+          },
+          {
+            "index": "ccc",
+            "status": "success",
+            "recommended_k": 10,
+            "criterion_value": 6.4825,
+            "reason": "",
+            "warnings": ""
+          },
+          {
+            "index": "scott",
+            "status": "success",
+            "recommended_k": 3,
+            "criterion_value": 2711.2874,
+            "reason": "",
+            "warnings": ""
+          },
+          {
+            "index": "marriot",
+            "status": "success",
+            "recommended_k": 4,
+            "criterion_value": 4.1926628359720385e+38,
+            "reason": "",
+            "warnings": ""
+          },
+          {
+            "index": "trcovw",
+            "status": "success",
+            "recommended_k": 3,
+            "criterion_value": 1955156.1048,
+            "reason": "",
+            "warnings": ""
+          },
+          {
+            "index": "tracew",
+            "status": "success",
+            "recommended_k": 3,
+            "criterion_value": 1862.1977,
+            "reason": "",
+            "warnings": ""
+          },
+          {
+            "index": "friedman",
+            "status": "success",
+            "recommended_k": 3,
+            "criterion_value": 9.3331,
+            "reason": "",
+            "warnings": ""
+          },
+          {
+            "index": "rubin",
+            "status": "success",
+            "recommended_k": 3,
+            "criterion_value": -0.1289,
+            "reason": "",
+            "warnings": ""
+          },
+          {
+            "index": "cindex",
+            "status": "success",
+            "recommended_k": 7,
+            "criterion_value": 0.2807,
+            "reason": "",
+            "warnings": ""
+          },
+          {
+            "index": "db",
+            "status": "success",
+            "recommended_k": 2,
+            "criterion_value": 1.2814,
+            "reason": "",
+            "warnings": ""
+          },
+          {
+            "index": "silhouette",
+            "status": "success",
+            "recommended_k": 2,
+            "criterion_value": 0.3317,
+            "reason": "",
+            "warnings": ""
+          },
+          {
+            "index": "duda",
+            "status": "success",
+            "recommended_k": 2,
+            "criterion_value": 1.2162,
+            "reason": "",
+            "warnings": ""
+          },
+          {
+            "index": "pseudot2",
+            "status": "success",
+            "recommended_k": 2,
+            "criterion_value": -261.8085,
+            "reason": "",
+            "warnings": ""
+          },
+          {
+            "index": "beale",
+            "status": "success",
+            "recommended_k": 2,
+            "criterion_value": -1.5777,
+            "reason": "",
+            "warnings": ""
+          },
+          {
+            "index": "ratkowsky",
+            "status": "success",
+            "recommended_k": 2,
+            "criterion_value": 0.4105,
+            "reason": "",
+            "warnings": ""
+          },
+          {
+            "index": "ball",
+            "status": "success",
+            "recommended_k": 3,
+            "criterion_value": 4461.6525,
+            "reason": "",
+            "warnings": ""
+          },
+          {
+            "index": "ptbiserial",
+            "status": "success",
+            "recommended_k": 2,
+            "criterion_value": 0.5695,
+            "reason": "",
+            "warnings": ""
+          },
+          {
+            "index": "frey",
+            "status": "success",
+            "recommended_k": 4,
+            "criterion_value": 1.3571,
+            "reason": "",
+            "warnings": ""
+          },
+          {
+            "index": "mcclain",
+            "status": "success",
+            "recommended_k": 2,
+            "criterion_value": 0.5428,
+            "reason": "",
+            "warnings": ""
+          },
+          {
+            "index": "dunn",
+            "status": "success",
+            "recommended_k": 10,
+            "criterion_value": 0.0798,
+            "reason": "",
+            "warnings": ""
+          },
+          {
+            "index": "hubert",
+            "status": "unavailable",
+            "recommended_k": null,
+            "criterion_value": null,
+            "reason": "NbClust completed index 'hubert' but returned no Best.nc recommendation (graphical index).",
+            "warnings": ""
+          },
+          {
+            "index": "sdindex",
+            "status": "success",
+            "recommended_k": 2,
+            "criterion_value": 1.4015,
+            "reason": "",
+            "warnings": ""
+          },
+          {
+            "index": "dindex",
+            "status": "unavailable",
+            "recommended_k": null,
+            "criterion_value": null,
+            "reason": "NbClust completed index 'dindex' but returned no Best.nc recommendation (graphical index).",
+            "warnings": ""
+          },
+          {
+            "index": "sdbw",
+            "status": "success",
+            "recommended_k": 10,
+            "criterion_value": 0.472,
+            "reason": "",
+            "warnings": ""
+          }
+        ],
+        "leaders": [
+          2
+        ],
+        "tieBreakRows": []
+      }
     }
   },
   "sop3": {
@@ -574,6 +1001,99 @@
         "daviesBouldin": 1.0758850311620256,
         "calinskiHarabasz": 1800.0249578026046
       }
+    },
+    "controlledComparison": {
+      "settings": {
+        "cohortN": 2437,
+        "representation": "13 standardized features",
+        "features": [
+          "MMSE",
+          "ADAS13",
+          "LMI",
+          "LMD",
+          "TMT_A",
+          "TMT_B",
+          "CATEGORY_FLUENCY_ANIMALS",
+          "RAVLT_IMMEDIATE",
+          "RAVLT_DELAYED",
+          "RAVLT_FORGETTING",
+          "CDRSB",
+          "FAQ",
+          "GDS"
+        ],
+        "pca": false,
+        "nbclust": false,
+        "k": 2,
+        "kSelection": "fixed",
+        "nInit": 1,
+        "maxIter": 300,
+        "tolerance": 0.0001,
+        "algorithm": "lloyd",
+        "controlInitialization": "random",
+        "dpcInitialization": "deterministic DPC",
+        "randomSeeds": [
+          0,
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8,
+          9,
+          10,
+          11,
+          12,
+          13,
+          14,
+          15,
+          16,
+          17,
+          18,
+          19,
+          20,
+          21,
+          22,
+          23,
+          24,
+          25,
+          26,
+          27,
+          28,
+          29
+        ],
+        "dpcRandomState": 0,
+        "inputSha256": "0267afadb86434c203321529cd039ef03b843e76ab56430d9e9d677fee232783",
+        "cutoffPercentile": 0.02
+      },
+      "repeatedChecks": 3,
+      "identicalInitialization": true,
+      "identicalOutput": true,
+      "clusterSizes": [
+        1554,
+        883
+      ],
+      "iterations": 13,
+      "metrics": {
+        "silhouette": 0.33173611492709726,
+        "daviesBouldin": 1.224367536833148,
+        "calinskiHarabasz": 1442.0313362431123
+      },
+      "selectedCentroids": [
+        {
+          "assignedCluster": 0,
+          "rho": 283,
+          "delta": 11.301038987458114,
+          "gamma": 3198.194033450646
+        },
+        {
+          "assignedCluster": 1,
+          "rho": 271,
+          "delta": 1.330667921603855,
+          "gamma": 360.61100675464473
+        }
+      ]
     }
   },
   "provenance": {

@@ -1,7 +1,12 @@
-import "dotenv/config";
-import { app } from "./app";
-import { cleanupStaleUploads } from "./services/localUploadStore";
-import { cleanupStaleResearchWorkspaces } from "./services/localResearchWorkspaceStore";
+import dotenv from "dotenv";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
+
+dotenv.config({ path: path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../.env") });
+
+const { app } = await import("./app");
+const { cleanupStaleUploads } = await import("./services/localUploadStore");
+const { cleanupStaleResearchWorkspaces } = await import("./services/localResearchWorkspaceStore");
 
 const port = Number(process.env.PORT ?? 4000);
 const host = process.env.API_HOST ?? "127.0.0.1";

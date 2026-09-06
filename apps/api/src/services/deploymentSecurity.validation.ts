@@ -18,7 +18,7 @@ if (!appSource.includes('app.disable("x-powered-by")') || !appSource.includes("C
 if (!appSource.includes('process.env.ENABLE_HSTS === "true"') || !appSource.includes("Unhandled ${error instanceof Error ? error.name")) throw new Error("HTTPS opt-in or production error sanitization is incomplete");
 if (!clusterSource.includes("requireTrustedBrowserOrigin") || !clusterSource.includes("createFixedWindowRateLimiter")) throw new Error("Sensitive local routes lack origin or rate controls");
 if (clusterSource.includes('/api/cluster/run')) throw new Error("The legacy synchronous execution route bypasses the unified lifecycle admission control");
-if (!clusterSource.includes("64 * 1024 * 1024") || !clusterSource.includes("Number.isSafeInteger") || !clusterSource.includes("fields: 0") || !clusterSource.includes("parts: 7")) throw new Error("Multipart upload limits are incomplete or accept an invalid environment override");
+if (!clusterSource.includes("64 * 1024 * 1024") || !clusterSource.includes("Number.isSafeInteger") || !clusterSource.includes("files: 7") || !clusterSource.includes("fields: 0")) throw new Error("Multipart upload limits are incomplete or accept an invalid environment override");
 if (!serverSource.includes("setInterval(cleanup") || !serverSource.includes("cleanupStaleResearchWorkspaces") || !workspaceStoreSource.includes("workspacePattern")) throw new Error("Sensitive temporary workspace cleanup is incomplete");
 console.log("PASS deployment HTTP security: loopback defaults, restrictive headers/body limits, safe logs, and retention controls");
 
@@ -28,10 +28,11 @@ console.log("PASS deployment browser boundary: untrusted origins are rejected");
 const environment = buildResearchEnvironment({
   PATH: "trusted-path",
   SYSTEMROOT: "C:\\Windows",
+  LOCALAPPDATA: "C:\\Users\\User\\AppData\\Local",
   DATABASE_URL: "postgresql://secret",
   PRIVATE_API_KEY: "secret",
   RESEARCH_R_HOME: "C:\\R"
 }, "win32");
-if (environment.PATH?.includes("trusted-path") !== true || environment.R_HOME !== "C:\\R") throw new Error("Required research runtime environment was lost");
+if (environment.PATH?.includes("trusted-path") !== true || environment.R_HOME !== "C:\\R" || environment.LOCALAPPDATA !== "C:\\Users\\User\\AppData\\Local") throw new Error("Required research runtime environment was lost");
 if (environment.DATABASE_URL || environment.PRIVATE_API_KEY || environment.RESEARCH_R_HOME) throw new Error("Deployment secrets escaped into the research subprocess environment");
 console.log("PASS subprocess environment: required runtime values retained without database or unrelated secrets");

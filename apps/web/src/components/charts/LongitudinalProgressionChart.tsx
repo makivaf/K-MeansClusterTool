@@ -13,7 +13,7 @@ const SupportTooltip = ({ active, payload }: { active?: boolean; payload?: Array
     <div className="rounded-sm border border-line bg-white p-3 text-xs shadow-sm">
       <div className="font-semibold">Cluster {point.clusterId}, year {point.yearStart}–{point.yearEnd}</div>
       <dl className="mt-2 space-y-1 text-muted">
-        <div><dt className="inline">Mean ADAS-Cog13: </dt><dd className="inline font-semibold text-ink">{point.meanAdas13.toFixed(2)}</dd></div>
+        <div><dt className="inline">Mean ADAS-Cog13: </dt><dd className="inline font-semibold text-ink">{point.meanAdas13.toFixed(5)}</dd></div>
         <div><dt className="inline">Participants: </dt><dd className="inline font-semibold text-ink">{point.participantCount.toLocaleString()}</dd></div>
         <div><dt className="inline">Observations: </dt><dd className="inline font-semibold text-ink">{point.observationCount.toLocaleString()}</dd></div>
       </dl>

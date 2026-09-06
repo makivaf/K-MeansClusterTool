@@ -149,7 +149,7 @@ export const LongitudinalProgressionPage = ({ run }: LongitudinalProgressionPage
           <dl className="grid gap-3 border-l-2 border-slate-300 bg-slate-50 p-4 text-sm sm:grid-cols-2 xl:col-span-2"><div><dt className="text-muted">Participant-level output</dt><dd className="mt-1 font-semibold">Local-only, gitignored, not web-exposed</dd></div><div><dt className="text-muted">Web result</dt><dd className="mt-1 font-semibold">Aggregate-only validated contract</dd></div><div><dt className="text-muted">Assignment source</dt><dd className="mt-1 break-all font-semibold">{run.provenance.assignmentArtifactAuthoritative}</dd></div><div><dt className="text-muted">Mixed-model artifacts</dt><dd className="mt-1 font-semibold">SHA-256 validated</dd></div></dl>
         </div>
       </details>
-      <ResearchPageNavigation currentPath="/longitudinal-follow-up" />
+      <ResearchPageNavigation currentPath="/summary-of-findings" />
     </>
   );
 };
