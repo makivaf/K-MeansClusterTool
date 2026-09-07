@@ -14,7 +14,7 @@ import { researchPages } from "./researchNavigation";
 const navIcons = [ClipboardList, FlaskConical, BarChart3, History];
 const navItems = researchPages.map((page, index) => ({ ...page, icon: navIcons[index] }));
 
-type AppShellProps = RunDataState & { children: ReactNode; allowWithoutRun?: boolean };
+type AppShellProps = RunDataState & { children: ReactNode; persistentContent?: ReactNode; allowWithoutRun?: boolean };
 
 const navigationClass = ({ isActive }: { isActive: boolean }) => [
   "flex min-w-0 items-center gap-2 border-l-2 px-3 py-2.5 text-sm font-medium transition",
@@ -28,6 +28,7 @@ const runAnalysisClass = ({ isActive }: { isActive: boolean }) => [
 
 export const AppShell = ({
   children,
+  persistentContent,
   selectedRun,
   isLoading,
   error,
@@ -81,6 +82,7 @@ export const AppShell = ({
       </header>
 
       <div className="mx-auto max-w-[1320px] px-4 py-6 sm:px-6 sm:py-8">
+        {persistentContent}
         {error ? <div role="alert" className="rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">{error}</div> : null}
         {isLoading ? (
           <div aria-live="polite" className="rounded-xl border border-line bg-white p-6 text-sm text-muted">Loading unified research run...</div>

@@ -336,7 +336,7 @@ const SopRunPanel = ({
           <span>{subtitle}</span>
         </div>
         <button type="button" className="existing-run-button summary-sop-run-button" disabled={isRunning} onClick={onRun}>
-          {isRunning ? "Running..." : isComplete ? `Rerun ${side === "existing" ? "Existing" : "Enhanced"}` : `Run ${side === "existing" ? "Existing" : "Enhanced"}`}
+          {isRunning ? "Replaying..." : `Replay ${side === "existing" ? "Existing" : "Enhanced"}`}
         </button>
       </div>
 
@@ -361,7 +361,7 @@ const SopRunPanel = ({
         </div>
       ) : (
         <p className="existing-run-status">
-          {isRunning ? "Replaying frontend execution presentation for stored aggregate SOP results." : "Run this side to reveal the stored validated SOP result."}
+          {isRunning ? "Replaying frontend execution presentation for stored aggregate SOP results." : "Replay this side to reveal the stored validated SOP result. No analysis is executed or saved."}
         </p>
       )}
     </article>
@@ -407,7 +407,7 @@ const PcaTab = ({ run, evaluation, error, baselineSweep }: { run: UnifiedResearc
           side="enhanced"
           title="PCA-Only K-Means"
           subtitle="PCA • No NbClust • No DPC"
-          label={`Frozen experiment ? k=${ablation.settings.k}`}
+          label={`Frozen experiment - k=${ablation.settings.k}`}
           condition={fromSop1Condition(pcaCondition)}
           progress={enhancedProgress}
           onRun={() => replayRun("enhanced")}
@@ -521,7 +521,7 @@ const NbClustTab = ({ run, evaluation, error, baselineSweep }: { run: UnifiedRes
           side="enhanced"
           title="NbClust-Only K-Means"
           subtitle="No PCA • NbClust • No DPC"
-          label={`Frozen experiment ? k=${selectedK}`}
+          label={`Frozen experiment - k=${selectedK}`}
           condition={nbclustResult ?? controlResult}
           progress={enhancedProgress}
           onRun={() => replayRun("enhanced")}
@@ -621,7 +621,7 @@ const DpcTab = ({ run, evaluation, error, baselineSweep }: { run: UnifiedResearc
           side="enhanced"
           title="DPC-Only K-Means"
           subtitle="No PCA • No NbClust • DPC"
-          label={`Frozen experiment ? k=${controlled?.settings.k ?? run.kSelection.selectedK}`}
+          label={`Frozen experiment - k=${controlled?.settings.k ?? run.kSelection.selectedK}`}
           condition={controlledResult ?? fromSop1Condition(baselineCondition)}
           progress={enhancedProgress}
           onRun={() => replayRun("enhanced")}
