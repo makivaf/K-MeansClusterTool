@@ -1,5 +1,5 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
-import { useLocation } from "react-router-dom";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
 import {
   RunListResponseSchema,
   type UnifiedResearchRun
@@ -23,8 +23,19 @@ const getRunIdFromLocation = (pathname: string, search: string) => {
   return new URLSearchParams(search).get("run_id");
 };
 
+export const completedRunLocation = (location: { pathname: string; search: string; hash: string }, runId: string) => {
+  const search = new URLSearchParams(location.search);
+  search.set("run_id", runId);
+  return { pathname: location.pathname, search: `?${search}`, hash: location.hash };
+};
+
 export const useRunData = (): RunDataState => {
   const location = useLocation();
+  const navigate = useNavigate();
+  const locationRef = useRef(location);
+  const navigateRef = useRef(navigate);
+  locationRef.current = location;
+  navigateRef.current = navigate;
   const [runs, setRuns] = useState<UnifiedResearchRun[]>([]);
   const [selectedRunId, setSelectedRunId] = useState("");
   const [isLoading, setIsLoading] = useState(true);
@@ -80,7 +91,13 @@ export const useRunData = (): RunDataState => {
             (run): run is UnifiedResearchRun => "pipeline" in run && run.pipeline === "unified"
           );
           setRuns(unifiedRuns);
-          if (unifiedRuns.some((run) => run.run_id === runId)) setSelectedRunId(runId);
+          if (unifiedRuns.some((run) => run.run_id === runId)) {
+            setSelectedRunId(runId);
+            // Replace a historical run query as well, so it cannot reselect the
+            // older run on the next render or browser refresh.
+            navigateRef.current(completedRunLocation(locationRef.current, runId), { replace: true });
+          }
+          setError(null);
         } catch (caught) {
           if (caught instanceof DOMException && caught.name === "AbortError") return;
           setError(caught instanceof Error ? caught.message : "Unable to refresh unified research runs");

@@ -5,7 +5,9 @@ import {
   type ResearchProgressStage, type ResearchRunFailureCode, type ResearchRunStatus
 } from "../../../../packages/shared/src";
 import { API_BASE_URL, isLocalApiBaseUrl } from "../config/api";
-import { RESEARCH_RUN_COMPLETE_EVENT } from "../components/run/runEvents";
+import { ACTIVE_RUN_KEY, RESEARCH_RUN_COMPLETE_EVENT } from "../components/run/runEvents";
+import { formatSourceFileLabel } from "../utils/sourceFileLabels";
+import { canonicalUploadFilename } from "../utils/uploadFilename";
 import { Panel } from "../components/ui/Panel";
 import { PageHeading } from "./PageHeading";
 
@@ -47,9 +49,8 @@ const EXECUTION_STAGES = [
   "aggregate_artifact_validation"
 ] as const satisfies readonly ResearchProgressStage[];
 
-const ACTIVE_RUN_KEY = "ad-clustering.active-research-run";
-
 const waitForPoll = (signal: AbortSignal) => new Promise<void>((resolve, reject) => {
+  if (signal.aborted) { reject(new DOMException("Polling aborted", "AbortError")); return; }
   const timer = window.setTimeout(() => { signal.removeEventListener("abort", abort); resolve(); }, 1000);
   const abort = () => { window.clearTimeout(timer); reject(new DOMException("Polling aborted", "AbortError")); };
   signal.addEventListener("abort", abort, { once: true });
@@ -93,15 +94,15 @@ export const UploadAndCluster = () => {
   const chooseFiles = (incoming: File[]) => {
     if (fileControlsLocked) return;
     const names = new Set(DATASETS.map(([, name]) => name));
-    const accepted = incoming.filter((file) => names.has(file.name as typeof DATASETS[number][1]));
-    setFiles((current) => ({ ...current, ...Object.fromEntries(accepted.map((file) => [file.name, file])) }));
-    setUnexpected(incoming.filter((file) => !names.has(file.name as typeof DATASETS[number][1])).map((file) => file.name));
+    const accepted = incoming.filter((file) => names.has(canonicalUploadFilename(file.name) as typeof DATASETS[number][1]));
+    setFiles((current) => ({ ...current, ...Object.fromEntries(accepted.map((file) => [canonicalUploadFilename(file.name), file])) }));
+    setUnexpected(incoming.filter((file) => !names.has(canonicalUploadFilename(file.name) as typeof DATASETS[number][1])).map((file) => file.name));
     resetWorkflow();
   };
 
   const replaceFile = (expected: string, file?: File) => {
     if (!file || fileControlsLocked) return;
-    if (file.name !== expected) { setUnexpected([file.name]); resetWorkflow(); return; }
+    if (canonicalUploadFilename(file.name) !== expected) { setUnexpected([file.name]); resetWorkflow(); return; }
     setFiles((current) => ({ ...current, [expected]: file })); setUnexpected([]); resetWorkflow();
   };
 
@@ -142,10 +143,16 @@ export const UploadAndCluster = () => {
 
   const resumeRun = useCallback(async (runId: string) => {
     controllerRef.current?.abort(); const controller = new AbortController(); controllerRef.current = controller;
-    setStatus("queued"); setValidated(true); setFailure(null);
+    setStatus("queued"); setValidated(true); setFailure(null); setResearchRunId(runId);
     try {
       const response = await fetch(`${API_BASE_URL}/api/research/runs/${encodeURIComponent(runId)}`, { signal: controller.signal });
-      if (!response.ok) { if (response.status === 404) sessionStorage.removeItem(ACTIVE_RUN_KEY); throw new Error(`Research status request returned ${response.status}.`); }
+      if (response.status === 404) {
+        sessionStorage.removeItem(ACTIVE_RUN_KEY);
+        setStatus("failed"); setValidated(false); setStage(null); setResearchRunId(null);
+        setFailure({ kind: "tracking", title: "Previous run status is unavailable", message: "This API process no longer has the saved job identifier.", guidance: "Check Run History for a completed result. If none was saved, select the seven exports and start a new analysis." });
+        return;
+      }
+      if (!response.ok) throw new Error(`Research status request returned ${response.status}.`);
       await observeRun(ResearchRunResponseSchema.parse(await response.json()).run, controller);
     } catch (error) {
       if (error instanceof DOMException && error.name === "AbortError") return;
@@ -165,7 +172,7 @@ export const UploadAndCluster = () => {
     let admitted: string | null = null;
     try {
       setStatus("uploading"); setValidated(false); setStage(null); setFailure(null); setCompleted(null); setResearchRunId(null);
-      const body = new FormData(); selected.forEach((file) => body.append("files", file));
+      const body = new FormData(); selected.forEach((file) => body.append("files", file, canonicalUploadFilename(file.name)));
       const upload = await fetch(`${API_BASE_URL}/api/upload`, { method: "POST", body, signal: controller.signal });
       if (!upload.ok) {
         setStatus("failed"); setFailure({ kind: "input", title: "Input validation failed", message: await responseError(upload, `Input validation returned ${upload.status}.`), guidance: "Review the named export or required fields, replace the affected file, and validate again. No research run was started." }); return;
@@ -208,11 +215,11 @@ export const UploadAndCluster = () => {
 
       <Panel title="Step 1 — Required ADNI exports" variant="section" action={<span className="text-xs font-semibold tabular-nums text-muted">{selected.length} of 7 supplied</span>}>
         <div className="mb-4 flex flex-col justify-between gap-3 border-l-2 border-teal-600 bg-teal-50/60 px-4 py-3 text-sm sm:flex-row sm:items-center"><div><p className="font-semibold text-teal-900">Exactly seven named CSV files are required.</p><p className="mt-1 text-muted">Select them together or choose and replace each export separately before execution.</p><p className="mt-1 text-xs text-muted">CSV only · exact filenames · readable UTF-8 headers · required columns · 64 MB maximum per file</p></div><label className={`inline-flex h-10 shrink-0 items-center justify-center gap-2 rounded-sm border border-teal-700 px-4 font-semibold ${fileControlsLocked || !localApi ? "cursor-not-allowed bg-slate-100 text-slate-500" : "cursor-pointer bg-white text-teal-800 hover:bg-teal-50"}`}><UploadCloud size={16} /> Select CSV files<input type="file" multiple accept=".csv" className="sr-only" disabled={fileControlsLocked || !localApi} onChange={(event) => { chooseFiles(Array.from(event.target.files ?? [])); event.currentTarget.value = ""; }} /></label></div>
-        {unexpected.length ? <div role="alert" className="mb-4 border-l-2 border-red-600 bg-red-50 px-4 py-3 text-sm text-red-800"><strong>Unexpected filename selected.</strong><p className="mt-1 break-words">{unexpected.join(", ")}</p><p className="mt-1">Choose the exact named export for the missing slot. Unexpected files are not uploaded.</p><button type="button" className="mt-2 text-xs font-semibold underline" onClick={() => setUnexpected([])}>Dismiss</button></div> : null}
+        {unexpected.length ? <div role="alert" className="mb-4 border-l-2 border-red-600 bg-red-50 px-4 py-3 text-sm text-red-800"><strong>Unexpected filename selected.</strong><p className="mt-1 break-words">{unexpected.map(formatSourceFileLabel).join(", ")}</p><p className="mt-1">Choose the exact named export for the missing slot. Unexpected files are not uploaded.</p><button type="button" className="mt-2 text-xs font-semibold underline" onClick={() => setUnexpected([])}>Dismiss</button></div> : null}
         <div className="overflow-hidden border border-line"><div className="hidden grid-cols-[7rem_minmax(10rem,1fr)_minmax(12rem,1.3fr)_7rem] gap-4 border-b border-line bg-slate-50 px-4 py-2 text-[10px] font-semibold uppercase tracking-[0.08em] text-muted md:grid"><span>Dataset</span><span>Expected role</span><span>Selected file</span><span>Status</span></div><ul className="divide-y divide-line">
           {DATASETS.map(([label, name, role]) => {
             const file = files[name]; const fileStatus = !file ? "Missing" : status === "uploading" ? "Validating" : validated ? "Valid" : affected === name ? "Error" : "Selected";
-            return <li key={label} className="grid gap-3 px-4 py-3 md:grid-cols-[7rem_minmax(10rem,1fr)_minmax(12rem,1.3fr)_7rem] md:items-center md:gap-4"><strong className="text-sm">{label}</strong><span className="text-xs leading-5 text-muted">{role}</span><div className="min-w-0">{file ? <div className="flex min-w-0 items-center gap-2"><FileText size={15} className="shrink-0 text-teal-700" /><span className="truncate text-xs font-medium" title={file.name}>{file.name}</span><span className="shrink-0 text-[10px] text-muted">{(file.size / 1048576).toFixed(2)} MB</span></div> : <span className="break-all text-xs text-muted">{name}</span>}<label className={`mt-1.5 inline-block text-xs font-semibold underline ${fileControlsLocked || !localApi ? "cursor-not-allowed text-slate-400" : "cursor-pointer text-teal-800"}`}>{file ? "Replace file" : "Choose file"}<input type="file" accept=".csv" className="sr-only" disabled={fileControlsLocked || !localApi} onChange={(event) => { replaceFile(name, event.target.files?.[0]); event.currentTarget.value = ""; }} /></label></div><span className={`inline-flex w-fit items-center gap-1.5 text-xs font-semibold ${fileStatus === "Valid" ? "text-teal-800" : fileStatus === "Error" ? "text-red-700" : "text-muted"}`}>{fileStatus === "Validating" ? <Loader2 size={14} className="animate-spin" /> : fileStatus === "Valid" ? <CheckCircle2 size={14} /> : fileStatus === "Error" ? <XCircle size={14} /> : <Circle size={11} />}{fileStatus}</span></li>;
+            return <li key={label} className="grid gap-3 px-4 py-3 md:grid-cols-[7rem_minmax(10rem,1fr)_minmax(12rem,1.3fr)_7rem] md:items-center md:gap-4"><strong className="text-sm">{formatSourceFileLabel(name)}</strong><span className="text-xs leading-5 text-muted">{role}</span><div className="min-w-0">{file ? <div className="flex min-w-0 items-center gap-2"><FileText size={15} className="shrink-0 text-teal-700" /><span className="truncate text-xs font-medium" title={formatSourceFileLabel(file.name)}>{formatSourceFileLabel(file.name)}</span><span className="shrink-0 text-[10px] text-muted">{(file.size / 1048576).toFixed(2)} MB</span></div> : <span className="break-all text-xs text-muted">{formatSourceFileLabel(name)}</span>}<label className={`mt-1.5 inline-block text-xs font-semibold underline ${fileControlsLocked || !localApi ? "cursor-not-allowed text-slate-400" : "cursor-pointer text-teal-800"}`}>{file ? "Replace file" : "Choose file"}<input type="file" accept=".csv" className="sr-only" disabled={fileControlsLocked || !localApi} onChange={(event) => { replaceFile(name, event.target.files?.[0]); event.currentTarget.value = ""; }} /></label></div><span className={`inline-flex w-fit items-center gap-1.5 text-xs font-semibold ${fileStatus === "Valid" ? "text-teal-800" : fileStatus === "Error" ? "text-red-700" : "text-muted"}`}>{fileStatus === "Validating" ? <Loader2 size={14} className="animate-spin" /> : fileStatus === "Valid" ? <CheckCircle2 size={14} /> : fileStatus === "Error" ? <XCircle size={14} /> : <Circle size={11} />}{fileStatus}</span></li>;
           })}
         </ul></div>
       </Panel>
@@ -243,11 +250,11 @@ export const UploadAndCluster = () => {
 
           <button type="button" onClick={() => status === "tracking_interrupted" && researchRunId ? void resumeRun(researchRunId) : status === "complete" ? resetWorkflow() : void runPipeline()} disabled={status === "tracking_interrupted" ? !researchRunId : !ready || busy || !localApi} className="mt-5 inline-flex h-11 w-full items-center justify-center gap-2 rounded-sm bg-teal-700 px-4 text-sm font-semibold text-white hover:bg-teal-900 focus-visible:ring-2 focus-visible:ring-teal-600 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:bg-slate-300 disabled:text-slate-600 sm:w-auto">{busy ? <Loader2 size={17} className="animate-spin" /> : status === "tracking_interrupted" ? <RefreshCw size={17} /> : <UploadCloud size={17} />}{primaryLabel}</button>
           {!ready && status === "idle" ? <p className="mt-2 text-xs text-muted">Supply every required export before validation can begin.</p> : null}
-          {busy ? <p className="mt-3 text-xs leading-5 text-muted">Once admitted, navigating away does not stop backend execution. This browser tab retains the run identifier so status checking can resume when you return.</p> : null}
+          {busy ? <p className="mt-3 text-xs leading-5 text-muted">Once admitted, navigating away does not stop backend execution. Status checking continues across pages in this browser tab. After a refresh, the saved run identifier reconnects to the same API process.</p> : null}
         </Panel>
 
         <div className="xl:col-span-5">
-          {failure ? <section role="alert" className="border-t-2 border-red-600 bg-white pt-4"><div className="flex items-start gap-3"><AlertTriangle size={18} className="mt-0.5 shrink-0 text-red-700" /><div><h2 className="font-semibold text-red-800">{failure.title}</h2><p className="mt-1 text-sm leading-6">{failure.message}</p><p className="mt-2 text-sm leading-6 text-muted">{failure.guidance}</p></div></div><details className="mt-4 border-t border-line pt-3 text-xs text-muted"><summary className="cursor-pointer font-semibold text-ink">Technical details</summary><dl className="mt-3 grid gap-2">{researchRunId ? <div><dt className="inline font-semibold">Research run: </dt><dd className="inline break-all">{researchRunId}</dd></div> : null}{stage ? <div><dt className="inline font-semibold">Last observed stage: </dt><dd className="inline">{stage}</dd></div> : null}{failure.code ? <div><dt className="inline font-semibold">Failure code: </dt><dd className="inline">{failure.code}</dd></div> : null}</dl></details></section>
+          {failure ? <section role="alert" className="border-t-2 border-red-600 bg-white pt-4"><div className="flex items-start gap-3"><AlertTriangle size={18} className="mt-0.5 shrink-0 text-red-700" /><div><h2 className="font-semibold text-red-800">{failure.title}</h2><p className="mt-1 text-sm leading-6">{formatSourceFileLabel(failure.message)}</p><p className="mt-2 text-sm leading-6 text-muted">{failure.guidance}</p></div></div><details className="mt-4 border-t border-line pt-3 text-xs text-muted"><summary className="cursor-pointer font-semibold text-ink">Technical details</summary><dl className="mt-3 grid gap-2">{researchRunId ? <div><dt className="inline font-semibold">Research run: </dt><dd className="inline break-all">{researchRunId}</dd></div> : null}{stage ? <div><dt className="inline font-semibold">Last observed stage: </dt><dd className="inline">{stage}</dd></div> : null}{failure.code ? <div><dt className="inline font-semibold">Failure code: </dt><dd className="inline">{failure.code}</dd></div> : null}</dl></details></section>
           : completed ? <section className="border-t-2 border-teal-700 bg-white pt-4"><div className="flex items-start gap-3"><CheckCircle2 size={20} className="mt-0.5 shrink-0 text-teal-700" /><div><h2 className="text-lg font-semibold text-teal-900">Analysis complete</h2><p className="mt-1 text-sm leading-6">The unified aggregate result passed the required application contract validation.</p></div></div><a href={`/overview?run_id=${encodeURIComponent(completed.resultRunId)}`} className="mt-5 inline-flex h-10 items-center rounded-sm bg-teal-700 px-4 text-sm font-semibold text-white hover:bg-teal-900">View Overview</a><details className="mt-4 border-t border-line pt-3 text-xs text-muted"><summary className="cursor-pointer font-semibold text-ink">Run details</summary><dl className="mt-3 grid gap-2"><div><dt className="inline font-semibold">Research run: </dt><dd className="inline break-all">{completed.researchRunId}</dd></div><div><dt className="inline font-semibold">Result run: </dt><dd className="inline break-all">{completed.resultRunId}</dd></div><div><dt className="inline font-semibold">Availability: </dt><dd className="inline">{completed.persistence === "durable" ? "Persisted to configured result storage" : "Available in this API process"}</dd></div></dl></details></section>
           : <section className="border-t border-line pt-4"><h2 className="text-base font-semibold">Execution controls</h2><p className="mt-2 text-sm leading-6 text-muted">Validation and execution begin only after the explicit action. During an active run, file controls and repeat submission are disabled.</p></section>}
 
