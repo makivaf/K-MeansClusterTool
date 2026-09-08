@@ -49,10 +49,7 @@ export const OverviewPage = ({ run }: OverviewPageProps) => {
 
       </section>
       <BaselineCandidateControl sweep={baselineSweep} error={error} />
-      <section className="existing-card">
-        <div className="existing-card-header"><div><p>Manuscript comparison</p><h2>Defined final baseline</h2></div></div>
-        <p className="text-sm text-muted">The final comparison selects k={baselineMethod.selectedK} by maximum Silhouette and summarizes all {baselineMethod.runCount} random-initialization runs. Its frozen values remain in Summary of Findings; the interactive candidate above is the selected single-seed result.</p>
-      </section>
+      
       <ResearchPageNavigation currentPath="/existing-algorithm" />
     </div>
   );

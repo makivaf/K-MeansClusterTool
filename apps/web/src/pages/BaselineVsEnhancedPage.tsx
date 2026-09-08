@@ -186,7 +186,7 @@ export const BaselineVsEnhancedPage = ({ run }: BaselineVsEnhancedPageProps) => 
   const { evaluation, error } = useSopEvaluation();
   if (!run) return null;
   return <>
-    <PageHeading title="SOP Simulation / Enhancement Evaluation" description="Controlled simulations translate the original proposal-defense demonstrations to the frozen 2,437-participant ADNI cohort." />
+    <PageHeading title="SOP Simulation / Enhancement Evaluation" description="Controlled simulations translate the original proposal demonstrations to the frozen 2,437-participant ADNI cohort." />
     <div className="sop-tabs" role="tablist" aria-label="Enhancement evaluation sections">{tabs.map((tab) => <button key={tab.id} type="button" role="tab" aria-selected={activeTab === tab.id} aria-controls={`panel-${tab.id}`} onClick={() => setActiveTab(tab.id)}>{tab.label}<ChevronRight size={14} aria-hidden="true" /></button>)}</div>
     <div id={`panel-${activeTab}`} role="tabpanel" tabIndex={0} className="min-h-[420px]">
       {activeTab === "overall" ? <OverallView run={run} /> : !evaluation ? <div className={`mt-6 border-l-2 px-4 py-3 text-sm ${error ? "border-red-400 bg-red-50 text-red-800" : "border-slate-300 bg-white text-muted"}`}>{error ?? "Loading aggregate SOP evaluation…"}</div> : activeTab === "sop1" ? <Sop1View evaluation={evaluation} /> : activeTab === "sop2" ? <Sop2View evaluation={evaluation} /> : <Sop3View evaluation={evaluation} />}

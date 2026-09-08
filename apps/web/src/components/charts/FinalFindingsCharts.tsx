@@ -73,7 +73,7 @@ export const FinalNbClustFigure = ({ run }: { run: UnifiedResearchRun }) => {
             </BarChart>
           </ResponsiveContainer>
         </div>
-        <figcaption className="mt-3 text-base text-muted">Teal: selected <strong>k = {selection.selectedK}</strong>, with <strong>{selection.votesForSelectedK} of {selection.usableVotes}</strong> usable index recommendations. This is the final PCA-based enhanced result.</figcaption>
+        <figcaption className="mt-3 text-base text-muted">Selected <strong>k = {selection.selectedK}</strong>, with <strong>{selection.votesForSelectedK} of {selection.usableVotes}</strong> usable index recommendations. This is the final PCA-based enhanced result.</figcaption>
         {data.some((row) => row.votes === undefined) ? <p className="existing-note">Vote counts not exposed for: {data.filter((row) => row.votes === undefined).map((row) => `k=${row.k}`).join(", ")}. Missing bars do not indicate zero votes.</p> : null}
       </figure>
     </section>
