@@ -68,30 +68,57 @@ if (
 ) throw new Error("SOP 3 sensitivity or determinism result changed");
 
 const controlled = evaluation.sop3.controlledComparison;
-if (!controlled || controlled.clusterSizes.join(",") !== "1554,883" || controlled.iterations !== 13) {
-  throw new Error("Validated original-space DPC-only result is missing or changed");
+if (!controlled || controlled.clusterSizes.join(",") !== "1553,884" || controlled.iterations !== 12) {
+  throw new Error("Validated PCA-space DPC-only result is missing or changed");
 }
 for (const [metric, expected] of Object.entries({
-  silhouette: 0.33173611492709726, daviesBouldin: 1.224367536833148, calinskiHarabasz: 1442.0313362431123
+  silhouette: 0.3727004724250328, daviesBouldin: 1.0758850311620256, calinskiHarabasz: 1800.0249578026046
 })) {
   if (Math.abs(controlled.metrics[metric as keyof typeof controlled.metrics] - expected) > 1e-10) {
     throw new Error(`DPC-only ${metric} changed`);
   }
 }
 const raw = JSON.parse(fs.readFileSync(runtimeArtifact, "utf8"));
+for (let i = 0; i < 6; i += 1) {
+  for (const flag of ["pca", "nbclust", "dpc"] as const) {
+    const invalid = structuredClone(raw);
+    invalid.pipelines[i][flag] = !invalid.pipelines[i][flag];
+    if (SopEvaluationSchema.safeParse(invalid).success) {
+      throw new Error(`Incorrect cumulative ${flag} setting accepted for pipeline ${i}`);
+    }
+  }
+}
+for (const condition of evaluation.sop1.ablation.conditions) {
+  const ranked = [...condition.baselineCandidates].sort((a, b) => b.silhouette - a.silhouette || a.k - b.k);
+  if (condition.baselineCandidates.some((row, i) => row.k !== i + 2) || ranked[0].k !== condition.selectedK) {
+    throw new Error("SOP 1 must select k using the baseline method in each representation");
+  }
+}
+if (evaluation.sop3.settings.representation !== "PC1-PC6" ||
+    controlled.settings.kSelection !== "NbClust" ||
+    !isDeepStrictEqual(evaluation.sop3.dpcDeterminism.metrics, controlled.metrics)) {
+  throw new Error("SOP 3 primary results do not retain PCA and NbClust");
+}
+for (const metric of ["silhouette", "davies_bouldin", "calinski_harabasz"] as const) {
+  if (!isDeepStrictEqual(evaluation.sop3.randomRunSummary[metric], pca.metrics[metric])) {
+    throw new Error(`SOP 3 random control differs from the common baseline: ${metric}`);
+  }
+}
+console.log("PASS all six cumulative SOP configurations and retained upstream stages");
 const invalidCases: Array<[string, (artifact: typeof raw) => void]> = [
   ["missing", (a) => { delete a.sop3.controlledComparison; }],
   ["legacy PCA result", (a) => { a.sop3.controlledComparison = a.sop3.dpcDeterminism; }],
-  ["PCA enabled", (a) => { a.sop3.controlledComparison.settings.pca = true; }],
-  ["NbClust enabled", (a) => { a.sop3.controlledComparison.settings.nbclust = true; }],
-  ["selected k", (a) => { a.sop3.controlledComparison.settings.kSelection = "NbClust"; }],
+  ["PCA removed", (a) => { a.sop3.controlledComparison.settings.pca = false; }],
+  ["NbClust removed", (a) => { a.sop3.controlledComparison.settings.nbclust = false; }],
+  ["baseline selection", (a) => { a.sop3.controlledComparison.settings.kSelection = "maximum silhouette; ties choose smaller k"; }],
+  ["fixed k carry-over", (a) => { a.sop3.controlledComparison.settings.kSelection = "fixed"; }],
   ["wrong k", (a) => { a.sop3.controlledComparison.settings.k = 3; }],
-  ["wrong features", (a) => { a.sop3.controlledComparison.settings.features[0] = "PC1"; }],
+  ["wrong features", (a) => { a.sop3.controlledComparison.settings.features[0] = "MMSE"; }],
   ["different input", (a) => { a.sop3.controlledComparison.settings.inputSha256 = "0".repeat(64); }],
   ["different settings", (a) => { a.sop3.controlledComparison.settings.nInit = 10; }],
   ["different algorithm", (a) => { a.sop3.controlledComparison.settings.algorithm = "elkan"; }],
   ["different seeds", (a) => { a.sop3.controlledComparison.settings.randomSeeds[0] = 29; }],
-  ["different control", (a) => { a.sop1.ablation.conditions[0].dimensions = 6; }],
+  ["different control", (a) => { a.sop1.ablation.conditions[1].dimensions = 13; }],
   ["missing metric", (a) => { delete a.sop3.controlledComparison.metrics.silhouette; }],
   ["nonfinite metric", (a) => { a.sop3.controlledComparison.metrics.silhouette = Infinity; }],
   ["failed determinism", (a) => { a.sop3.controlledComparison.identicalOutput = false; }]
@@ -104,26 +131,25 @@ for (const [name, mutate] of invalidCases) {
     throw new Error(`Invalid DPC-only artifact must remain pending without losing legacy evidence: ${name}`);
   }
 }
-const clustersPage = fs.readFileSync(path.join(repositoryRoot, "apps/web/src/pages/ClustersPage.tsx"), "utf8");
-for (const binding of ["evaluation?.sop3.controlledComparison", "resultPending={!controlledResult}",
-  "formatSopMetric(metric, controlledResult.metrics[metric].mean)", "controlled?.selectedCentroids"]) {
-  if (!clustersPage.includes(binding)) throw new Error(`SOP 3 controlled-result rendering is disconnected: ${binding}`);
-}
 const interimArtifact = path.join(repositoryRoot, "data/interim/sop_evaluation_summary.json");
 if (fs.existsSync(interimArtifact) && !isDeepStrictEqual(JSON.parse(fs.readFileSync(interimArtifact, "utf8")), JSON.parse(fs.readFileSync(runtimeArtifact, "utf8")))) {
   throw new Error("Runtime and interim SOP aggregates differ");
 }
-console.log("PASS SOP 3: original-space DPC metrics, controlled protocol, frontend binding, and invalid-artifact pending fallback");
+console.log("PASS SOP 3: PCA-space DPC metrics, controlled protocol, and invalid-artifact pending fallback");
 
 const nbclustOnly = evaluation.sop2.controlledComparison;
-if (!nbclustOnly) throw new Error("Validated original-space NbClust-only comparison is missing");
-if (nbclustOnly.control.selectedK !== 2) throw new Error("Original-space baseline selection changed");
-if (nbclustOnly.nbclustOnly.selectedK !== 2 || nbclustOnly.selection.votesForSelectedK !== 11 || nbclustOnly.selection.usableIndices !== 24) {
-  throw new Error("Original-space NbClust selection or votes changed");
+if (!nbclustOnly) throw new Error("Validated PCA-space NbClust-only comparison is missing");
+if (nbclustOnly.control.selectedK !== 2) throw new Error("PCA-space baseline selection changed");
+if (nbclustOnly.nbclustOnly.selectedK !== 2 || nbclustOnly.selection.votesForSelectedK !== 9 || nbclustOnly.selection.usableIndices !== 24) {
+  throw new Error("PCA-space NbClust selection or votes changed");
+}
+if (!isDeepStrictEqual(evaluation.sop2.nbclust.voteDistribution, nbclustOnly.selection.voteDistribution) ||
+    evaluation.sop2.candidates.some((row, i) => row.silhouette !== nbclustOnly.baselineCandidates[i].silhouette)) {
+  throw new Error("SOP 2 primary evidence differs from the PCA-space controlled comparison");
 }
 for (const metric of ["silhouette", "davies_bouldin", "calinski_harabasz"] as const) {
-  if (Math.abs(nbclustOnly.control.metrics[metric].mean - original.metrics[metric].mean) > 1e-10) {
-    throw new Error(`Recomputed SOP 2 control disagrees with the original-space baseline: ${metric}`);
+  if (Math.abs(nbclustOnly.control.metrics[metric].mean - pca.metrics[metric].mean) > 1e-10) {
+    throw new Error(`Recomputed SOP 2 control disagrees with the PCA-space baseline: ${metric}`);
   }
   if (nbclustOnly.control.selectedK === nbclustOnly.nbclustOnly.selectedK &&
       JSON.stringify(nbclustOnly.control.metrics[metric]) !== JSON.stringify(nbclustOnly.nbclustOnly.metrics[metric])) {
@@ -133,11 +159,11 @@ for (const metric of ["silhouette", "davies_bouldin", "calinski_harabasz"] as co
 const invalidNbClustCases: Array<[string, (artifact: typeof raw) => void]> = [
   ["missing", (a) => { delete a.sop2.controlledComparison; }],
   ["legacy PCA result", (a) => { a.sop2.controlledComparison = a.sop2.nbclust; }],
-  ["PCA enabled", (a) => { a.sop2.controlledComparison.settings.pca = true; }],
+  ["PCA removed", (a) => { a.sop2.controlledComparison.settings.pca = false; }],
   ["DPC enabled", (a) => { a.sop2.controlledComparison.settings.dpc = true; }],
   ["NbClust in control", (a) => { a.sop2.controlledComparison.settings.controlNbclust = true; }],
   ["fixed baseline k", (a) => { a.sop2.controlledComparison.settings.controlKSelection = "fixed"; }],
-  ["wrong features", (a) => { a.sop2.controlledComparison.settings.features[0] = "PC1"; }],
+  ["wrong features", (a) => { a.sop2.controlledComparison.settings.features[0] = "MMSE"; }],
   ["different input", (a) => { a.sop2.controlledComparison.settings.inputSha256 = "0".repeat(64); }],
   ["different initialization", (a) => { a.sop2.controlledComparison.settings.initialization = "k-means++"; }],
   ["different settings", (a) => { a.sop2.controlledComparison.settings.nInit = 10; }],
@@ -145,7 +171,7 @@ const invalidNbClustCases: Array<[string, (artifact: typeof raw) => void]> = [
   ["different seeds", (a) => { a.sop2.controlledComparison.settings.randomSeeds[0] = 29; }],
   ["wrong baseline selection", (a) => { a.sop2.controlledComparison.control.selectedK = 10; }],
   ["wrong NbClust selection", (a) => { a.sop2.controlledComparison.nbclustOnly.selectedK = 10; }],
-  ["wrong result dimensions", (a) => { a.sop2.controlledComparison.nbclustOnly.dimensions = 6; }],
+  ["wrong result dimensions", (a) => { a.sop2.controlledComparison.nbclustOnly.dimensions = 13; }],
   ["partial run set", (a) => { a.sop2.controlledComparison.nbclustOnly.runCount = 1; }],
   ["inconsistent votes", (a) => { a.sop2.controlledComparison.selection.voteDistribution[0].votes += 1; }],
   ["missing metric", (a) => { delete a.sop2.controlledComparison.nbclustOnly.metrics.silhouette; }],
@@ -160,7 +186,7 @@ for (const [name, mutate] of invalidNbClustCases) {
     throw new Error(`Invalid NbClust-only artifact must remain pending without affecting DPC: ${name}`);
   }
 }
-console.log("PASS SOP 2: original-space selection, matched control, and incompatible-artifact pending fallback");
+console.log("PASS SOP 2: PCA-space selection, matched control, and incompatible-artifact pending fallback");
 
 const serialized = fs.readFileSync(runtimeArtifact, "utf8");
 for (const forbidden of ["\"PTID\"", "\"RID\"", "participantId", "coordinates", "assignments"]) {

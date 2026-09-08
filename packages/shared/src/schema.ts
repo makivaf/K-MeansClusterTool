@@ -1048,12 +1048,10 @@ const SopCandidateSchema = SopClusteringMetricsSchema.extend({
 
 const SopDpcOnlySchema = z.object({
   settings: z.object({
-    cohortN: z.literal(2437), representation: z.literal("13 standardized features"),
-    features: z.tuple([z.literal("MMSE"), z.literal("ADAS13"), z.literal("LMI"), z.literal("LMD"),
-      z.literal("TMT_A"), z.literal("TMT_B"), z.literal("CATEGORY_FLUENCY_ANIMALS"),
-      z.literal("RAVLT_IMMEDIATE"), z.literal("RAVLT_DELAYED"), z.literal("RAVLT_FORGETTING"),
-      z.literal("CDRSB"), z.literal("FAQ"), z.literal("GDS")]),
-    pca: z.literal(false), nbclust: z.literal(false), k: z.literal(2), kSelection: z.literal("fixed"),
+    cohortN: z.literal(2437), representation: z.literal("PC1-PC6"),
+    features: z.tuple([z.literal("PC1"), z.literal("PC2"), z.literal("PC3"),
+      z.literal("PC4"), z.literal("PC5"), z.literal("PC6")]),
+    pca: z.literal(true), nbclust: z.literal(true), k: z.literal(2), kSelection: z.literal("NbClust"),
     nInit: z.literal(1), maxIter: z.literal(300), tolerance: z.literal(0.0001), algorithm: z.literal("lloyd"),
     controlInitialization: z.literal("random"), dpcInitialization: z.literal("deterministic DPC"),
     randomSeeds: z.array(z.number()).refine((seeds) => seeds.length === 30 && seeds.every((seed, i) => seed === i)),
@@ -1072,16 +1070,16 @@ const SopDpcOnlySchema = z.object({
 const SopNbClustMetricSummarySchema = SopMetricSummarySchema.refine((summary) =>
   Object.values(summary).every(Number.isFinite) && summary.minimum <= summary.mean && summary.mean <= summary.maximum);
 const SopNbClustConditionSchema = z.object({
-  selectedK: z.number().int().min(2).max(10), representation: z.literal("13 standardized features"),
-  dimensions: z.literal(13), runCount: z.literal(30),
+  selectedK: z.number().int().min(2).max(10), representation: z.literal("PC1-PC6"),
+  dimensions: z.literal(6), runCount: z.literal(30),
   metrics: z.object({ silhouette: SopNbClustMetricSummarySchema,
     davies_bouldin: SopNbClustMetricSummarySchema, calinski_harabasz: SopNbClustMetricSummarySchema }).strict()
 }).strict();
 const SopNbClustOnlySchema = z.object({
   settings: z.object({
-    cohortN: z.literal(2437), representation: z.literal("13 standardized features"),
+    cohortN: z.literal(2437), representation: z.literal("PC1-PC6"),
     features: SopDpcOnlySchema.shape.settings.shape.features,
-    pca: z.literal(false), dpc: z.literal(false), controlNbclust: z.literal(false), comparisonNbclust: z.literal(true),
+    pca: z.literal(true), dpc: z.literal(false), controlNbclust: z.literal(false), comparisonNbclust: z.literal(true),
     controlKSelection: z.literal("maximum silhouette; ties choose smaller k"),
     comparisonKSelection: z.literal("NbClust index voting; Chapter 3 rank-sum tie-break"),
     candidateK: z.array(z.number()).refine((ks) => ks.length === 9 && ks.every((k, i) => k === i + 2)),
@@ -1134,6 +1132,17 @@ export const SopEvaluationSchema = z.object({
   contractVersion: z.literal("sop-evaluation/v1"),
   scope: z.literal("Aggregate-only controlled evaluation; isolated from frozen official results"),
   cohortN: z.literal(2437),
+  pipelines: z.array(z.object({
+    sop: z.enum(["SOP1", "SOP2", "SOP3"]), pipeline: z.enum(["Existing", "Enhanced"]),
+    pca: z.boolean(), nbclust: z.boolean(), dpc: z.boolean(),
+    representation: z.enum(["13 standardized features", "PC1-PC6"]),
+    selectedK: z.number().int().min(2).max(10),
+    kSelection: z.enum(["maximum silhouette; ties choose smaller k", "NbClust"])
+  }).strict()).length(6).refine((rows) => rows.every((row, i) =>
+    row.sop === `SOP${Math.floor(i / 2) + 1}` && row.pipeline === (i % 2 ? "Enhanced" : "Existing") &&
+    row.pca === (i >= 1) && row.nbclust === (i >= 3) && row.dpc === (i === 5) &&
+    row.representation === (i >= 1 ? "PC1-PC6" : "13 standardized features") &&
+    row.kSelection === (i >= 3 ? "NbClust" : "maximum silhouette; ties choose smaller k"))),
   sop1: z.object({
     redundancy: z.object({
       featureCount: z.literal(13),
@@ -1165,11 +1174,15 @@ export const SopEvaluationSchema = z.object({
       settings: z.object({
         cohortN: z.literal(2437), k: z.literal(2), initialization: z.literal("random"), nInit: z.literal(1),
         maxIter: z.literal(300), tolerance: z.literal(0.0001), algorithm: z.literal("lloyd"),
+        kSelection: z.literal("maximum silhouette; ties choose smaller k"),
         seeds: z.array(z.number().int().min(0).max(29)).length(30)
       }).strict(),
       conditions: z.array(z.object({
         representation: z.string().min(1), dimensions: z.number().int().positive(),
         varianceRetained: z.number().min(0).max(1), runCount: z.literal(30),
+        selectedK: z.number().int().min(2).max(10),
+        baselineCandidates: z.array(z.object({ k: z.number().int().min(2).max(10),
+          silhouette: z.number().finite().min(-1).max(1) }).strict()).length(9),
         metrics: z.object({
           silhouette: SopMetricSummarySchema,
           davies_bouldin: SopMetricSummarySchema,
@@ -1236,14 +1249,14 @@ export const SopEvaluationSchema = z.object({
   }).strict()
 }).strict().transform((evaluation) => {
   const controlled = evaluation.sop3.controlledComparison;
-  const control = evaluation.sop1.ablation.conditions[0];
+  const control = evaluation.sop1.ablation.conditions[1];
   if (controlled && (
-    controlled.settings.inputSha256 !== evaluation.provenance.sourceSha256["data/interim/clustering_features_standardized.csv"] ||
-    control.representation !== controlled.settings.representation || control.dimensions !== 13 ||
+    controlled.settings.inputSha256 !== evaluation.provenance.sourceSha256["data/interim/clustering_pca_scores.csv"] ||
+    control.representation !== controlled.settings.representation || control.dimensions !== 6 ||
     evaluation.sop1.ablation.settings.seeds.some((seed, i) => seed !== controlled.settings.randomSeeds[i])
   )) evaluation.sop3.controlledComparison = undefined;
   const nbclust = evaluation.sop2.controlledComparison;
-  if (nbclust && nbclust.settings.inputSha256 !== evaluation.provenance.sourceSha256["data/interim/clustering_features_standardized.csv"]) {
+  if (nbclust && nbclust.settings.inputSha256 !== evaluation.provenance.sourceSha256["data/interim/clustering_pca_scores.csv"]) {
     evaluation.sop2.controlledComparison = undefined;
   }
   return evaluation;

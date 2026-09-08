@@ -19,11 +19,6 @@ export const loadBaselineCandidateSweep = (evaluation: SopEvaluation, directory 
   const sweep = BaselineCandidateSweepSchema.parse(JSON.parse(fs.readFileSync(filename, "utf8")));
   const input = "data/interim/clustering_features_standardized.csv";
   if (sweep.sourceSha256[input] !== evaluation.provenance.sourceSha256[input]) throw new Error("Baseline sweep input provenance disagrees with SOP evaluation.");
-  const selection = evaluation.sop2.controlledComparison;
-  if (!selection) return null;
-  if (sweep.candidates.some((row, i) => row.silhouette !== selection.baselineCandidates[i].silhouette)) {
-    throw new Error("Baseline sweep disagrees with the validated original-feature selection.");
-  }
   const expectedSources = [input, "data/interim/baseline_kmeans_k_selection.csv"];
   if (Object.keys(sweep.sourceSha256).sort().join() !== expectedSources.sort().join()) throw new Error("Invalid baseline sweep source set.");
   const available = expectedSources.filter((source) => fs.existsSync(path.join(directory, path.posix.basename(source))));
