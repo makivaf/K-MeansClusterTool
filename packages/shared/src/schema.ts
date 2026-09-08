@@ -1128,6 +1128,16 @@ const SopNbClustOnlySchema = z.object({
     (leaders.length === 1 ? tieRows.length === 0 : tieRows.length === leaders.length && tieRows[0].k === nbclustOnly.selectedK);
 });
 
+const SopRandomRunSchema = z.object({
+  runNumber: z.number().int().min(1).max(30),
+  seed: z.number().int().min(0).max(29),
+  silhouette: z.number().finite().min(-1).max(1),
+  daviesBouldin: z.number().finite().nonnegative(),
+  calinskiHarabasz: z.number().finite().nonnegative(),
+  iterations: z.number().int().min(1).max(300),
+  clusterSizes: z.array(z.number().int().positive()).length(2)
+}).strict();
+
 export const SopEvaluationSchema = z.object({
   contractVersion: z.literal("sop-evaluation/v1"),
   scope: z.literal("Aggregate-only controlled evaluation; isolated from frozen official results"),
@@ -1212,6 +1222,8 @@ export const SopEvaluationSchema = z.object({
     }).strict()
   }).strict(),
   sop3: z.object({
+    // Optional for legacy aggregates; present series must contain every genuine run.
+    randomRuns: z.array(SopRandomRunSchema).length(30).optional(),
     // Legacy or non-controlled artifacts remain usable, but cannot supply DPC-only metrics.
     controlledComparison: SopDpcOnlySchema.optional().catch(undefined),
     settings: z.object({
@@ -1247,7 +1259,28 @@ export const SopEvaluationSchema = z.object({
     participantLevelOutput: z.literal(false),
     sourceSha256: z.record(sha256Schema)
   }).strict()
-}).strict().transform((evaluation) => {
+}).strict().superRefine((evaluation, context) => {
+  const runs = evaluation.sop3.randomRuns;
+  if (!runs) return;
+  const reject = (message: string) => context.addIssue({ code: z.ZodIssueCode.custom, path: ["sop3", "randomRuns"], message });
+  if (!evaluation.provenance.sourceSha256["data/interim/dpc_comparison_random_runs.csv"]) reject("SOP 3 run series requires CSV source provenance.");
+  runs.forEach((run, index) => {
+    if (run.runNumber !== index + 1 || run.seed !== index || run.seed !== evaluation.sop3.settings.randomSeeds[index]) reject("SOP 3 requires ordered runs 1–30 and seeds 0–29.");
+    if (run.clusterSizes.reduce((sum, size) => sum + size, 0) !== evaluation.cohortN) reject("SOP 3 run sizes must cover the frozen cohort.");
+    const first = evaluation.sop3.firstThreeRandomRuns[index];
+    if (first && (run.runNumber !== first.runNumber || run.seed !== first.seed || run.iterations !== first.iterations ||
+      run.clusterSizes.some((size, cluster) => size !== first.clusterSizes[cluster]) ||
+      (["silhouette", "daviesBouldin", "calinskiHarabasz"] as const).some((metric) => Math.abs(run[metric] - first[metric]) > 1e-10))) reject("SOP 3 series disagrees with first-three evidence.");
+  });
+  for (const [field, summaryKey] of [["silhouette", "silhouette"], ["daviesBouldin", "davies_bouldin"], ["calinskiHarabasz", "calinski_harabasz"], ["iterations", "iterations"]] as const) {
+    const values = runs.map((run) => run[field]);
+    const mean = values.reduce((sum, value) => sum + value, 0) / values.length;
+    const actual = { mean, minimum: Math.min(...values), maximum: Math.max(...values),
+      standardDeviation: Math.sqrt(values.reduce((sum, value) => sum + (value - mean) ** 2, 0) / (values.length - 1)) };
+    const expected = evaluation.sop3.randomRunSummary[summaryKey];
+    if ((Object.keys(actual) as Array<keyof typeof actual>).some((key) => !Number.isFinite(expected[key]) || Math.abs(actual[key] - expected[key]) > 1e-10)) reject(`SOP 3 ${field} series disagrees with its packaged summary.`);
+  }
+}).transform((evaluation) => {
   const controlled = evaluation.sop3.controlledComparison;
   const control = evaluation.sop1.ablation.conditions[1];
   if (controlled && (

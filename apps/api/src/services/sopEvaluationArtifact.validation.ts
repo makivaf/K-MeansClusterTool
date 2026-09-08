@@ -1,10 +1,11 @@
 import { isDeepStrictEqual } from "node:util";
+import assert from "node:assert/strict";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { loadSopEvaluation } from "./sopEvaluationArtifact";
-import { SopEvaluationSchema } from "../../../../packages/shared/src/schema";
+import { SopEvaluationSchema, SopEvaluationResponseSchema } from "../../../../packages/shared/src/schema";
 
 const repositoryRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../../../..");
 const runtimeArtifact = path.join(repositoryRoot, "apps", "api", "artifacts", "sop_evaluation_summary.json");
@@ -194,3 +195,52 @@ for (const forbidden of ["\"PTID\"", "\"RID\"", "participantId", "coordinates", 
 }
 
 console.log("PASS SOP evaluation: isolated aggregate contract, controlled PCA/k experiments, privacy boundary, and DPC determinism");
+
+const series = evaluation.sop3.randomRuns;
+assert.ok(series);
+assert.equal(series.length, 30);
+assert.deepEqual(series.map((run) => run.seed), expectedSeeds);
+assert.deepEqual(series.slice(0, 3), evaluation.sop3.firstThreeRandomRuns);
+const response = SopEvaluationResponseSchema.parse(JSON.parse(JSON.stringify({ evaluation })));
+assert.deepEqual(response.evaluation.sop3.randomRuns, series);
+const allowedFields = ["runNumber", "seed", "silhouette", "daviesBouldin", "calinskiHarabasz", "iterations", "clusterSizes"].sort();
+for (const run of series) assert.deepEqual(Object.keys(run).sort(), allowedFields);
+for (const [field, key] of [["silhouette", "silhouette"], ["daviesBouldin", "davies_bouldin"], ["calinskiHarabasz", "calinski_harabasz"]] as const) {
+  const mean = series.reduce((sum, run) => sum + run[field], 0) / 30;
+  const delta = Math.abs(mean - evaluation.sop3.randomRunSummary[key].mean);
+  assert.ok(delta <= 1e-10);
+  console.log(`PASS SOP 3 ${field}: 30-run mean absolute delta=${delta} (tolerance 1e-10)`);
+}
+const invalidSeriesCases: Array<[string, (artifact: typeof raw) => void]> = [
+  ["29 rows", (a) => { a.sop3.randomRuns.pop(); }],
+  ["31 rows", (a) => { a.sop3.randomRuns.push(a.sop3.randomRuns[0]); }],
+  ["duplicate seed", (a) => { a.sop3.randomRuns[4].seed = 3; }],
+  ["wrong run order", (a) => { a.sop3.randomRuns.reverse(); }],
+  ["nonfinite metric", (a) => { a.sop3.randomRuns[4].silhouette = Infinity; }],
+  ["summary mismatch", (a) => { a.sop3.randomRuns[4].silhouette += 0.01; }],
+  ["first-three mismatch", (a) => { a.sop3.firstThreeRandomRuns[0].iterations += 1; }],
+  ["wrong cohort size", (a) => { a.sop3.randomRuns[4].clusterSizes[0] += 1; }],
+  ["missing hash", (a) => { delete a.provenance.sourceSha256["data/interim/dpc_comparison_random_runs.csv"]; }],
+  ...["PTID", "RID", "participantId", "coordinates", "assignments"].map((field): [string, (artifact: typeof raw) => void] =>
+    [field, (a) => { a.sop3.randomRuns[4][field] = "forbidden"; }])
+];
+for (const [name, mutate] of invalidSeriesCases) {
+  const artifact = structuredClone(raw);
+  mutate(artifact);
+  assert.equal(SopEvaluationSchema.safeParse(artifact).success, false, name);
+}
+const legacy = structuredClone(raw);
+delete legacy.sop3.randomRuns;
+delete legacy.provenance.sourceSha256["data/interim/dpc_comparison_random_runs.csv"];
+assert.ok(SopEvaluationSchema.safeParse(legacy).success, "Legacy summaries remain compatible");
+const driftDirectory = fs.mkdtempSync(path.join(os.tmpdir(), "sop-series-drift-"));
+try {
+  for (const source of Object.keys(evaluation.provenance.sourceSha256)) {
+    fs.copyFileSync(path.join(repositoryRoot, source), path.join(driftDirectory, path.basename(source)));
+  }
+  fs.appendFileSync(path.join(driftDirectory, "dpc_comparison_random_runs.csv"), "\n");
+  assert.throws(() => loadSopEvaluation({ sourceArtifactDirectory: driftDirectory }), /source drift/);
+} finally {
+  fs.rmSync(driftDirectory, { recursive: true, force: true });
+}
+console.log("PASS SOP 3 series: API response, strict field allowlist, 14 invalid cases, legacy compatibility, CSV equality and source-drift rejection");

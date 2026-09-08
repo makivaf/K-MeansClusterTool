@@ -1221,7 +1221,369 @@
           "gamma": 260.263320665542
         }
       ]
-    }
+    },
+    "randomRuns": [
+      {
+        "runNumber": 1,
+        "seed": 0,
+        "silhouette": 0.3727004724250328,
+        "daviesBouldin": 1.0758850311620256,
+        "calinskiHarabasz": 1800.0249578026046,
+        "iterations": 11,
+        "clusterSizes": [
+          1553,
+          884
+        ]
+      },
+      {
+        "runNumber": 2,
+        "seed": 1,
+        "silhouette": 0.3727004724250328,
+        "daviesBouldin": 1.0758850311620256,
+        "calinskiHarabasz": 1800.0249578026046,
+        "iterations": 8,
+        "clusterSizes": [
+          884,
+          1553
+        ]
+      },
+      {
+        "runNumber": 3,
+        "seed": 2,
+        "silhouette": 0.3727004724250328,
+        "daviesBouldin": 1.0758850311620256,
+        "calinskiHarabasz": 1800.0249578026046,
+        "iterations": 10,
+        "clusterSizes": [
+          884,
+          1553
+        ]
+      },
+      {
+        "runNumber": 4,
+        "seed": 3,
+        "silhouette": 0.3727004724250328,
+        "daviesBouldin": 1.0758850311620256,
+        "calinskiHarabasz": 1800.0249578026046,
+        "iterations": 11,
+        "clusterSizes": [
+          1553,
+          884
+        ]
+      },
+      {
+        "runNumber": 5,
+        "seed": 4,
+        "silhouette": 0.37301323144314236,
+        "daviesBouldin": 1.0749732416051911,
+        "calinskiHarabasz": 1799.9749087140085,
+        "iterations": 4,
+        "clusterSizes": [
+          880,
+          1557
+        ]
+      },
+      {
+        "runNumber": 6,
+        "seed": 5,
+        "silhouette": 0.372910934781088,
+        "daviesBouldin": 1.0751119548358608,
+        "calinskiHarabasz": 1800.0034781230065,
+        "iterations": 9,
+        "clusterSizes": [
+          881,
+          1556
+        ]
+      },
+      {
+        "runNumber": 7,
+        "seed": 6,
+        "silhouette": 0.3727004724250328,
+        "daviesBouldin": 1.0758850311620256,
+        "calinskiHarabasz": 1800.0249578026046,
+        "iterations": 13,
+        "clusterSizes": [
+          1553,
+          884
+        ]
+      },
+      {
+        "runNumber": 8,
+        "seed": 7,
+        "silhouette": 0.3727004724250328,
+        "daviesBouldin": 1.0758850311620256,
+        "calinskiHarabasz": 1800.0249578026046,
+        "iterations": 13,
+        "clusterSizes": [
+          884,
+          1553
+        ]
+      },
+      {
+        "runNumber": 9,
+        "seed": 8,
+        "silhouette": 0.3727004724250328,
+        "daviesBouldin": 1.0758850311620256,
+        "calinskiHarabasz": 1800.0249578026046,
+        "iterations": 11,
+        "clusterSizes": [
+          1553,
+          884
+        ]
+      },
+      {
+        "runNumber": 10,
+        "seed": 9,
+        "silhouette": 0.3727004724250328,
+        "daviesBouldin": 1.0758850311620256,
+        "calinskiHarabasz": 1800.0249578026046,
+        "iterations": 10,
+        "clusterSizes": [
+          1553,
+          884
+        ]
+      },
+      {
+        "runNumber": 11,
+        "seed": 10,
+        "silhouette": 0.3727004724250328,
+        "daviesBouldin": 1.0758850311620256,
+        "calinskiHarabasz": 1800.0249578026046,
+        "iterations": 12,
+        "clusterSizes": [
+          1553,
+          884
+        ]
+      },
+      {
+        "runNumber": 12,
+        "seed": 11,
+        "silhouette": 0.3727004724250328,
+        "daviesBouldin": 1.0758850311620256,
+        "calinskiHarabasz": 1800.0249578026046,
+        "iterations": 13,
+        "clusterSizes": [
+          1553,
+          884
+        ]
+      },
+      {
+        "runNumber": 13,
+        "seed": 12,
+        "silhouette": 0.3727004724250328,
+        "daviesBouldin": 1.0758850311620256,
+        "calinskiHarabasz": 1800.0249578026046,
+        "iterations": 10,
+        "clusterSizes": [
+          884,
+          1553
+        ]
+      },
+      {
+        "runNumber": 14,
+        "seed": 13,
+        "silhouette": 0.3727004724250328,
+        "daviesBouldin": 1.0758850311620256,
+        "calinskiHarabasz": 1800.0249578026046,
+        "iterations": 10,
+        "clusterSizes": [
+          884,
+          1553
+        ]
+      },
+      {
+        "runNumber": 15,
+        "seed": 14,
+        "silhouette": 0.3727004724250328,
+        "daviesBouldin": 1.0758850311620256,
+        "calinskiHarabasz": 1800.0249578026046,
+        "iterations": 11,
+        "clusterSizes": [
+          1553,
+          884
+        ]
+      },
+      {
+        "runNumber": 16,
+        "seed": 15,
+        "silhouette": 0.3727004724250328,
+        "daviesBouldin": 1.0758850311620256,
+        "calinskiHarabasz": 1800.0249578026046,
+        "iterations": 12,
+        "clusterSizes": [
+          884,
+          1553
+        ]
+      },
+      {
+        "runNumber": 17,
+        "seed": 16,
+        "silhouette": 0.37301323144314236,
+        "daviesBouldin": 1.0749732416051911,
+        "calinskiHarabasz": 1799.9749087140085,
+        "iterations": 9,
+        "clusterSizes": [
+          1557,
+          880
+        ]
+      },
+      {
+        "runNumber": 18,
+        "seed": 17,
+        "silhouette": 0.3727004724250328,
+        "daviesBouldin": 1.0758850311620256,
+        "calinskiHarabasz": 1800.0249578026046,
+        "iterations": 12,
+        "clusterSizes": [
+          884,
+          1553
+        ]
+      },
+      {
+        "runNumber": 19,
+        "seed": 18,
+        "silhouette": 0.372910934781088,
+        "daviesBouldin": 1.0751119548358608,
+        "calinskiHarabasz": 1800.0034781230065,
+        "iterations": 9,
+        "clusterSizes": [
+          1556,
+          881
+        ]
+      },
+      {
+        "runNumber": 20,
+        "seed": 19,
+        "silhouette": 0.372910934781088,
+        "daviesBouldin": 1.0751119548358608,
+        "calinskiHarabasz": 1800.0034781230065,
+        "iterations": 9,
+        "clusterSizes": [
+          881,
+          1556
+        ]
+      },
+      {
+        "runNumber": 21,
+        "seed": 20,
+        "silhouette": 0.3727004724250328,
+        "daviesBouldin": 1.0758850311620256,
+        "calinskiHarabasz": 1800.0249578026046,
+        "iterations": 10,
+        "clusterSizes": [
+          1553,
+          884
+        ]
+      },
+      {
+        "runNumber": 22,
+        "seed": 21,
+        "silhouette": 0.3727004724250328,
+        "daviesBouldin": 1.0758850311620256,
+        "calinskiHarabasz": 1800.0249578026046,
+        "iterations": 11,
+        "clusterSizes": [
+          884,
+          1553
+        ]
+      },
+      {
+        "runNumber": 23,
+        "seed": 22,
+        "silhouette": 0.372910934781088,
+        "daviesBouldin": 1.0751119548358608,
+        "calinskiHarabasz": 1800.0034781230065,
+        "iterations": 9,
+        "clusterSizes": [
+          1556,
+          881
+        ]
+      },
+      {
+        "runNumber": 24,
+        "seed": 23,
+        "silhouette": 0.372910934781088,
+        "daviesBouldin": 1.0751119548358608,
+        "calinskiHarabasz": 1800.0034781230065,
+        "iterations": 11,
+        "clusterSizes": [
+          881,
+          1556
+        ]
+      },
+      {
+        "runNumber": 25,
+        "seed": 24,
+        "silhouette": 0.3727004724250328,
+        "daviesBouldin": 1.0758850311620256,
+        "calinskiHarabasz": 1800.0249578026046,
+        "iterations": 10,
+        "clusterSizes": [
+          884,
+          1553
+        ]
+      },
+      {
+        "runNumber": 26,
+        "seed": 25,
+        "silhouette": 0.372910934781088,
+        "daviesBouldin": 1.0751119548358608,
+        "calinskiHarabasz": 1800.0034781230065,
+        "iterations": 11,
+        "clusterSizes": [
+          881,
+          1556
+        ]
+      },
+      {
+        "runNumber": 27,
+        "seed": 26,
+        "silhouette": 0.3727004724250328,
+        "daviesBouldin": 1.0758850311620256,
+        "calinskiHarabasz": 1800.0249578026046,
+        "iterations": 11,
+        "clusterSizes": [
+          884,
+          1553
+        ]
+      },
+      {
+        "runNumber": 28,
+        "seed": 27,
+        "silhouette": 0.372910934781088,
+        "daviesBouldin": 1.0751119548358608,
+        "calinskiHarabasz": 1800.0034781230065,
+        "iterations": 11,
+        "clusterSizes": [
+          881,
+          1556
+        ]
+      },
+      {
+        "runNumber": 29,
+        "seed": 28,
+        "silhouette": 0.3727004724250328,
+        "daviesBouldin": 1.0758850311620256,
+        "calinskiHarabasz": 1800.0249578026046,
+        "iterations": 13,
+        "clusterSizes": [
+          884,
+          1553
+        ]
+      },
+      {
+        "runNumber": 30,
+        "seed": 29,
+        "silhouette": 0.3727004724250328,
+        "daviesBouldin": 1.0758850311620256,
+        "calinskiHarabasz": 1800.0249578026046,
+        "iterations": 14,
+        "clusterSizes": [
+          884,
+          1553
+        ]
+      }
+    ]
   },
   "provenance": {
     "officialResultsModified": false,
@@ -1230,7 +1592,8 @@
       "data/interim/clustering_features_standardized.csv": "0267afadb86434c203321529cd039ef03b843e76ab56430d9e9d677fee232783",
       "data/interim/clustering_pca_scores.csv": "abf2c7a98c65f7d0b609bd14389b20be930d5850bc8a4f213d383a8eb432f4b0",
       "data/interim/clustering_pca_explained_variance.csv": "769216258e22de504fc8ca39d1f898f7c4ce1e1d37cd7dd9876dc0571d67f33f",
-      "data/interim/study_entry_cohort_unimputed.csv": "b9983abfd068c4c00006750c2d08e547bc0c7b2769b60080ae9733b4841c04eb"
+      "data/interim/study_entry_cohort_unimputed.csv": "b9983abfd068c4c00006750c2d08e547bc0c7b2769b60080ae9733b4841c04eb",
+      "data/interim/dpc_comparison_random_runs.csv": "27a98a52d1302cde2cf054ccee7f196fc82eb1672dbeed8c3c56ec9d31b20b04"
     }
   }
 }

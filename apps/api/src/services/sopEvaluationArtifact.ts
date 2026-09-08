@@ -65,6 +65,20 @@ export const loadSopEvaluation = (options: SopEvaluationLoadOptions = {}): SopEv
     if (actualSha256 !== expectedSha256) throw new Error(`SOP evaluation source drift detected: ${reportedPath}`);
   }
   const serialized = JSON.stringify(evaluation);
+  // Hashes detect source drift; row checks also detect edits to the packaged series.
+  if (evaluation.sop3.randomRuns && availableSourceCount === sources.length) {
+    const rows = readCsvRecords(localSourceDirectory, "dpc_comparison_random_runs.csv");
+    const settings = evaluation.sop3.settings;
+    if (rows.length !== 30 || rows.some((row, index) => {
+      const run = evaluation.sop3.randomRuns![index];
+      return Number(row.run_number) !== run.runNumber || Number(row.seed) !== run.seed ||
+        Number(row.k) !== settings.k || row.init !== "random" || row.algorithm !== settings.algorithm ||
+        Number(row.n_init) !== settings.nInit || Number(row.max_iter) !== settings.maxIter || Number(row.tol) !== settings.tolerance ||
+        Number(row.silhouette) !== run.silhouette || Number(row.davies_bouldin) !== run.daviesBouldin ||
+        Number(row.calinski_harabasz) !== run.calinskiHarabasz || Number(row.iterations) !== run.iterations ||
+        row.cluster_sizes !== run.clusterSizes.map((size, cluster) => `${cluster}:${size}`).join("|");
+    })) throw new Error("Packaged SOP 3 run series disagrees with its validated CSV source.");
+  }
   for (const forbidden of ["PTID", "RID", "participantId", "coordinates", "assignments"]) {
     if (serialized.includes(`\"${forbidden}\"`)) throw new Error(`Participant-level field escaped SOP evaluation: ${forbidden}`);
   }

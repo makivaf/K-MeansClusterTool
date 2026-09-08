@@ -36,6 +36,7 @@ sys.path.insert(0, str(ROOT / "scripts" / "research" / "study_entry"))
 from dpc_initialize_clusters import dpc_init, STUDY_CUTOFF_PERCENTILE
 import run_enhanced_kmeans as final_enhanced
 import run_baseline_kmeans_comparison as baseline
+from package_sop_run_series import attach_random_runs
 
 INTERIM = ROOT / "data" / "interim"
 
@@ -527,6 +528,7 @@ def main() -> None:
             "sourceSha256": {str(path.relative_to(ROOT)).replace("\\", "/"): _sha256(path) for path in source_paths},
         },
     }
+    attach_random_runs(payload)
     _write_json(SUMMARY_PATH, payload)
     _write_json(RUNTIME_SUMMARY_PATH, payload)
     print(f"wrote={SOP1_REDUNDANCY_PATH.relative_to(ROOT)}")

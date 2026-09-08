@@ -3,6 +3,7 @@ import { CheckCircle2 } from "lucide-react";
 import type { BaselineCandidateSweep, SopEvaluation, UnifiedResearchRun } from "../../../../packages/shared/src";
 import { ClusterDifferenceFigure, FinalNbClustFigure, InternalValidationFigure, PcaVarianceFigure } from "../components/charts/FinalFindingsCharts";
 import { LongitudinalProgressionChart } from "../components/charts/LongitudinalProgressionChart";
+import { SopRunSeriesChart } from "../components/charts/SopRunSeriesChart";
 import { ResearchPageNavigation } from "../components/layout/ResearchPageNavigation";
 import { StatCard } from "../components/ui/StatCard";
 import { useSopEvaluation } from "../hooks/useSopEvaluation";
@@ -662,16 +663,14 @@ const DpcTab = ({ run, evaluation, error, baselineSweep: _baselineSweep }: { run
               <h2>Run-to-Run Internal Validation Metrics</h2>
               <blockquote>The random-control runs show run-to-run variation, while deterministic DPC remains fixed under identical inputs.</blockquote>
             </div>
-            {[
-              ["Silhouette", "higher is better"],
-              ["Davies-Bouldin", "lower is better"],
-              ["Calinski-Harabasz", "higher is better"]
-            ].map(([label, direction]) => (
+            {([
+              ["Silhouette", "higher is better", "silhouette"],
+              ["Davies-Bouldin", "lower is better", "daviesBouldin"],
+              ["Calinski-Harabasz", "higher is better", "calinskiHarabasz"]
+            ] as const).map(([label, direction, metric]) => (
               <article key={label} className="existing-card summary-dpc-chart-missing">
                 <h3>{label} <span>({direction})</span></h3>
-                <div>
-                  <p>The frontend has the 30-run aggregate summary for this metric, but not the 30 individual run values required to draw the run-by-run random-control series.</p>
-                </div>
+                <SopRunSeriesChart sop3={sop3} metric={metric} />
               </article>
             ))}
           </div>
