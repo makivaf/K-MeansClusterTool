@@ -121,7 +121,7 @@ export const AppShell = ({
           <div aria-live="polite" className="rounded-md border border-line bg-white p-6 text-sm text-muted">Loading unified research run...</div>
         ) : !selectedRun && !error && !allowWithoutRun ? (
           <div className="rounded-md border border-amber-200 bg-amber-50 p-6 text-sm text-amber-900">
-            <h1 className="text-base font-semibold text-amber-950">No validated unified run is available</h1>
+            <h1 className="text-base font-semibold text-amber-950">Run analysis to view results.</h1>
             <p className="mt-2 leading-6">Run an analysis with the local scientific pipeline to generate the aggregate results used by these views.</p>
             <NavLink
               to="/upload-run"

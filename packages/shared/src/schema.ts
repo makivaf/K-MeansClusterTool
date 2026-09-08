@@ -1304,7 +1304,87 @@ export const BaselineCandidateSweepSchema = z.object({
   sourceSha256: z.record(z.string(), sha256Schema)
 }).strict();
 export type BaselineCandidateSweep = z.infer<typeof BaselineCandidateSweepSchema>;
-export const SopEvaluationResponseSchema = z.object({ evaluation: SopEvaluationSchema, baselineSweep: BaselineCandidateSweepSchema.nullable().optional() }).strict();
+// The only observation-level exception: defense projection geometry, with no
+// identifiers or attributes. All pre-existing aggregate contracts stay strict.
+const DefensePointSchema = z.object({ pc1: z.number().finite(), pc2: z.number().finite(), cluster: z.union([z.literal(0), z.literal(1)]) }).strict();
+const DefenseMarkerSchema = DefensePointSchema.extend({ type: z.enum(["initial", "final"]) }).strict();
+const DefensePanelSchema = z.object({
+  observations: z.array(DefensePointSchema).length(2437),
+  markers: z.array(DefenseMarkerSchema).min(2).max(4)
+}).strict();
+
+export const DefenseGeometrySchema = z.object({
+  contractVersion: z.literal("defense-geometry/v1"),
+  scope: z.literal("Frozen-study defense visualization only"),
+  sop1: z.object({
+    seed: z.literal(0), centroidMethod: z.literal("mean_of_saved_final_assignment_projection"),
+    baseline: DefensePanelSchema, pcaOnly: DefensePanelSchema
+  }).strict(),
+  sop3: z.object({
+    random: z.array(DefensePanelSchema.extend({ runNumber: z.number().int().min(1).max(3), seed: z.number().int().min(0).max(2) }).strict()).length(3),
+    dpc: z.array(DefensePanelSchema.extend({ checkNumber: z.number().int().min(1).max(3), origin: z.enum(["saved_reference", "reconstructed_check"]) }).strict()).length(3)
+  }).strict(),
+  provenance: z.object({
+    generatedAt: z.string().datetime({ offset: true }), sourceSha256: z.record(sha256Schema), evaluationSha256: sha256Schema,
+    runtime: z.object({ python: z.string(), numpy: z.string(), scipy: z.string(), sklearn: z.string() }).strict(),
+    randomOrigin: z.literal("replayed_seeds_0_1_2_validated_against_saved_evidence"),
+    dpcOrigin: z.literal("saved_reference_and_reconstructed_checks_2_3"), assignmentsExact: z.literal(true),
+    metricRtol: z.literal(1e-12), metricAtol: z.literal(1e-12), centroidRtol: z.literal(1e-12), centroidAtol: z.literal(1e-12)
+  }).strict()
+}).strict().superRefine((geometry, context) => {
+  const reject = (message: string) => context.addIssue({ code: z.ZodIssueCode.custom, message });
+  const common = geometry.sop1.baseline.observations;
+  const panels = [geometry.sop1.baseline, geometry.sop1.pcaOnly, ...geometry.sop3.random, ...geometry.sop3.dpc];
+  if (geometry.sop3.random.length !== 3 || geometry.sop3.dpc.length !== 3 || panels.some((panel) => panel.observations.length !== 2437)) {
+    reject("Defense geometry requires all eight complete panels.");
+    return;
+  }
+  for (const [index, panel] of panels.entries()) {
+    if (panel.observations.some((point, i) => point.pc1 !== common[i].pc1 || point.pc2 !== common[i].pc2)) reject("Every defense panel must use the identical complete common projection.");
+    const expectedTypes = index < 2 ? ["final"] : ["initial", "final"];
+    if (panel.markers.length !== expectedTypes.length * 2 || expectedTypes.some((type) => [0, 1].some((cluster) => panel.markers.filter((m) => m.type === type && m.cluster === cluster).length !== 1))) reject("Missing or duplicate defense centroid markers.");
+    for (const cluster of [0, 1]) {
+      const points = panel.observations.filter((point) => point.cluster === cluster);
+      if (!points.length) { reject("Empty defense cluster."); continue; }
+      if (index < 2) {
+        const marker = panel.markers.find((m) => m.type === "final" && m.cluster === cluster);
+        for (const field of ["pc1", "pc2"] as const) {
+          const mean = points.reduce((sum, point) => sum + point[field], 0) / points.length;
+          if (!marker || Math.abs(marker[field] - mean) > 1e-12 + Math.abs(mean) * 1e-12) reject("SOP 1 markers must be projected means of saved final assignments.");
+        }
+      }
+    }
+  }
+  geometry.sop3.random.forEach((panel, i) => {
+    if (panel.runNumber !== i + 1 || panel.seed !== i) reject("Defense random runs must be ordered runs 1–3 / seeds 0–2.");
+  });
+  if (geometry.sop1.pcaOnly.observations.some((point, i) => point.cluster !== geometry.sop3.random[0].observations[i].cluster)) reject("PCA-only seed-zero assignments differ from controlled random seed zero.");
+  geometry.sop3.dpc.forEach((panel, i) => {
+    if (panel.checkNumber !== i + 1 || panel.origin !== (i === 0 ? "saved_reference" : "reconstructed_check")) reject("DPC historical and reconstructed origins must be explicit.");
+    const reference = geometry.sop3.dpc[0];
+    if (panel.observations.some((point, j) => point.cluster !== reference.observations[j].cluster)) reject("DPC check assignments must reproduce the reference exactly.");
+    for (const marker of panel.markers) {
+      const expected = reference.markers.find((m) => m.type === marker.type && m.cluster === marker.cluster);
+      if (!expected || (["pc1", "pc2"] as const).some((field) => Math.abs(marker[field] - expected[field]) > (marker.type === "initial" ? 0 : 1e-12 + Math.abs(expected[field]) * 1e-12))) reject("DPC check geometry differs from the validated reference.");
+    }
+  });
+});
+export type DefenseGeometry = z.infer<typeof DefenseGeometrySchema>;
+export type DefensePanel = z.infer<typeof DefensePanelSchema>;
+
+export const SopEvaluationResponseSchema = z.object({ evaluation: SopEvaluationSchema, baselineSweep: BaselineCandidateSweepSchema.nullable().optional(), defenseGeometry: DefenseGeometrySchema.nullable().optional() }).strict().superRefine((payload, context) => {
+  const geometry = payload.defenseGeometry;
+  if (!geometry) return;
+  const reject = (message: string) => context.addIssue({ code: z.ZodIssueCode.custom, path: ["defenseGeometry"], message });
+  for (const [source, hash] of Object.entries(payload.evaluation.provenance.sourceSha256)) {
+    if (geometry.provenance.sourceSha256[source] !== hash) reject("Defense geometry source disagrees with validated SOP evidence.");
+  }
+  geometry.sop3.random.forEach((panel, i) => {
+    const expected = payload.evaluation.sop3.firstThreeRandomRuns[i];
+    if (!expected || expected.clusterSizes.some((count, cluster) => panel.observations.filter((point) => point.cluster === cluster).length !== count)) reject("Defense random assignments disagree with saved cluster sizes.");
+  });
+  if (!geometry.sop3.dpc[0] || payload.evaluation.sop3.dpcDeterminism.clusterSizes.some((count, cluster) => geometry.sop3.dpc[0].observations.filter((point) => point.cluster === cluster).length !== count)) reject("Defense DPC assignments disagree with saved cluster sizes.");
+});
 
 export type Axis = z.infer<typeof AxisSchema>;
 export type ResultSource = z.infer<typeof ResultSourceSchema>;

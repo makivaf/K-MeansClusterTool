@@ -2,16 +2,34 @@ import { useEffect, useState } from "react";
 import {
   SopEvaluationResponseSchema,
   type SopEvaluation,
+  type UnifiedResearchRun,
+  type DefenseGeometry,
   type BaselineCandidateSweep
 } from "../../../../packages/shared/src";
 import { API_BASE_URL } from "../config/api";
 
-export const useSopEvaluation = () => {
+export const hasSharedSopProvenance = (run: UnifiedResearchRun, evaluation: SopEvaluation) => {
+  const sharedSources = [
+    "data/interim/study_entry_cohort_unimputed.csv",
+    "data/interim/clustering_pca_explained_variance.csv"
+  ];
+  return sharedSources.every((source) => {
+    const runHash = run.provenance.inputSha256[source];
+    return Boolean(runHash) && runHash === evaluation.provenance.sourceSha256[source];
+  }) && Object.entries(evaluation.provenance.sourceSha256).every(([source, hash]) =>
+    !run.provenance.inputSha256[source] || run.provenance.inputSha256[source] === hash
+  );
+};
+
+export const useSopEvaluation = (run: UnifiedResearchRun | null = null) => {
+  const enabled = run !== null;
   const [evaluation, setEvaluation] = useState<SopEvaluation | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [baselineSweep, setBaselineSweep] = useState<BaselineCandidateSweep | null>(null);
+  const [defenseGeometry, setDefenseGeometry] = useState<DefenseGeometry | null>(null);
 
   useEffect(() => {
+    if (!enabled) return;
     const abortController = new AbortController();
     void (async () => {
       try {
@@ -20,13 +38,41 @@ export const useSopEvaluation = () => {
         const payload = SopEvaluationResponseSchema.parse(await response.json());
         setEvaluation(payload.evaluation);
         setBaselineSweep(payload.baselineSweep ?? null);
+        setDefenseGeometry(payload.defenseGeometry ?? null);
       } catch (caught) {
         if (caught instanceof DOMException && caught.name === "AbortError") return;
         setError(caught instanceof Error ? caught.message : "Unable to load the aggregate SOP evaluation");
       }
     })();
     return () => abortController.abort();
-  }, []);
+  }, [enabled]);
 
-  return { evaluation, baselineSweep, error };
+  const matches = run !== null && evaluation !== null && hasSharedSopProvenance(run, evaluation);
+  // Compare shared scientific inputs across runs, not the recovery's output
+  // reports (e.g. enhanced_kmeans_run_summary.csv contains per-execution
+  // floating-point reproducibility diagnostics). The API still validates ALL
+  // recovery-source hashes against the frozen artifacts, plus the geometry
+  // checksum and SOP linkage. This remains frozen-study evidence, not run output.
+  const geometryInputSources = [
+    "data/interim/study_entry_cohort_unimputed.csv",
+    "data/interim/clustering_features_standardized.csv",
+    "data/interim/clustering_pca_scores.csv",
+    "data/interim/clustering_pca_explained_variance.csv",
+    "data/interim/clustering_pca_loadings.csv",
+    "data/interim/clustering_selected_k.csv",
+    "data/interim/clustering_dpc_selected_centroids.csv"
+  ];
+  const geometryMatches = matches && defenseGeometry !== null && geometryInputSources.every((source) => {
+    const frozenHash = defenseGeometry.provenance.sourceSha256[source];
+    const runHash = run.provenance.inputSha256[source];
+    return Boolean(frozenHash) && (!runHash || runHash === frozenHash);
+  });
+  return {
+    evaluation: matches ? evaluation : null,
+    baselineSweep: matches ? baselineSweep : null,
+    defenseGeometry: geometryMatches ? defenseGeometry : null,
+    error: error ? "Frozen-study evaluation unavailable." : run && evaluation && !matches
+      ? "Frozen-study evaluation unavailable: required shared provenance is missing or mismatched."
+      : null
+  };
 };
