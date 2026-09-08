@@ -1048,12 +1048,10 @@ const SopCandidateSchema = SopClusteringMetricsSchema.extend({
 
 const SopDpcOnlySchema = z.object({
   settings: z.object({
-    cohortN: z.literal(2437), representation: z.literal("13 standardized features"),
-    features: z.tuple([z.literal("MMSE"), z.literal("ADAS13"), z.literal("LMI"), z.literal("LMD"),
-      z.literal("TMT_A"), z.literal("TMT_B"), z.literal("CATEGORY_FLUENCY_ANIMALS"),
-      z.literal("RAVLT_IMMEDIATE"), z.literal("RAVLT_DELAYED"), z.literal("RAVLT_FORGETTING"),
-      z.literal("CDRSB"), z.literal("FAQ"), z.literal("GDS")]),
-    pca: z.literal(false), nbclust: z.literal(false), k: z.literal(2), kSelection: z.literal("fixed"),
+    cohortN: z.literal(2437), representation: z.literal("PC1-PC6"),
+    features: z.tuple([z.literal("PC1"), z.literal("PC2"), z.literal("PC3"),
+      z.literal("PC4"), z.literal("PC5"), z.literal("PC6")]),
+    pca: z.literal(true), nbclust: z.literal(true), k: z.literal(2), kSelection: z.literal("NbClust"),
     nInit: z.literal(1), maxIter: z.literal(300), tolerance: z.literal(0.0001), algorithm: z.literal("lloyd"),
     controlInitialization: z.literal("random"), dpcInitialization: z.literal("deterministic DPC"),
     randomSeeds: z.array(z.number()).refine((seeds) => seeds.length === 30 && seeds.every((seed, i) => seed === i)),
@@ -1072,16 +1070,16 @@ const SopDpcOnlySchema = z.object({
 const SopNbClustMetricSummarySchema = SopMetricSummarySchema.refine((summary) =>
   Object.values(summary).every(Number.isFinite) && summary.minimum <= summary.mean && summary.mean <= summary.maximum);
 const SopNbClustConditionSchema = z.object({
-  selectedK: z.number().int().min(2).max(10), representation: z.literal("13 standardized features"),
-  dimensions: z.literal(13), runCount: z.literal(30),
+  selectedK: z.number().int().min(2).max(10), representation: z.literal("PC1-PC6"),
+  dimensions: z.literal(6), runCount: z.literal(30),
   metrics: z.object({ silhouette: SopNbClustMetricSummarySchema,
     davies_bouldin: SopNbClustMetricSummarySchema, calinski_harabasz: SopNbClustMetricSummarySchema }).strict()
 }).strict();
 const SopNbClustOnlySchema = z.object({
   settings: z.object({
-    cohortN: z.literal(2437), representation: z.literal("13 standardized features"),
+    cohortN: z.literal(2437), representation: z.literal("PC1-PC6"),
     features: SopDpcOnlySchema.shape.settings.shape.features,
-    pca: z.literal(false), dpc: z.literal(false), controlNbclust: z.literal(false), comparisonNbclust: z.literal(true),
+    pca: z.literal(true), dpc: z.literal(false), controlNbclust: z.literal(false), comparisonNbclust: z.literal(true),
     controlKSelection: z.literal("maximum silhouette; ties choose smaller k"),
     comparisonKSelection: z.literal("NbClust index voting; Chapter 3 rank-sum tie-break"),
     candidateK: z.array(z.number()).refine((ks) => ks.length === 9 && ks.every((k, i) => k === i + 2)),
@@ -1130,10 +1128,31 @@ const SopNbClustOnlySchema = z.object({
     (leaders.length === 1 ? tieRows.length === 0 : tieRows.length === leaders.length && tieRows[0].k === nbclustOnly.selectedK);
 });
 
+const SopRandomRunSchema = z.object({
+  runNumber: z.number().int().min(1).max(30),
+  seed: z.number().int().min(0).max(29),
+  silhouette: z.number().finite().min(-1).max(1),
+  daviesBouldin: z.number().finite().nonnegative(),
+  calinskiHarabasz: z.number().finite().nonnegative(),
+  iterations: z.number().int().min(1).max(300),
+  clusterSizes: z.array(z.number().int().positive()).length(2)
+}).strict();
+
 export const SopEvaluationSchema = z.object({
   contractVersion: z.literal("sop-evaluation/v1"),
   scope: z.literal("Aggregate-only controlled evaluation; isolated from frozen official results"),
   cohortN: z.literal(2437),
+  pipelines: z.array(z.object({
+    sop: z.enum(["SOP1", "SOP2", "SOP3"]), pipeline: z.enum(["Existing", "Enhanced"]),
+    pca: z.boolean(), nbclust: z.boolean(), dpc: z.boolean(),
+    representation: z.enum(["13 standardized features", "PC1-PC6"]),
+    selectedK: z.number().int().min(2).max(10),
+    kSelection: z.enum(["maximum silhouette; ties choose smaller k", "NbClust"])
+  }).strict()).length(6).refine((rows) => rows.every((row, i) =>
+    row.sop === `SOP${Math.floor(i / 2) + 1}` && row.pipeline === (i % 2 ? "Enhanced" : "Existing") &&
+    row.pca === (i >= 1) && row.nbclust === (i >= 3) && row.dpc === (i === 5) &&
+    row.representation === (i >= 1 ? "PC1-PC6" : "13 standardized features") &&
+    row.kSelection === (i >= 3 ? "NbClust" : "maximum silhouette; ties choose smaller k"))),
   sop1: z.object({
     redundancy: z.object({
       featureCount: z.literal(13),
@@ -1165,11 +1184,15 @@ export const SopEvaluationSchema = z.object({
       settings: z.object({
         cohortN: z.literal(2437), k: z.literal(2), initialization: z.literal("random"), nInit: z.literal(1),
         maxIter: z.literal(300), tolerance: z.literal(0.0001), algorithm: z.literal("lloyd"),
+        kSelection: z.literal("maximum silhouette; ties choose smaller k"),
         seeds: z.array(z.number().int().min(0).max(29)).length(30)
       }).strict(),
       conditions: z.array(z.object({
         representation: z.string().min(1), dimensions: z.number().int().positive(),
         varianceRetained: z.number().min(0).max(1), runCount: z.literal(30),
+        selectedK: z.number().int().min(2).max(10),
+        baselineCandidates: z.array(z.object({ k: z.number().int().min(2).max(10),
+          silhouette: z.number().finite().min(-1).max(1) }).strict()).length(9),
         metrics: z.object({
           silhouette: SopMetricSummarySchema,
           davies_bouldin: SopMetricSummarySchema,
@@ -1199,6 +1222,8 @@ export const SopEvaluationSchema = z.object({
     }).strict()
   }).strict(),
   sop3: z.object({
+    // Optional for legacy aggregates; present series must contain every genuine run.
+    randomRuns: z.array(SopRandomRunSchema).length(30).optional(),
     // Legacy or non-controlled artifacts remain usable, but cannot supply DPC-only metrics.
     controlledComparison: SopDpcOnlySchema.optional().catch(undefined),
     settings: z.object({
@@ -1234,16 +1259,37 @@ export const SopEvaluationSchema = z.object({
     participantLevelOutput: z.literal(false),
     sourceSha256: z.record(sha256Schema)
   }).strict()
-}).strict().transform((evaluation) => {
+}).strict().superRefine((evaluation, context) => {
+  const runs = evaluation.sop3.randomRuns;
+  if (!runs) return;
+  const reject = (message: string) => context.addIssue({ code: z.ZodIssueCode.custom, path: ["sop3", "randomRuns"], message });
+  if (!evaluation.provenance.sourceSha256["data/interim/dpc_comparison_random_runs.csv"]) reject("SOP 3 run series requires CSV source provenance.");
+  runs.forEach((run, index) => {
+    if (run.runNumber !== index + 1 || run.seed !== index || run.seed !== evaluation.sop3.settings.randomSeeds[index]) reject("SOP 3 requires ordered runs 1–30 and seeds 0–29.");
+    if (run.clusterSizes.reduce((sum, size) => sum + size, 0) !== evaluation.cohortN) reject("SOP 3 run sizes must cover the frozen cohort.");
+    const first = evaluation.sop3.firstThreeRandomRuns[index];
+    if (first && (run.runNumber !== first.runNumber || run.seed !== first.seed || run.iterations !== first.iterations ||
+      run.clusterSizes.some((size, cluster) => size !== first.clusterSizes[cluster]) ||
+      (["silhouette", "daviesBouldin", "calinskiHarabasz"] as const).some((metric) => Math.abs(run[metric] - first[metric]) > 1e-10))) reject("SOP 3 series disagrees with first-three evidence.");
+  });
+  for (const [field, summaryKey] of [["silhouette", "silhouette"], ["daviesBouldin", "davies_bouldin"], ["calinskiHarabasz", "calinski_harabasz"], ["iterations", "iterations"]] as const) {
+    const values = runs.map((run) => run[field]);
+    const mean = values.reduce((sum, value) => sum + value, 0) / values.length;
+    const actual = { mean, minimum: Math.min(...values), maximum: Math.max(...values),
+      standardDeviation: Math.sqrt(values.reduce((sum, value) => sum + (value - mean) ** 2, 0) / (values.length - 1)) };
+    const expected = evaluation.sop3.randomRunSummary[summaryKey];
+    if ((Object.keys(actual) as Array<keyof typeof actual>).some((key) => !Number.isFinite(expected[key]) || Math.abs(actual[key] - expected[key]) > 1e-10)) reject(`SOP 3 ${field} series disagrees with its packaged summary.`);
+  }
+}).transform((evaluation) => {
   const controlled = evaluation.sop3.controlledComparison;
-  const control = evaluation.sop1.ablation.conditions[0];
+  const control = evaluation.sop1.ablation.conditions[1];
   if (controlled && (
-    controlled.settings.inputSha256 !== evaluation.provenance.sourceSha256["data/interim/clustering_features_standardized.csv"] ||
-    control.representation !== controlled.settings.representation || control.dimensions !== 13 ||
+    controlled.settings.inputSha256 !== evaluation.provenance.sourceSha256["data/interim/clustering_pca_scores.csv"] ||
+    control.representation !== controlled.settings.representation || control.dimensions !== 6 ||
     evaluation.sop1.ablation.settings.seeds.some((seed, i) => seed !== controlled.settings.randomSeeds[i])
   )) evaluation.sop3.controlledComparison = undefined;
   const nbclust = evaluation.sop2.controlledComparison;
-  if (nbclust && nbclust.settings.inputSha256 !== evaluation.provenance.sourceSha256["data/interim/clustering_features_standardized.csv"]) {
+  if (nbclust && nbclust.settings.inputSha256 !== evaluation.provenance.sourceSha256["data/interim/clustering_pca_scores.csv"]) {
     evaluation.sop2.controlledComparison = undefined;
   }
   return evaluation;
@@ -1258,7 +1304,87 @@ export const BaselineCandidateSweepSchema = z.object({
   sourceSha256: z.record(z.string(), sha256Schema)
 }).strict();
 export type BaselineCandidateSweep = z.infer<typeof BaselineCandidateSweepSchema>;
-export const SopEvaluationResponseSchema = z.object({ evaluation: SopEvaluationSchema, baselineSweep: BaselineCandidateSweepSchema.nullable().optional() }).strict();
+// The only observation-level exception: defense projection geometry, with no
+// identifiers or attributes. All pre-existing aggregate contracts stay strict.
+const DefensePointSchema = z.object({ pc1: z.number().finite(), pc2: z.number().finite(), cluster: z.union([z.literal(0), z.literal(1)]) }).strict();
+const DefenseMarkerSchema = DefensePointSchema.extend({ type: z.enum(["initial", "final"]) }).strict();
+const DefensePanelSchema = z.object({
+  observations: z.array(DefensePointSchema).length(2437),
+  markers: z.array(DefenseMarkerSchema).min(2).max(4)
+}).strict();
+
+export const DefenseGeometrySchema = z.object({
+  contractVersion: z.literal("defense-geometry/v1"),
+  scope: z.literal("Frozen-study defense visualization only"),
+  sop1: z.object({
+    seed: z.literal(0), centroidMethod: z.literal("mean_of_saved_final_assignment_projection"),
+    baseline: DefensePanelSchema, pcaOnly: DefensePanelSchema
+  }).strict(),
+  sop3: z.object({
+    random: z.array(DefensePanelSchema.extend({ runNumber: z.number().int().min(1).max(3), seed: z.number().int().min(0).max(2) }).strict()).length(3),
+    dpc: z.array(DefensePanelSchema.extend({ checkNumber: z.number().int().min(1).max(3), origin: z.enum(["saved_reference", "reconstructed_check"]) }).strict()).length(3)
+  }).strict(),
+  provenance: z.object({
+    generatedAt: z.string().datetime({ offset: true }), sourceSha256: z.record(sha256Schema), evaluationSha256: sha256Schema,
+    runtime: z.object({ python: z.string(), numpy: z.string(), scipy: z.string(), sklearn: z.string() }).strict(),
+    randomOrigin: z.literal("replayed_seeds_0_1_2_validated_against_saved_evidence"),
+    dpcOrigin: z.literal("saved_reference_and_reconstructed_checks_2_3"), assignmentsExact: z.literal(true),
+    metricRtol: z.literal(1e-12), metricAtol: z.literal(1e-12), centroidRtol: z.literal(1e-12), centroidAtol: z.literal(1e-12)
+  }).strict()
+}).strict().superRefine((geometry, context) => {
+  const reject = (message: string) => context.addIssue({ code: z.ZodIssueCode.custom, message });
+  const common = geometry.sop1.baseline.observations;
+  const panels = [geometry.sop1.baseline, geometry.sop1.pcaOnly, ...geometry.sop3.random, ...geometry.sop3.dpc];
+  if (geometry.sop3.random.length !== 3 || geometry.sop3.dpc.length !== 3 || panels.some((panel) => panel.observations.length !== 2437)) {
+    reject("Defense geometry requires all eight complete panels.");
+    return;
+  }
+  for (const [index, panel] of panels.entries()) {
+    if (panel.observations.some((point, i) => point.pc1 !== common[i].pc1 || point.pc2 !== common[i].pc2)) reject("Every defense panel must use the identical complete common projection.");
+    const expectedTypes = index < 2 ? ["final"] : ["initial", "final"];
+    if (panel.markers.length !== expectedTypes.length * 2 || expectedTypes.some((type) => [0, 1].some((cluster) => panel.markers.filter((m) => m.type === type && m.cluster === cluster).length !== 1))) reject("Missing or duplicate defense centroid markers.");
+    for (const cluster of [0, 1]) {
+      const points = panel.observations.filter((point) => point.cluster === cluster);
+      if (!points.length) { reject("Empty defense cluster."); continue; }
+      if (index < 2) {
+        const marker = panel.markers.find((m) => m.type === "final" && m.cluster === cluster);
+        for (const field of ["pc1", "pc2"] as const) {
+          const mean = points.reduce((sum, point) => sum + point[field], 0) / points.length;
+          if (!marker || Math.abs(marker[field] - mean) > 1e-12 + Math.abs(mean) * 1e-12) reject("SOP 1 markers must be projected means of saved final assignments.");
+        }
+      }
+    }
+  }
+  geometry.sop3.random.forEach((panel, i) => {
+    if (panel.runNumber !== i + 1 || panel.seed !== i) reject("Defense random runs must be ordered runs 1–3 / seeds 0–2.");
+  });
+  if (geometry.sop1.pcaOnly.observations.some((point, i) => point.cluster !== geometry.sop3.random[0].observations[i].cluster)) reject("PCA-only seed-zero assignments differ from controlled random seed zero.");
+  geometry.sop3.dpc.forEach((panel, i) => {
+    if (panel.checkNumber !== i + 1 || panel.origin !== (i === 0 ? "saved_reference" : "reconstructed_check")) reject("DPC historical and reconstructed origins must be explicit.");
+    const reference = geometry.sop3.dpc[0];
+    if (panel.observations.some((point, j) => point.cluster !== reference.observations[j].cluster)) reject("DPC check assignments must reproduce the reference exactly.");
+    for (const marker of panel.markers) {
+      const expected = reference.markers.find((m) => m.type === marker.type && m.cluster === marker.cluster);
+      if (!expected || (["pc1", "pc2"] as const).some((field) => Math.abs(marker[field] - expected[field]) > (marker.type === "initial" ? 0 : 1e-12 + Math.abs(expected[field]) * 1e-12))) reject("DPC check geometry differs from the validated reference.");
+    }
+  });
+});
+export type DefenseGeometry = z.infer<typeof DefenseGeometrySchema>;
+export type DefensePanel = z.infer<typeof DefensePanelSchema>;
+
+export const SopEvaluationResponseSchema = z.object({ evaluation: SopEvaluationSchema, baselineSweep: BaselineCandidateSweepSchema.nullable().optional(), defenseGeometry: DefenseGeometrySchema.nullable().optional() }).strict().superRefine((payload, context) => {
+  const geometry = payload.defenseGeometry;
+  if (!geometry) return;
+  const reject = (message: string) => context.addIssue({ code: z.ZodIssueCode.custom, path: ["defenseGeometry"], message });
+  for (const [source, hash] of Object.entries(payload.evaluation.provenance.sourceSha256)) {
+    if (geometry.provenance.sourceSha256[source] !== hash) reject("Defense geometry source disagrees with validated SOP evidence.");
+  }
+  geometry.sop3.random.forEach((panel, i) => {
+    const expected = payload.evaluation.sop3.firstThreeRandomRuns[i];
+    if (!expected || expected.clusterSizes.some((count, cluster) => panel.observations.filter((point) => point.cluster === cluster).length !== count)) reject("Defense random assignments disagree with saved cluster sizes.");
+  });
+  if (!geometry.sop3.dpc[0] || payload.evaluation.sop3.dpcDeterminism.clusterSizes.some((count, cluster) => geometry.sop3.dpc[0].observations.filter((point) => point.cluster === cluster).length !== count)) reject("Defense DPC assignments disagree with saved cluster sizes.");
+});
 
 export type Axis = z.infer<typeof AxisSchema>;
 export type ResultSource = z.infer<typeof ResultSourceSchema>;

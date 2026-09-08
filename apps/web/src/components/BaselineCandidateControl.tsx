@@ -12,10 +12,12 @@ export const BaselineCandidateControl = ({ sweep, error }: { sweep: BaselineCand
       <div className="existing-card-header"><div><p>Interactive baseline candidate</p><h2>Baseline K-Means · k={k}</h2></div></div>
       <p className="mb-4 text-sm text-muted">No PCA · No NbClust · No DPC. Validated 13-feature candidate sweep, random initialization, seed {sweep?.seed ?? "—"}. Selecting k displays its stored result immediately.</p>
       <label htmlFor={id} className="text-base font-semibold">Manual cluster count: {k}</label>
-      <input id={id} aria-label="Baseline candidate cluster count" className="baseline-k-slider" type="range" min={BASELINE_K_MIN} max={BASELINE_K_MAX} step={1} value={k} disabled={!sweep}
-        onChange={(event) => { const next = Number(event.target.value); selectBaselineCandidate(sweep, next); setK(next); }}
-        style={{ "--slider-fill": `${((k - BASELINE_K_MIN) / (BASELINE_K_MAX - BASELINE_K_MIN)) * 100}%` } as CSSProperties} />
-      <div className="existing-k-ticks" aria-hidden="true">{sweep?.candidates.map((row) => <span key={row.k}>{row.k}</span>)}</div>
+      <div className="baseline-k-slider-shell">
+        <input id={id} aria-label="Baseline candidate cluster count" className="baseline-k-slider" type="range" min={BASELINE_K_MIN} max={BASELINE_K_MAX} step={1} value={k} disabled={!sweep}
+          onChange={(event) => { const next = Number(event.target.value); selectBaselineCandidate(sweep, next); setK(next); }}
+          style={{ "--slider-fill": `${((k - BASELINE_K_MIN) / (BASELINE_K_MAX - BASELINE_K_MIN)) * 100}%` } as CSSProperties} />
+        <div className="existing-k-ticks" aria-hidden="true">{sweep?.candidates.map((row) => <span key={row.k}>{row.k}</span>)}</div>
+      </div>
       {candidate ? <>
         <h3 className="mt-5 text-base font-semibold">Cluster membership counts · k={candidate.k}</h3>
         <div className="mt-3 space-y-2" aria-label={`Validated cluster sizes for baseline k=${candidate.k}`}>

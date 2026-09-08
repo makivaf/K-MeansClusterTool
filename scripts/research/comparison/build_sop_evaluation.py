@@ -4,12 +4,9 @@ This script does not participate in, modify, or consolidate the frozen official
 clustering and longitudinal pipeline. It consumes validated intermediates and
 creates aggregate-only evidence for the defense UI:
 
-* SOP 1 reuses the matched 30-run random-initialization outputs in the original
-  standardized space and PC1--PC6, then adds correlation and distance summaries.
-* SOP 2 preserves the PCA demonstration and adds an original-space comparison
-  of baseline maximum-Silhouette selection versus NbClust index voting.
-* SOP 3 preserves the existing PCA-space evidence and adds a fixed-k, original
-  standardized-space comparison that changes only random versus DPC seeds.
+* SOP 1 changes only the representation: standardized variables versus retained PCs.
+* SOP 2 retains PCA and changes baseline k selection versus NbClust.
+* SOP 3 retains PCA and NbClust and changes random versus DPC initialization.
 
 No participant identifiers, coordinates, assignments, or raw rows are written.
 """
@@ -31,33 +28,21 @@ for thread_variable in ("OMP_NUM_THREADS", "OPENBLAS_NUM_THREADS", "MKL_NUM_THRE
 
 import numpy as np
 from scipy.spatial.distance import pdist
-from sklearn.cluster import KMeans
-from sklearn.metrics import (
-    calinski_harabasz_score,
-    davies_bouldin_score,
-    silhouette_score,
-)
+
 
 
 ROOT = Path(__file__).resolve().parents[3]
 sys.path.insert(0, str(ROOT / "scripts" / "research" / "study_entry"))
 from dpc_initialize_clusters import dpc_init, STUDY_CUTOFF_PERCENTILE
+import run_enhanced_kmeans as final_enhanced
+import run_baseline_kmeans_comparison as baseline
+from package_sop_run_series import attach_random_runs
 
 INTERIM = ROOT / "data" / "interim"
 
 STANDARDIZED_PATH = INTERIM / "clustering_features_standardized.csv"
 PCA_PATH = INTERIM / "clustering_pca_scores.csv"
 PCA_VARIANCE_PATH = INTERIM / "clustering_pca_explained_variance.csv"
-BASELINE_RUNS_PATH = INTERIM / "baseline_kmeans_runs.csv"
-PCA_RANDOM_RUNS_PATH = INTERIM / "dpc_comparison_random_runs.csv"
-PCA_RANDOM_SUMMARY_PATH = INTERIM / "dpc_comparison_random_summary.csv"
-PCA_RANDOM_STABILITY_PATH = INTERIM / "dpc_comparison_random_stability.csv"
-NBCLUST_SUMMARY_PATH = INTERIM / "clustering_nbclust_summary.csv"
-SELECTED_K_PATH = INTERIM / "clustering_selected_k.csv"
-DPC_DETERMINISM_PATH = INTERIM / "clustering_dpc_determinism_check.csv"
-ENHANCED_METRICS_PATH = INTERIM / "enhanced_kmeans_metrics.csv"
-ENHANCED_SUMMARY_PATH = INTERIM / "enhanced_kmeans_run_summary.csv"
-
 SOP1_REDUNDANCY_PATH = INTERIM / "sop1_redundancy_distance_summary.csv"
 SOP1_ABLATION_PATH = INTERIM / "sop1_pca_ablation_summary.csv"
 SOP2_CANDIDATES_PATH = INTERIM / "sop2_pca_k_candidates.csv"
@@ -65,30 +50,56 @@ SUMMARY_PATH = INTERIM / "sop_evaluation_summary.json"
 RUNTIME_SUMMARY_PATH = ROOT / "apps" / "api" / "artifacts" / "sop_evaluation_summary.json"
 
 IDENTIFIERS = ("PTID", "RID")
-FEATURES = (
-    "MMSE",
-    "ADAS13",
-    "LMI",
-    "LMD",
-    "TMT_A",
-    "TMT_B",
-    "CATEGORY_FLUENCY_ANIMALS",
-    "RAVLT_IMMEDIATE",
-    "RAVLT_DELAYED",
-    "RAVLT_FORGETTING",
-    "CDRSB",
-    "FAQ",
-    "GDS",
-)
+FEATURES = baseline.FEATURES
 PCS = tuple(f"PC{number}" for number in range(1, 7))
-EXPECTED_N = 2437
-SEEDS = tuple(range(30))
-K_CANDIDATES = tuple(range(2, 11))
-K_SELECTION_SEED = 0
-N_INIT = 1
-MAX_ITER = 300
-TOLERANCE = 1e-4
-ALGORITHM = "lloyd"
+EXPECTED_N = baseline.EXPECTED_SHAPE[0]
+SEEDS = baseline.BASELINE_SEEDS
+K_CANDIDATES = baseline.K_CANDIDATES
+K_SELECTION_SEED = baseline.K_SELECTION_SEED
+N_INIT = baseline.N_INIT
+MAX_ITER = baseline.MAX_ITER
+TOLERANCE = baseline.TOLERANCE
+ALGORITHM = baseline.ALGORITHM
+BASELINE_SELECTION = "maximum silhouette; ties choose smaller k"
+
+# Cumulative workflow: downstream SOPs retain the previously introduced stages.
+PIPELINES = (
+    ("SOP1", "Existing", False, False, False),
+    ("SOP1", "Enhanced", True, False, False),
+    ("SOP2", "Existing", True, False, False),
+    ("SOP2", "Enhanced", True, True, False),
+    ("SOP3", "Existing", True, True, False),
+    ("SOP3", "Enhanced", True, True, True),
+)
+
+
+def run_sequential_conditions(standardized, pca):
+    """Retain PCA and then NbClust as each successive SOP changes one stage."""
+    import select_cluster_count_nbclust as nbclust
+    results = {}
+    for name, matrix in (("Existing", standardized), ("Enhanced", pca)):
+        k, candidates = baseline.select_baseline_k(matrix)
+        results["SOP1", name] = dict(k=k, candidates=candidates,
+            runs=baseline.run_baseline_replications(matrix, k))
+        print(f"SOP1/{name}: baseline-selected k={k}", flush=True)
+    results["SOP2", "Existing"] = results["SOP1", "Enhanced"]
+    selection = nbclust.select_k_nbclust(pca.tolist())
+    k = selection.selected_k
+    print(f"PCA NbClust selected k={k}", flush=True)
+    random = dict(k=k, selection=selection, runs=baseline.run_baseline_replications(pca, k))
+    results["SOP2", "Enhanced"] = random
+    results["SOP3", "Existing"] = random
+    initializations = [dpc_init(pca.tolist(), k=k) for _ in range(3)]
+    runs = [final_enhanced.run_enhanced_kmeans(pca, np.asarray(seeds.centroid_matrix), k)
+            for seeds in initializations]
+    if any(seeds.centroid_matrix != initializations[0].centroid_matrix for seeds in initializations[1:]):
+        raise AssertionError("PCA DPC initialization did not reproduce")
+    final_enhanced.validate_reproducibility(runs)
+    results["SOP3", "Enhanced"] = dict(k=k, selection=selection, runs=runs,
+                                        initializations=initializations)
+    return results
+
+
 METRICS = ("silhouette", "davies_bouldin", "calinski_harabasz")
 
 
@@ -176,36 +187,11 @@ def _distance_summary(name: str, matrix: np.ndarray) -> dict[str, Any]:
     }
 
 
-def _validate_run_protocol(rows: Sequence[dict[str, str]], k_field: str) -> None:
-    if len(rows) != len(SEEDS):
-        raise AssertionError("Controlled run artifact must contain exactly 30 rows")
-    for expected_number, (expected_seed, row) in enumerate(zip(SEEDS, rows), start=1):
-        expected = {
-            "run_number": str(expected_number),
-            "seed": str(expected_seed),
-            k_field: "2",
-            "init": "random",
-            "n_init": str(N_INIT),
-            "max_iter": str(MAX_ITER),
-            "tol": str(TOLERANCE),
-            "algorithm": ALGORITHM,
-        }
-        if any(row.get(key) != value for key, value in expected.items()):
-            raise AssertionError(f"Controlled run protocol mismatch at seed {expected_seed}")
-
-
-def _cluster_sizes(value: str) -> list[int]:
-    sizes = [int(part.split(":", 1)[1]) for part in value.split("|")]
-    if sum(sizes) != EXPECTED_N:
-        raise AssertionError("Cluster sizes do not sum to the frozen cohort")
-    return sizes
-
-
 def _condition_summary(
     name: str,
     dimensions: int,
     variance_retained: float,
-    rows: Sequence[dict[str, str]],
+    rows: Sequence[Any],
 ) -> dict[str, Any]:
     return {
         "representation": name,
@@ -213,7 +199,7 @@ def _condition_summary(
         "varianceRetained": variance_retained,
         "runCount": len(rows),
         "metrics": {
-            metric: _describe([float(row[metric]) for row in rows]) for metric in METRICS
+            metric: _describe([float(getattr(row, metric)) for row in rows]) for metric in METRICS
         },
     }
 
@@ -229,7 +215,7 @@ def _pca_variance_retained() -> float:
     return value
 
 
-def _build_sop1(standardized: np.ndarray, pca: np.ndarray) -> dict[str, Any]:
+def _build_sop1(standardized: np.ndarray, pca: np.ndarray, control, enhanced) -> dict[str, Any]:
     correlation = np.corrcoef(standardized, rowvar=False)
     upper = np.triu_indices(len(FEATURES), k=1)
     pairs = [
@@ -258,13 +244,13 @@ def _build_sop1(standardized: np.ndarray, pca: np.ndarray) -> dict[str, Any]:
         _distance_summary("6 principal components", pca),
     ]
 
-    baseline_rows = _read_csv(BASELINE_RUNS_PATH)
-    pca_rows = _read_csv(PCA_RANDOM_RUNS_PATH)
-    _validate_run_protocol(baseline_rows, "baseline_k")
-    _validate_run_protocol(pca_rows, "k")
     variance_retained = _pca_variance_retained()
-    baseline = _condition_summary("13 standardized features", 13, 1.0, baseline_rows)
-    pca_condition = _condition_summary("PC1-PC6", 6, variance_retained, pca_rows)
+    baseline = _condition_summary("13 standardized features", 13, 1.0, control["runs"])
+    pca_condition = _condition_summary("PC1-PC6", 6, variance_retained, enhanced["runs"])
+    for condition, result in ((baseline, control), (pca_condition, enhanced)):
+        condition["selectedK"] = result["k"]
+        condition["baselineCandidates"] = [
+            {"k": run.k, "silhouette": run.silhouette} for run in result["candidates"]]
     metric_changes = {
         metric: {
             "absoluteMeanChange": pca_condition["metrics"][metric]["mean"]
@@ -336,7 +322,8 @@ def _build_sop1(standardized: np.ndarray, pca: np.ndarray) -> dict[str, Any]:
         "ablation": {
             "settings": {
                 "cohortN": EXPECTED_N,
-                "k": 2,
+                "k": control["k"],
+                "kSelection": BASELINE_SELECTION,
                 "initialization": "random",
                 "nInit": N_INIT,
                 "maxIter": MAX_ITER,
@@ -350,24 +337,23 @@ def _build_sop1(standardized: np.ndarray, pca: np.ndarray) -> dict[str, Any]:
     }
 
 
-def _build_nbclust_only(standardized: np.ndarray) -> dict[str, Any]:
+def _build_nbclust_comparison(pca: np.ndarray, control, enhanced) -> dict[str, Any]:
     """Reuse both validated selectors and one common downstream Lloyd runner."""
     from dataclasses import asdict
     import run_baseline_kmeans_comparison as baseline
     import select_cluster_count_nbclust as nbclust
 
-    baseline_k, candidates = baseline.select_baseline_k(standardized)
-    print(f"original_space_baseline_selected_k={baseline_k}", flush=True)
-    matrix = standardized.tolist()
-    selection = nbclust.select_k_nbclust(matrix, expected_shape=(EXPECTED_N, len(FEATURES)))
-    print(f"original_space_nbclust_selected_k={selection.selected_k}; first_pass_complete=True", flush=True)
-    repeated = nbclust.select_k_nbclust(matrix, expected_shape=(EXPECTED_N, len(FEATURES)))
+    baseline_k, candidates = control["k"], control["candidates"]
+    matrix = pca.tolist()
+    selection = enhanced["selection"]
+    print(f"pca_space_nbclust_selected_k={selection.selected_k}; first_pass_complete=True", flush=True)
+    repeated = nbclust.select_k_nbclust(matrix, expected_shape=(EXPECTED_N, len(PCS)))
     if selection != repeated:
-        raise AssertionError("Original-space NbClust selection did not reproduce exactly")
-    print("original_space_nbclust_reproducible=True", flush=True)
+        raise AssertionError("PCA-space NbClust selection did not reproduce exactly")
+    print("pca_space_nbclust_reproducible=True", flush=True)
 
-    control_runs = baseline.run_baseline_replications(standardized, baseline_k)
-    nbclust_runs = baseline.run_baseline_replications(standardized, selection.selected_k)
+    control_runs = control["runs"]
+    nbclust_runs = enhanced["runs"]
     if baseline_k == selection.selected_k and any(
         not np.array_equal(control.labels, enhanced.labels)
         for control, enhanced in zip(control_runs, nbclust_runs)
@@ -375,15 +361,15 @@ def _build_nbclust_only(standardized: np.ndarray) -> dict[str, Any]:
         raise AssertionError("Identical k and initialization must reproduce identical partitions")
 
     def summarize(k: int, runs: Sequence[Any]) -> dict[str, Any]:
-        return {"selectedK": k, "representation": "13 standardized features", "dimensions": 13,
+        return {"selectedK": k, "representation": "PC1-PC6", "dimensions": 6,
                 "runCount": len(runs),
                 "metrics": {metric: _describe([float(getattr(run, metric)) for run in runs])
                             for metric in METRICS}}
 
     return {
         "settings": {
-            "cohortN": EXPECTED_N, "representation": "13 standardized features",
-            "features": list(FEATURES), "pca": False, "dpc": False,
+            "cohortN": EXPECTED_N, "representation": "PC1-PC6",
+            "features": list(PCS), "pca": True, "dpc": False,
             "controlNbclust": False, "comparisonNbclust": True,
             "controlKSelection": "maximum silhouette; ties choose smaller k",
             "comparisonKSelection": "NbClust index voting; Chapter 3 rank-sum tie-break",
@@ -391,7 +377,7 @@ def _build_nbclust_only(standardized: np.ndarray) -> dict[str, Any]:
             "nbclustSelectionSeed": nbclust.RANDOM_SEED,
             "initialization": "random", "nInit": baseline.N_INIT, "maxIter": baseline.MAX_ITER,
             "tolerance": baseline.TOLERANCE, "algorithm": baseline.ALGORITHM,
-            "randomSeeds": list(baseline.BASELINE_SEEDS), "inputSha256": _sha256(STANDARDIZED_PATH),
+            "randomSeeds": list(baseline.BASELINE_SEEDS), "inputSha256": _sha256(PCA_PATH),
         },
         "control": summarize(baseline_k, control_runs),
         "nbclustOnly": summarize(selection.selected_k, nbclust_runs),
@@ -408,255 +394,131 @@ def _build_nbclust_only(standardized: np.ndarray) -> dict[str, Any]:
     }
 
 
-def _build_sop2(pca: np.ndarray) -> dict[str, Any]:
-    candidates: list[dict[str, Any]] = []
-    for k in K_CANDIDATES:
-        model = KMeans(
-            n_clusters=k,
-            init="random",
-            n_init=N_INIT,
-            random_state=K_SELECTION_SEED,
-            max_iter=MAX_ITER,
-            tol=TOLERANCE,
-            algorithm=ALGORITHM,
-        )
-        labels = np.asarray(model.fit_predict(pca), dtype=np.int64)
-        sizes = [int(np.count_nonzero(labels == label)) for label in range(k)]
-        row = {
-            "k": k,
-            "clusterSizes": sizes,
-            "silhouette": float(silhouette_score(pca, labels, metric="euclidean")),
-            "daviesBouldin": float(davies_bouldin_score(pca, labels)),
-            "calinskiHarabasz": float(calinski_harabasz_score(pca, labels)),
-            "inertia": float(model.inertia_),
-            "iterations": int(model.n_iter_),
-        }
-        if sum(sizes) != EXPECTED_N or not all(math.isfinite(value) for key, value in row.items() if key not in {"k", "clusterSizes"}):
-            raise AssertionError(f"Invalid PCA candidate result for k={k}")
-        candidates.append(row)
-    silhouette_selected_k = min(candidates, key=lambda row: (-row["silhouette"], row["k"]))["k"]
+def _candidate(run):
+    return {"k": run.k, "clusterSizes": list(run.cluster_sizes),
+            "silhouette": run.silhouette, "daviesBouldin": run.davies_bouldin,
+            "calinskiHarabasz": run.calinski_harabasz,
+            "inertia": run.inertia, "iterations": run.iterations}
 
-    vote_rows = _read_csv(NBCLUST_SUMMARY_PATH)
-    votes = [
-        {"k": int(row["k"]), "votes": int(row["vote_count"])} for row in vote_rows
-    ]
-    selection_rows = _read_csv(SELECTED_K_PATH)
-    if len(selection_rows) != 1:
-        raise AssertionError("Expected one frozen selected-k row")
-    selection = selection_rows[0]
-    nbclust_selected_k = int(selection["selected_k"])
-    usable_votes = int(selection["total_usable_indices"])
-    selected_votes = next(item["votes"] for item in votes if item["k"] == nbclust_selected_k)
-    if (silhouette_selected_k, nbclust_selected_k, usable_votes, selected_votes) != (2, 2, 24, 9):
-        raise AssertionError("SOP 2 selections differ from the frozen result")
 
-    _write_csv(
-        SOP2_CANDIDATES_PATH,
-        ("k", "cluster_sizes", "silhouette", "davies_bouldin", "calinski_harabasz", "inertia", "iterations", "maximum_silhouette_selected"),
-        (
-            {
-                "k": row["k"],
-                "cluster_sizes": "|".join(str(size) for size in row["clusterSizes"]),
-                "silhouette": row["silhouette"],
-                "davies_bouldin": row["daviesBouldin"],
-                "calinski_harabasz": row["calinskiHarabasz"],
-                "inertia": row["inertia"],
-                "iterations": row["iterations"],
-                "maximum_silhouette_selected": row["k"] == silhouette_selected_k,
-            }
-            for row in candidates
-        ),
-    )
+def _build_sop2(pca, control, enhanced):
+    controlled = _build_nbclust_comparison(pca, control, enhanced)
+    candidates = [_candidate(run) for run in control["candidates"]]
+    _write_csv(SOP2_CANDIDATES_PATH,
+        ("k", "cluster_sizes", "silhouette", "davies_bouldin", "calinski_harabasz",
+         "inertia", "iterations", "maximum_silhouette_selected"),
+        ({"k": run.k, "cluster_sizes": "|".join(map(str, run.cluster_sizes)),
+          **{metric: getattr(run, metric) for metric in (*METRICS, "inertia", "iterations")},
+          "maximum_silhouette_selected": run.k == control["k"]}
+         for run in control["candidates"]))
     return {
-        "settings": {
-            "cohortN": EXPECTED_N,
-            "representation": "PC1-PC6",
-            "seed": K_SELECTION_SEED,
-            "initialization": "random",
-            "nInit": N_INIT,
-            "maxIter": MAX_ITER,
-            "tolerance": TOLERANCE,
-            "algorithm": ALGORITHM,
-        },
-        "demonstratedK": [next(row for row in candidates if row["k"] == k) for k in (2, 3, 5)],
-        "candidates": candidates,
-        "maximumSilhouetteSelectedK": silhouette_selected_k,
-        "nbclust": {
-            "selectedK": nbclust_selected_k,
-            "usableIndices": usable_votes,
-            "votesForSelectedK": selected_votes,
-            "voteDistribution": votes,
-        },
+        "settings": {"cohortN": EXPECTED_N, "representation": "PC1-PC6",
+            "seed": K_SELECTION_SEED, "initialization": "random", "nInit": N_INIT,
+            "maxIter": MAX_ITER, "tolerance": TOLERANCE, "algorithm": ALGORITHM},
+        "demonstratedK": [row for row in candidates if row["k"] in (2, 3, 5)],
+        "candidates": candidates, "maximumSilhouetteSelectedK": control["k"],
+        "nbclust": {"selectedK": enhanced["k"], **{key: controlled["selection"][key]
+            for key in ("usableIndices", "votesForSelectedK", "voteDistribution")}},
+        "controlledComparison": controlled,
     }
 
 
-def _build_dpc_only(standardized: np.ndarray) -> dict[str, Any]:
-    """Change only initialization in the original space; k is fixed, never selected."""
-    settings = dict(n_clusters=2, n_init=N_INIT, max_iter=MAX_ITER,
-                    tol=TOLERANCE, algorithm=ALGORITHM)
-
-    def fit(init: Any, seed: int) -> tuple[np.ndarray, dict[str, float], int]:
-        model = KMeans(**settings, init=init, random_state=seed)
-        labels = model.fit_predict(standardized)
-        metrics = {
-            "silhouette": float(silhouette_score(standardized, labels)),
-            "davies_bouldin": float(davies_bouldin_score(standardized, labels)),
-            "calinski_harabasz": float(calinski_harabasz_score(standardized, labels)),
-        }
-        if len(set(labels)) != 2 or not all(math.isfinite(v) for v in metrics.values()):
-            raise AssertionError("Invalid DPC-only comparison output")
-        return labels, metrics, int(model.n_iter_)
-
-    # Verify the existing control against this exact matrix before reusing its mean.
-    baseline = _read_csv(BASELINE_RUNS_PATH)
-    _validate_run_protocol(baseline, "baseline_k")
-    for seed, row in zip(SEEDS, baseline):
-        _, metrics, _ = fit("random", seed)
-        if any(not math.isclose(metrics[key], float(row[key]), rel_tol=1e-10, abs_tol=1e-12)
-               for key in METRICS):
-            raise AssertionError(f"Original-space control drift at seed {seed}")
-
-    matrix = standardized.tolist()
-    reference = None
-    for check in range(3):
-        seeds = dpc_init(matrix, k=2)
-        labels, metrics, iterations = fit(np.asarray(seeds.centroid_matrix), 0)
-        result = (seeds.centroid_matrix, labels.tolist(), metrics, iterations)
-        if reference is not None and result != reference:
-            raise AssertionError("Original-space DPC initialization/output is not deterministic")
-        reference = result
+def _build_dpc_comparison(enhanced):
+    run, seeds = enhanced["runs"][0], enhanced["initializations"][0]
     return {
         "settings": {
-            "cohortN": EXPECTED_N, "representation": "13 standardized features",
-            "features": list(FEATURES), "pca": False, "nbclust": False,
-            "k": 2, "kSelection": "fixed", "nInit": N_INIT, "maxIter": MAX_ITER,
-            "tolerance": TOLERANCE, "algorithm": ALGORITHM,
-            "controlInitialization": "random", "dpcInitialization": "deterministic DPC",
-            "randomSeeds": list(SEEDS), "dpcRandomState": 0,
-            "inputSha256": _sha256(STANDARDIZED_PATH),
+            "cohortN": EXPECTED_N, "representation": "PC1-PC6",
+            "features": list(PCS), "pca": True, "nbclust": True,
+            "k": enhanced["k"], "kSelection": "NbClust",
+            "nInit": N_INIT, "maxIter": MAX_ITER, "tolerance": TOLERANCE,
+            "algorithm": ALGORITHM, "controlInitialization": "random",
+            "dpcInitialization": "deterministic DPC", "randomSeeds": list(SEEDS),
+            "dpcRandomState": 0, "inputSha256": _sha256(PCA_PATH),
             "cutoffPercentile": STUDY_CUTOFF_PERCENTILE,
         },
-        "repeatedChecks": 3, "identicalInitialization": True, "identicalOutput": True,
-        "clusterSizes": [int(np.count_nonzero(labels == label)) for label in range(2)],
-        "iterations": iterations,
-        "metrics": {"silhouette": metrics["silhouette"],
-                    "daviesBouldin": metrics["davies_bouldin"],
-                    "calinskiHarabasz": metrics["calinski_harabasz"]},
+        "repeatedChecks": len(enhanced["runs"]), "identicalInitialization": True,
+        "identicalOutput": True, "clusterSizes": np.bincount(run.labels).tolist(),
+        "iterations": run.iterations,
+        "metrics": {"silhouette": run.silhouette, "daviesBouldin": run.davies_bouldin,
+                    "calinskiHarabasz": run.calinski_harabasz},
         "selectedCentroids": [
             {"assignedCluster": position, "rho": seeds.rho[index],
              "delta": seeds.delta[index], "gamma": seeds.gamma[index]}
-            for position, index in enumerate(seeds.selected_indices)
-        ],
+            for position, index in enumerate(seeds.selected_indices)],
     }
 
 
-def _build_sop3() -> dict[str, Any]:
-    runs = _read_csv(PCA_RANDOM_RUNS_PATH)
-    _validate_run_protocol(runs, "k")
-    first_three = [
-        {
-            "runNumber": int(row["run_number"]),
-            "seed": int(row["seed"]),
-            "clusterSizes": _cluster_sizes(row["cluster_sizes"]),
-            "silhouette": float(row["silhouette"]),
-            "daviesBouldin": float(row["davies_bouldin"]),
-            "calinskiHarabasz": float(row["calinski_harabasz"]),
-            "iterations": int(row["iterations"]),
-        }
-        for row in runs[:3]
-    ]
-    summary_rows = _read_csv(PCA_RANDOM_SUMMARY_PATH)
-    summary = {
-        row["metric"]: {
-            "mean": float(row["mean"]),
-            "standardDeviation": float(row["standard_deviation_ddof_1"]),
-            "minimum": float(row["minimum"]),
-            "maximum": float(row["maximum"]),
-        }
-        for row in summary_rows
-    }
-    stability_rows = _read_csv(PCA_RANDOM_STABILITY_PATH)
-    stability = {
-        row["statistic"]: float(row["value"])
-        for row in stability_rows
-        if row["record_type"] == "summary"
-    }
-    partition_rows = [
-        row for row in stability_rows
-        if row["record_type"] == "summary" and row["statistic"] == "distinct_label_invariant_partitions"
-    ]
-    if len(partition_rows) != 1 or "label permutations share one canonical tuple" not in partition_rows[0]["canonicalization_method"]:
-        raise AssertionError("SOP 3 partition count is not explicitly label-invariant")
-    determinism = _read_csv(DPC_DETERMINISM_PATH)
-    if len(determinism) != 3 or any(row["overall_pass"] != "True" for row in determinism):
-        raise AssertionError("DPC determinism checks did not pass three times")
-    metric_rows = _read_csv(ENHANCED_METRICS_PATH)
-    metric_lookup = {row["metric"]: float(row["value"]) for row in metric_rows}
-    enhanced_summary = {row["metric"]: row["value"] for row in _read_csv(ENHANCED_SUMMARY_PATH)}
+def _build_sop3(control, enhanced):
+    runs = control["runs"]
+    dpc = _build_dpc_comparison(enhanced)
+    ari = [row["adjusted_rand_index"] for row in baseline._pairwise_ari(runs)]
     return {
-        "settings": {
-            "cohortN": EXPECTED_N,
-            "representation": "PC1-PC6",
-            "k": 2,
-            "nInit": N_INIT,
-            "maxIter": MAX_ITER,
-            "tolerance": TOLERANCE,
-            "algorithm": ALGORITHM,
-            "randomSeeds": list(SEEDS),
-        },
-        "firstThreeRandomRuns": first_three,
-        "randomRunSummary": summary,
+        "settings": {"cohortN": EXPECTED_N, "representation": "PC1-PC6",
+            "k": control["k"], "nInit": N_INIT, "maxIter": MAX_ITER,
+            "tolerance": TOLERANCE, "algorithm": ALGORITHM, "randomSeeds": list(SEEDS)},
+        "firstThreeRandomRuns": [
+            {"runNumber": run.run_number, "seed": run.seed,
+             **{key: value for key, value in _candidate(run).items() if key not in ("k", "inertia")}}
+            for run in runs[:3]],
+        "randomRunSummary": {metric: _describe([getattr(run, metric) for run in runs])
+                             for metric in (*METRICS, "inertia", "iterations")},
         "partitionStability": {
-            "distinctLabelInvariantPartitions": int(stability["distinct_label_invariant_partitions"]),
-            "meanPairwiseAdjustedRandIndex": stability["mean_pairwise_ari"],
-            "minimumPairwiseAdjustedRandIndex": stability["minimum_pairwise_ari"],
-            "maximumPairwiseAdjustedRandIndex": stability["maximum_pairwise_ari"],
-        },
-        "dpcDeterminism": {
-            "repeatedChecks": len(determinism),
-            "identicalInitialization": all(row["centroid_matrix_exact"] == "True" for row in determinism),
-            "identicalOutput": all(row["overall_pass"] == "True" for row in determinism),
-            "clusterSizes": [int(enhanced_summary["cluster_0_size"]), int(enhanced_summary["cluster_1_size"])],
-            "iterations": int(enhanced_summary["iterations"]),
-            "metrics": {
-                "silhouette": metric_lookup["silhouette_coefficient"],
-                "daviesBouldin": metric_lookup["davies_bouldin_index"],
-                "calinskiHarabasz": metric_lookup["calinski_harabasz_index"],
-            },
-        },
+            "distinctLabelInvariantPartitions": len({baseline.canonicalize_partition(run.labels) for run in runs}),
+            "meanPairwiseAdjustedRandIndex": float(np.mean(ari)),
+            "minimumPairwiseAdjustedRandIndex": float(np.min(ari)),
+            "maximumPairwiseAdjustedRandIndex": float(np.max(ari))},
+        "dpcDeterminism": {key: value for key, value in dpc.items()
+                           if key not in ("settings", "selectedCentroids")},
+        "controlledComparison": dpc,
     }
+
+
+def _validate_preprocessing(standardized, pca):
+    """Reproduce the common median/z-score input and existing retained-PC transform."""
+    import preprocess_study_entry as prep
+    retained = prep.build_retained_feature_table(prep.read_csv_as_text(prep.AUTHORITATIVE_INPUT))
+    imputed, summary = prep.median_impute_features(retained)
+    rebuilt, _, _ = prep.standardize_features(imputed, summary)
+    scores, _, _, _, count = prep.apply_pca(rebuilt)
+    keys = list(zip(rebuilt["PTID"].str.strip(), rebuilt["RID"].str.strip()))
+    stored_keys, _ = _load_matrix(STANDARDIZED_PATH, FEATURES)
+    if keys != stored_keys or count != len(PCS):
+        raise AssertionError("Preprocessing cohort or retained PCA dimension drift")
+    np.testing.assert_allclose(rebuilt.loc[:, FEATURES].to_numpy(), standardized, rtol=0, atol=1e-12)
+    np.testing.assert_allclose(scores.loc[:, PCS].to_numpy(), pca, rtol=0, atol=1e-12)
+
+
+def pipeline_manifest(sop1, sop2, sop3):
+    """Attach the executable switch contract to the corresponding computed selections."""
+    selected = [condition["selectedK"] for condition in sop1["ablation"]["conditions"]]
+    selected += [sop2["maximumSilhouetteSelectedK"], sop2["nbclust"]["selectedK"],
+                 sop3["settings"]["k"], sop3["controlledComparison"]["settings"]["k"]]
+    return [
+        {"sop": sop, "pipeline": pipeline, "pca": pca_on, "nbclust": nb_on,
+         "dpc": dpc_on, "representation": "PC1-PC6" if pca_on else "13 standardized features",
+         "selectedK": k, "kSelection": "NbClust" if nb_on else BASELINE_SELECTION}
+        for (sop, pipeline, pca_on, nb_on, dpc_on), k in zip(PIPELINES, selected)]
 
 
 def main() -> None:
     standardized_keys, standardized = _load_matrix(STANDARDIZED_PATH, FEATURES)
-    if sys.argv[1:] == ["--sop2-only"]:
-        # Update only this controlled field; preserve all existing SOP/PCA/DPC evidence.
-        payload = json.loads(RUNTIME_SUMMARY_PATH.read_text(encoding="utf-8"))
-        if payload["provenance"]["sourceSha256"]["data/interim/clustering_features_standardized.csv"] != _sha256(STANDARDIZED_PATH):
-            raise AssertionError("Frozen standardized input differs from the aggregate provenance")
-        payload["sop2"]["controlledComparison"] = _build_nbclust_only(standardized)
-        _write_json(SUMMARY_PATH, payload)
-        _write_json(RUNTIME_SUMMARY_PATH, payload)
-        print("sop2_only_written=True; other_results_modified=False", flush=True)
-        return
+    if sys.argv[1:]:
+        raise SystemExit("Regenerate the complete six-pipeline contract; no partial SOP updates")
     pca_keys, pca = _load_matrix(PCA_PATH, PCS)
     if standardized_keys != pca_keys:
-        raise AssertionError("The standardized and PCA representations do not contain the same ordered cohort")
-    sop1 = _build_sop1(standardized, pca)
-    sop2 = _build_sop2(pca)
-    sop2["controlledComparison"] = _build_nbclust_only(standardized)
-    sop3 = _build_sop3()
-    sop3["controlledComparison"] = _build_dpc_only(standardized)
-    source_paths = (
-        STANDARDIZED_PATH, PCA_PATH, PCA_VARIANCE_PATH, BASELINE_RUNS_PATH,
-        PCA_RANDOM_RUNS_PATH, PCA_RANDOM_SUMMARY_PATH, PCA_RANDOM_STABILITY_PATH,
-        NBCLUST_SUMMARY_PATH, SELECTED_K_PATH, DPC_DETERMINISM_PATH,
-        ENHANCED_METRICS_PATH, ENHANCED_SUMMARY_PATH,
-    )
+        raise AssertionError("Standardized and PCA representations must share the ordered cohort")
+    _validate_preprocessing(standardized, pca)
+    results = run_sequential_conditions(standardized, pca)
+    sop1 = _build_sop1(standardized, pca, results["SOP1", "Existing"], results["SOP1", "Enhanced"])
+    sop2 = _build_sop2(pca, results["SOP2", "Existing"], results["SOP2", "Enhanced"])
+    sop3 = _build_sop3(results["SOP3", "Existing"], results["SOP3", "Enhanced"])
+    source_paths = (STANDARDIZED_PATH, PCA_PATH, PCA_VARIANCE_PATH,
+                    INTERIM / "study_entry_cohort_unimputed.csv")
     payload = {
         "contractVersion": "sop-evaluation/v1",
         "scope": "Aggregate-only controlled evaluation; isolated from frozen official results",
         "cohortN": EXPECTED_N,
+        "pipelines": pipeline_manifest(sop1, sop2, sop3),
         "sop1": sop1,
         "sop2": sop2,
         "sop3": sop3,
@@ -666,6 +528,7 @@ def main() -> None:
             "sourceSha256": {str(path.relative_to(ROOT)).replace("\\", "/"): _sha256(path) for path in source_paths},
         },
     }
+    attach_random_runs(payload)
     _write_json(SUMMARY_PATH, payload)
     _write_json(RUNTIME_SUMMARY_PATH, payload)
     print(f"wrote={SOP1_REDUNDANCY_PATH.relative_to(ROOT)}")

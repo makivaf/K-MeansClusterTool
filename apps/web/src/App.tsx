@@ -30,7 +30,7 @@ export default function App() {
         <Suspense fallback={<p>Loading Run Analysis...</p>}><UploadAndCluster /></Suspense>
       </div> : null
     }>
-      <Suspense fallback={<div className="rounded-xl border border-line bg-white p-6 text-sm text-muted">Loading research view...</div>}>
+      <Suspense fallback={<div className="rounded-md border border-line bg-white p-6 text-sm text-muted">Loading research view...</div>}>
         <Routes>
           <Route path="/" element={<Navigate to="/existing-algorithm" replace />} />
           <Route path="/existing-algorithm" element={<OverviewPage run={run} />} />

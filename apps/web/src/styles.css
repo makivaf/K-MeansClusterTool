@@ -16,6 +16,7 @@ body {
   min-width: 320px;
   min-height: 100vh;
   line-height: 1.5;
+  overflow-x: hidden;
 }
 
 ::selection {
@@ -60,15 +61,15 @@ input:focus-visible {
   }
 
   .research-table thead {
-    @apply border-y border-line bg-slate-50/70 text-[11px] font-semibold uppercase tracking-[0.08em] text-muted;
+    @apply border-y border-line bg-slate-50 text-[11px] font-semibold uppercase tracking-[0.08em] text-muted;
   }
 
   .research-table th {
-    @apply px-3 py-2.5;
+    @apply px-4 py-3;
   }
 
   .research-table td {
-    @apply border-b border-line px-3 py-2.5 align-top;
+    @apply border-b border-line px-4 py-3 align-top;
   }
 
   .research-table tbody tr:last-child td {
@@ -76,15 +77,15 @@ input:focus-visible {
   }
 
   .sop-tabs {
-    @apply grid grid-cols-2 border-y border-line bg-white sm:grid-cols-4;
+    @apply flex overflow-x-auto rounded-md border border-line bg-white p-1 shadow-panel;
   }
 
   .sop-tabs button {
-    @apply flex items-center justify-between border-b-2 border-transparent px-3 py-3 text-left text-xs font-semibold text-muted transition hover:bg-slate-50 hover:text-ink sm:px-4 sm:text-sm;
+    @apply flex h-10 min-w-max items-center justify-between gap-4 rounded-sm border border-transparent px-3 text-left text-xs font-semibold text-muted transition hover:border-teal-100 hover:bg-teal-50/40 hover:text-ink focus-visible:ring-2 focus-visible:ring-teal-600 focus-visible:ring-offset-2 sm:px-4 sm:text-sm;
   }
 
   .sop-tabs button[aria-selected="true"] {
-    @apply border-teal-700 bg-teal-50/60 text-teal-900;
+    @apply border-teal-700 bg-teal-50/70 font-bold text-teal-900;
   }
 
   .sop-flow {
@@ -212,7 +213,7 @@ input:focus-visible {
   }
 
   .existing-hero {
-    @apply grid gap-5 rounded-md border border-line bg-white p-5 shadow-panel lg:grid-cols-[minmax(0,1fr)_18rem] lg:items-end lg:p-7;
+    @apply grid gap-5 rounded-md border border-line bg-white p-5 shadow-panel lg:grid-cols-[minmax(0,1fr)_18rem] lg:items-end lg:p-6;
   }
 
   .existing-eyebrow,
@@ -291,6 +292,11 @@ input:focus-visible {
     @apply justify-self-center rounded-sm bg-teal-50 px-3 py-1 text-base text-teal-900;
   }
 
+  .baseline-k-slider-shell {
+    --baseline-slider-thumb-size: 1.5rem;
+    @apply mt-2;
+  }
+
   .baseline-k-slider {
     @apply h-3 w-full cursor-pointer appearance-none rounded-full bg-slate-200;
     background-image: linear-gradient(90deg, #0f7977 var(--slider-fill), #e2e8f0 var(--slider-fill));
@@ -306,6 +312,16 @@ input:focus-visible {
 
   .existing-k-ticks {
     @apply mt-2 grid grid-cols-9 text-center text-[10px] font-semibold tabular-nums text-muted;
+  }
+
+  .baseline-k-slider-shell .baseline-k-slider {
+    width: calc(100% - var(--baseline-slider-thumb-size));
+    margin-inline: calc(var(--baseline-slider-thumb-size) / 2);
+  }
+
+  .baseline-k-slider-shell .existing-k-ticks {
+    @apply flex justify-between;
+    margin-inline: calc(var(--baseline-slider-thumb-size) / 2);
   }
 
   .existing-run-button {
@@ -520,15 +536,15 @@ input:focus-visible {
   }
 
   .summary-tabs {
-    @apply grid gap-2 rounded-md border border-line bg-white p-2 shadow-panel sm:grid-cols-2 xl:grid-cols-6;
+    @apply flex gap-1 overflow-x-auto rounded-md border border-line bg-white p-1 shadow-panel;
   }
 
   .summary-tabs button {
-    @apply rounded-sm border border-transparent px-3 py-2.5 text-left transition hover:border-teal-200 hover:bg-teal-50/40;
+    @apply h-10 min-w-[10rem] rounded-sm border border-transparent px-3 text-left transition hover:border-teal-100 hover:bg-teal-50/40 focus-visible:ring-2 focus-visible:ring-teal-600 focus-visible:ring-offset-2 xl:min-w-0 xl:flex-1;
   }
 
   .summary-tabs button[aria-selected="true"] {
-    @apply border-teal-700 bg-teal-50/70 text-teal-900;
+    @apply border-teal-700 bg-teal-50/70 font-bold text-teal-900;
   }
 
   .summary-tabs span {
@@ -583,6 +599,68 @@ input:focus-visible {
     @apply grid items-start gap-4 xl:grid-cols-[minmax(22rem,1fr)_2.5rem_minmax(22rem,1fr)];
   }
 
+  .summary-sop-two-up {
+    @apply mt-4 grid items-start gap-4 xl:grid-cols-2;
+  }
+
+  .summary-nbclust-comparison {
+    @apply mt-4 grid items-start gap-4 xl:grid-cols-2;
+  }
+
+  .summary-nbclust-selection-card {
+    @apply min-w-0 p-5 sm:p-6;
+  }
+
+  .summary-nbclust-selection-card .summary-sop-result-heading > strong {
+    @apply text-2xl font-semibold tracking-tight text-ink sm:text-right;
+  }
+
+  .summary-nbclust-selection-copy {
+    @apply min-h-[3rem] border-b border-line pb-4 text-sm leading-6 text-muted;
+  }
+
+  .summary-manual-k-control {
+    @apply border-b border-line py-4;
+  }
+
+  .summary-manual-k-control label {
+    @apply mb-2 block text-sm font-semibold text-ink;
+  }
+
+  .summary-nbclust-facts {
+    @apply mt-4 grid overflow-hidden rounded-md border border-line bg-line sm:grid-cols-2;
+  }
+
+  .summary-nbclust-facts div {
+    @apply bg-white px-4 py-3.5;
+  }
+
+  .summary-nbclust-facts span,
+  .summary-nbclust-metrics span {
+    @apply block text-[10px] font-semibold uppercase tracking-[0.08em] text-muted;
+  }
+
+  .summary-nbclust-facts strong {
+    @apply mt-1 block text-lg font-semibold tabular-nums text-ink;
+  }
+
+  .summary-nbclust-facts small,
+  .summary-nbclust-metrics small {
+    @apply mt-1 block text-xs leading-5 text-muted;
+  }
+
+  .summary-nbclust-metrics {
+    @apply mt-4 grid gap-3 sm:grid-cols-3;
+  }
+
+  .summary-nbclust-metrics div {
+    @apply min-h-24 rounded-sm border border-line bg-slate-50/70 px-4 py-3.5;
+  }
+
+  .summary-nbclust-metrics strong {
+    @apply mt-2 block text-xl font-semibold tabular-nums text-ink;
+  }
+
   .summary-vs {
     @apply hidden self-center text-center text-xs font-semibold uppercase tracking-[0.18em] text-muted xl:block;
   }
@@ -613,6 +691,239 @@ input:focus-visible {
 
   .summary-sop-scatter-plot {
     @apply h-[24rem] sm:h-[30rem] lg:h-[34rem];
+  }
+
+  .summary-sop-projection-gap {
+    @apply relative flex h-[22rem] min-h-[18rem] items-center justify-center overflow-hidden rounded-md border border-line bg-slate-50 px-8 text-center text-sm leading-6 text-muted sm:h-[28rem] lg:h-[32rem];
+  }
+
+  .summary-sop-projection-gap p {
+    @apply relative z-[1] max-w-md rounded-sm border border-line bg-white/90 px-4 py-3 shadow-panel;
+  }
+
+  .summary-sop-counts {
+    @apply mt-4 space-y-2 border-t border-line pt-3;
+  }
+
+  .summary-sop-counts p {
+    @apply text-xs leading-5 text-muted;
+  }
+
+  .summary-sop-counts > div {
+    @apply grid grid-cols-[5rem_minmax(0,1fr)_4.25rem] items-center gap-3 text-xs;
+  }
+
+  .summary-sop-counts span {
+    @apply font-medium text-ink;
+  }
+
+  .summary-sop-counts div div {
+    @apply h-3 overflow-hidden rounded-full bg-slate-100;
+  }
+
+  .summary-sop-counts i {
+    @apply block h-full rounded-full bg-teal-700;
+  }
+
+  .summary-sop-counts > div:nth-of-type(2) i {
+    @apply bg-amber-500;
+  }
+
+  .summary-sop-counts strong {
+    @apply text-right font-semibold tabular-nums text-ink;
+  }
+
+  .summary-controlled-strip-six {
+    @apply xl:grid-cols-6;
+  }
+
+  .summary-controlled-strip-five {
+    @apply xl:grid-cols-5;
+  }
+
+  .summary-view-tabs {
+    @apply mt-4 flex w-fit max-w-full gap-1 overflow-x-auto rounded-md border border-line bg-slate-50 p-1 shadow-panel;
+  }
+
+  .summary-view-tabs button {
+    @apply flex h-9 min-w-24 items-center justify-center rounded-sm border border-transparent px-4 text-sm font-semibold text-muted transition hover:border-teal-200 hover:bg-white hover:text-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-600 focus-visible:ring-offset-2 focus-visible:ring-offset-white;
+  }
+
+  .summary-view-tabs button[aria-selected="true"] {
+    @apply border-teal-600 bg-white font-bold text-teal-900 shadow-sm;
+  }
+
+  .summary-dpc-runs {
+    @apply mt-4 grid gap-px overflow-hidden rounded-md border border-line bg-line;
+  }
+
+  .summary-dpc-column-heading {
+    @apply bg-white px-4 py-3;
+  }
+
+  .summary-dpc-column-heading p,
+  .summary-dpc-plot-card > p {
+    @apply text-[11px] font-semibold uppercase tracking-[0.08em] text-teal-700;
+  }
+
+  .summary-dpc-column-heading h3 {
+    @apply mt-1 text-base font-semibold text-ink;
+  }
+
+  .summary-dpc-column-heading span {
+    @apply mt-1 block text-xs leading-5 text-muted;
+  }
+
+  .summary-dpc-run-pair {
+    @apply grid gap-px bg-line md:grid-cols-2 md:col-span-2;
+  }
+
+  .summary-dpc-plot-card {
+    @apply min-w-0 bg-white p-4;
+  }
+
+  .summary-dpc-plot-gap {
+    @apply mt-3 h-[24rem] sm:h-[30rem];
+  }
+
+  .summary-dpc-plot-gap > span:not(.existing-axis-label) {
+    @apply relative z-[1] max-w-md rounded-sm border border-line bg-white/90 px-4 py-3 text-center text-sm leading-6 text-muted shadow-panel;
+  }
+
+  .summary-dpc-plot-metrics {
+    @apply mt-3 text-xs font-semibold tabular-nums text-muted;
+  }
+
+  .summary-dpc-chart-stack {
+    @apply mt-4 space-y-4;
+  }
+
+  .summary-dpc-chart-missing {
+    @apply min-w-0;
+  }
+
+  .summary-dpc-chart-missing h3 {
+    @apply text-sm font-semibold text-ink;
+  }
+
+  .summary-dpc-chart-missing h3 span {
+    @apply font-normal text-muted;
+  }
+
+  .summary-dpc-chart-missing > div {
+    @apply mt-3 flex min-h-40 items-center justify-center rounded-md border border-dashed border-line bg-slate-50 px-4 text-center text-sm leading-6 text-muted;
+  }
+
+  .summary-dpc-stability-grid {
+    @apply mt-5 grid gap-3 md:grid-cols-3;
+  }
+
+  .summary-dpc-stability-grid div {
+    @apply rounded-sm border border-line bg-slate-50 px-4 py-3;
+  }
+
+  .summary-dpc-stability-grid span,
+  .summary-dpc-seed-card span {
+    @apply block text-[10px] font-semibold uppercase tracking-[0.08em] text-muted;
+  }
+
+  .summary-dpc-stability-grid strong {
+    @apply mt-1 block text-2xl font-semibold tabular-nums tracking-tight text-ink;
+  }
+
+  .summary-dpc-stability-grid small {
+    @apply mt-1 block text-xs leading-5 text-muted;
+  }
+
+  .summary-dpc-summary-grid {
+    @apply mt-4 grid gap-4 xl:grid-cols-2;
+  }
+
+  .summary-dpc-seed-card {
+    @apply rounded-sm border border-line bg-white p-4;
+  }
+
+  .summary-dpc-seed-card strong {
+    @apply mt-1 block text-2xl font-semibold tracking-tight text-ink;
+  }
+
+  .summary-dpc-seed-card small {
+    @apply mt-1 block text-xs leading-5 text-muted;
+  }
+
+  .summary-dpc-seed-card dt {
+    @apply text-muted;
+  }
+
+  .summary-dpc-seed-card dd {
+    @apply mt-1 font-semibold tabular-nums text-ink;
+  }
+
+  .summary-dpc-seed-card > div:last-child span {
+    @apply block h-full rounded-full bg-teal-700;
+  }
+
+  .summary-dpc-seed-card:nth-child(2) > div:last-child span {
+    @apply bg-amber-500;
+  }
+
+  .summary-dpc-validation-card {
+    @apply rounded-md border border-line;
+  }
+
+  .summary-dpc-validation-table-wrap {
+    @apply mt-5 overflow-x-auto;
+  }
+
+  .summary-dpc-validation-table {
+    @apply min-w-[760px] table-fixed overflow-hidden rounded-md border border-line;
+  }
+
+  .summary-dpc-validation-table thead {
+    @apply bg-slate-50;
+  }
+
+  .summary-dpc-validation-table th {
+    @apply border-b border-line px-4 py-4 align-middle;
+  }
+
+  .summary-dpc-validation-table td {
+    @apply border-b border-line px-4 py-5 align-middle;
+  }
+
+  .summary-dpc-validation-table tbody tr:last-child td {
+    @apply border-b-0;
+  }
+
+  .summary-dpc-validation-table th:first-child,
+  .summary-dpc-validation-table td:first-child {
+    @apply w-[34%];
+  }
+
+  .summary-dpc-validation-table th:not(:first-child),
+  .summary-dpc-validation-table td:not(:first-child) {
+    @apply w-[22%];
+  }
+
+  .summary-dpc-reproducibility-card {
+    @apply rounded-md border border-line;
+  }
+
+  .summary-dpc-reproducibility-table {
+    @apply min-w-[720px] table-fixed overflow-hidden rounded-md border border-line;
+  }
+
+  .summary-dpc-reproducibility-table thead {
+    @apply bg-slate-50;
+  }
+
+  .summary-dpc-reproducibility-table th,
+  .summary-dpc-reproducibility-table td {
+    @apply border-b border-line px-4 py-4 align-middle;
+  }
+
+  .summary-dpc-reproducibility-table tbody tr:last-child td {
+    @apply border-b-0;
   }
 
   .summary-sop-panel-metrics {
@@ -664,12 +975,12 @@ input:focus-visible {
   }
 
   .summary-sop-metric-table {
-    @apply overflow-hidden rounded-md border border-line;
+    @apply overflow-x-auto rounded-md border border-line;
   }
 
   .summary-sop-metric-head,
   .summary-sop-metric-row {
-    @apply grid grid-cols-[minmax(10rem,1fr)_minmax(12rem,0.8fr)_minmax(10rem,1fr)] items-center gap-3 px-4;
+    @apply grid min-w-[42rem] grid-cols-[minmax(10rem,1fr)_minmax(12rem,0.8fr)_minmax(10rem,1fr)] items-center gap-3 px-4;
   }
 
   .summary-sop-metric-head {

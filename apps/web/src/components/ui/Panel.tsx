@@ -9,14 +9,14 @@ type PanelProps = {
 };
 
 const panelStyles = {
-  legacy: "rounded-xl border border-line bg-panel shadow-panel",
+  legacy: "rounded-md border border-line bg-panel shadow-panel",
   surface: "rounded-md border border-line bg-panel",
   result: "rounded-md border border-teal-100 bg-panel shadow-[inset_3px_0_0_#0f7977]",
   section: "border-t border-line bg-transparent"
 };
 
 const headerStyles = {
-  legacy: "min-h-14 border-b border-line px-4",
+  legacy: "min-h-14 border-b border-line px-4 sm:px-5",
   surface: "min-h-12 border-b border-line px-4 sm:px-5",
   result: "min-h-12 border-b border-line px-4 sm:px-5",
   section: "pt-5"
@@ -32,7 +32,7 @@ const bodyStyles = {
 export const Panel = ({ title, children, action, className = "", variant = "legacy" }: PanelProps) => (
   <section className={`${panelStyles[variant]} ${className}`}>
     <div className={`flex items-center justify-between ${headerStyles[variant]}`}>
-      <h2 className={variant === "result" ? "text-lg font-semibold tracking-tight text-teal-900" : "text-base font-semibold tracking-tight"}>{title}</h2>
+      <h2 className={variant === "result" ? "text-lg font-semibold tracking-tight text-teal-900" : "text-base font-semibold tracking-tight text-ink"}>{title}</h2>
       {action}
     </div>
     <div className={bodyStyles[variant]}>{children}</div>

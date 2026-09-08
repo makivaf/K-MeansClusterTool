@@ -5,7 +5,7 @@ import {
   type UnifiedResearchRun
 } from "../../../../packages/shared/src";
 import { API_BASE_URL } from "../config/api";
-import { RESEARCH_RUN_COMPLETE_EVENT } from "../components/run/runEvents";
+import { COMPLETED_RUN_KEY, RESEARCH_RUN_COMPLETE_EVENT } from "../components/run/runEvents";
 
 export type RunDataState = {
   runs: UnifiedResearchRun[];
@@ -38,7 +38,7 @@ export const useRunData = (): RunDataState => {
   navigateRef.current = navigate;
   const [runs, setRuns] = useState<UnifiedResearchRun[]>([]);
   const [selectedRunId, setSelectedRunId] = useState("");
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(() => sessionStorage.getItem(COMPLETED_RUN_KEY) !== null);
   const [error, setError] = useState<string | null>(null);
   const requestedRunId = useMemo(
     () => getRunIdFromLocation(location.pathname, location.search),
@@ -46,6 +46,8 @@ export const useRunData = (): RunDataState => {
   );
 
   useEffect(() => {
+    const completedRunId = sessionStorage.getItem(COMPLETED_RUN_KEY);
+    if (!completedRunId) return;
     const abortController = new AbortController();
     const loadRuns = async () => {
       try {
@@ -57,9 +59,13 @@ export const useRunData = (): RunDataState => {
         const unifiedRuns = payload.runs.filter(
           (run): run is UnifiedResearchRun => "pipeline" in run && run.pipeline === "unified"
         );
+        if (!unifiedRuns.some((run) => run.run_id === completedRunId)) {
+          sessionStorage.removeItem(COMPLETED_RUN_KEY);
+          return;
+        }
         setRuns(unifiedRuns);
         const requestedRun = unifiedRuns.find((run) => run.run_id === requestedRunId);
-        setSelectedRunId(requestedRun?.run_id ?? unifiedRuns[0]?.run_id ?? requestedRunId ?? "");
+        setSelectedRunId(requestedRun?.run_id ?? completedRunId);
       } catch (caught) {
         if (caught instanceof DOMException && caught.name === "AbortError") return;
         setError(caught instanceof Error ? caught.message : "Unable to load unified research runs");
@@ -90,12 +96,15 @@ export const useRunData = (): RunDataState => {
           const unifiedRuns = payload.runs.filter(
             (run): run is UnifiedResearchRun => "pipeline" in run && run.pipeline === "unified"
           );
-          setRuns(unifiedRuns);
           if (unifiedRuns.some((run) => run.run_id === runId)) {
+            sessionStorage.setItem(COMPLETED_RUN_KEY, runId);
+            setRuns(unifiedRuns);
             setSelectedRunId(runId);
             // Replace a historical run query as well, so it cannot reselect the
             // older run on the next render or browser refresh.
             navigateRef.current(completedRunLocation(locationRef.current, runId), { replace: true });
+          } else {
+            throw new Error("Completed analysis result is unavailable.");
           }
           setError(null);
         } catch (caught) {

@@ -1,9 +1,10 @@
-import { useEffect, useRef, useState, type ReactNode } from "react";
+import { useState, type CSSProperties, type ReactNode } from "react";
 import { CheckCircle2 } from "lucide-react";
-import type { BaselineCandidateSweep, SopEvaluation, UnifiedResearchRun } from "../../../../packages/shared/src";
-import { BaselineCandidateControl } from "../components/BaselineCandidateControl";
-import { DpcSeedFigure, ClusterDifferenceFigure, FinalNbClustFigure, InternalValidationFigure, PcaVarianceFigure } from "../components/charts/FinalFindingsCharts";
+import type { BaselineCandidateSweep, DefenseGeometry, DefensePanel, SopEvaluation, UnifiedResearchRun } from "../../../../packages/shared/src";
+import { ClusterDifferenceFigure, FinalNbClustFigure, InternalValidationFigure, PcaVarianceFigure } from "../components/charts/FinalFindingsCharts";
 import { LongitudinalProgressionChart } from "../components/charts/LongitudinalProgressionChart";
+import { DefenseScatter } from "../components/charts/DefenseScatter";
+import { SopRunSeriesChart } from "../components/charts/SopRunSeriesChart";
 import { ResearchPageNavigation } from "../components/layout/ResearchPageNavigation";
 import { StatCard } from "../components/ui/StatCard";
 import { useSopEvaluation } from "../hooks/useSopEvaluation";
@@ -13,7 +14,7 @@ type ClustersPageProps = { run: UnifiedResearchRun | null };
 type SummaryTab = "pca" | "nbclust" | "dpc" | "fullComparison" | "profiles" | "longitudinal";
 type ComparisonMetric = UnifiedResearchRun["baselineComparison"]["metrics"][number];
 type SopMetric = keyof SopEvaluation["sop1"]["ablation"]["conditions"][number]["metrics"];
-type SopRunSide = "existing" | "enhanced";
+type DpcStabilityTab = "three" | "thirty" | "summary";
 type SopRunResult = {
   representation: string;
   dimensions?: number;
@@ -49,13 +50,7 @@ const sopMetricLabels: Record<SopMetric, string> = {
 };
 
 const formatSopMetric = (_metric: SopMetric, value: number) => value.toFixed(5);
-
-const fromSop1Condition = (condition: SopEvaluation["sop1"]["ablation"]["conditions"][number]): SopRunResult => ({
-  representation: condition.representation,
-  dimensions: condition.dimensions,
-  runCount: condition.runCount,
-  metrics: condition.metrics
-});
+const formatSignedPercent = (value: number) => `${value > 0 ? "+" : ""}${value.toFixed(2)}%`;
 
 const fromSop2Condition = (condition: NonNullable<SopEvaluation["sop2"]["controlledComparison"]>["control"]): SopRunResult => ({
   representation: `${condition.representation}, k=${condition.selectedK}`,
@@ -63,48 +58,6 @@ const fromSop2Condition = (condition: NonNullable<SopEvaluation["sop2"]["control
   runCount: condition.runCount,
   metrics: condition.metrics
 });
-
-const fromSop3DpcResult = (result: NonNullable<SopEvaluation["sop3"]["controlledComparison"]>): SopRunResult => ({
-  representation: "13 standardized features, DPC initialization",
-  dimensions: 13,
-  runCount: `${result.repeatedChecks} deterministic checks`,
-  metrics: {
-    silhouette: { mean: result.metrics.silhouette },
-    davies_bouldin: { mean: result.metrics.daviesBouldin },
-    calinski_harabasz: { mean: result.metrics.calinskiHarabasz }
-  }
-});
-
-const useSopRunReplay = () => {
-  const [existingProgress, setExistingProgress] = useState(0);
-  const [enhancedProgress, setEnhancedProgress] = useState(0);
-  const existingTimerRef = useRef<number | null>(null);
-  const enhancedTimerRef = useRef<number | null>(null);
-
-  useEffect(() => () => {
-    if (existingTimerRef.current !== null) window.clearInterval(existingTimerRef.current);
-    if (enhancedTimerRef.current !== null) window.clearInterval(enhancedTimerRef.current);
-  }, []);
-
-  const replayRun = (side: SopRunSide) => {
-    const timerRef = side === "existing" ? existingTimerRef : enhancedTimerRef;
-    const setProgress = side === "existing" ? setExistingProgress : setEnhancedProgress;
-    if (timerRef.current !== null) window.clearInterval(timerRef.current);
-    setProgress(0);
-    timerRef.current = window.setInterval(() => {
-      setProgress((current) => {
-        const next = Math.min(100, current + 5);
-        if (next === 100 && timerRef.current !== null) {
-          window.clearInterval(timerRef.current);
-          timerRef.current = null;
-        }
-        return next;
-      });
-    }, 120);
-  };
-
-  return { existingProgress, enhancedProgress, replayRun };
-};
 
 const ClusterComposition = ({ clusters, total }: { clusters: Array<{ clusterId: number; nMembers: number }>; total: number }) => (
   <div>
@@ -126,6 +79,36 @@ const ClusterComposition = ({ clusters, total }: { clusters: Array<{ clusterId: 
       ))}
     </div>
   </div>
+);
+
+const SopClusterCounts = ({ sizes }: { sizes: number[] }) => {
+  const total = sizes.reduce((sum, size) => sum + size, 0);
+  return (
+    <div className="summary-sop-counts" aria-label="Cluster membership counts">
+      <p>Cluster membership counts for k = {sizes.length}</p>
+      {sizes.map((size, clusterId) => (
+        <div key={clusterId}>
+          <span>Cluster {clusterId}</span>
+          <div><i style={{ width: `${(size / total) * 100}%` }} /></div>
+          <strong>{size.toLocaleString()}</strong>
+        </div>
+      ))}
+    </div>
+  );
+};
+
+const SopProjectionPanel = ({ title, subtitle, sizes, panel }: { title: string; subtitle: string; sizes?: number[]; panel: DefensePanel | null }) => (
+  <article className="existing-card summary-sop-result-card">
+    <div className="summary-sop-result-heading">
+      <div>
+        <p>{subtitle}</p>
+        <h3>{title}</h3>
+        <span>Common PC1-PC2 projection · representative seed 0</span>
+      </div>
+    </div>
+    <DefenseScatter panel={panel} label={title} />
+    {sizes ? <SopClusterCounts sizes={sizes} /> : null}
+  </article>
 );
 
 const FindingNote = ({ children }: { children: ReactNode }) => (
@@ -305,72 +288,8 @@ const MetricsTab = ({ run }: { run: UnifiedResearchRun }) => (
   </div>
 );
 
-const SopRunPanel = ({
-  side,
-  title,
-  subtitle,
-  condition,
-  progress,
-  onRun,
-  label,
-  resultPending
-}: {
-  side: SopRunSide;
-  title: string;
-  subtitle: string;
-  condition: SopRunResult;
-  progress: number;
-  onRun: () => void;
-  label?: string;
-  resultPending?: boolean;
-}) => {
-  const isRunning = progress > 0 && progress < 100;
-  const isComplete = progress === 100;
-
-  return (
-    <article className="existing-card summary-sop-result-card">
-      <div className="summary-sop-result-heading">
-        <div>
-          <p>{label ?? (side === "existing" ? "Existing" : "Enhanced")}</p>
-          <h3>{title}</h3>
-          <span>{subtitle}</span>
-        </div>
-        <button type="button" className="existing-run-button summary-sop-run-button" disabled={isRunning} onClick={onRun}>
-          {isRunning ? "Replaying..." : `Replay ${side === "existing" ? "Existing" : "Enhanced"}`}
-        </button>
-      </div>
-
-      <div className="existing-progress" aria-label={`${title} replay progress ${progress}%`}>
-        <div><span style={{ width: `${progress}%` }} /></div>
-        <strong>{progress}%</strong>
-      </div>
-
-
-
-      {isComplete && resultPending ? (
-        <div className="summary-sop-panel-metrics">
-          <StatCard label="Result status" value="Validated controlled result pending" detail="Current stored aggregate result does not match this corrected pipeline definition." />
-          <StatCard label="Run count" value="—" detail="Unavailable for this corrected control" />
-          <StatCard label="Silhouette mean" value="—" detail="Metric unavailable" />
-        </div>
-      ) : isComplete ? (
-        <div className="summary-sop-panel-metrics">
-          <StatCard label="Representation" value={condition.dimensions ? `${condition.dimensions}D` : condition.representation} detail={condition.dimensions ? condition.representation : undefined} accent={side === "enhanced" ? "teal" : "slate"} />
-          <StatCard label="Run count" value={condition.runCount} detail={typeof condition.runCount === "number" ? "Predetermined random seeds" : "Repeated identical initialization and output"} />
-          <StatCard label="Silhouette mean" value={condition.metrics.silhouette.mean.toFixed(5)} detail={condition.metrics.silhouette.standardDeviation === undefined ? undefined : `SD ${condition.metrics.silhouette.standardDeviation.toFixed(5)}`} accent={side === "enhanced" ? "teal" : "slate"} />
-        </div>
-      ) : (
-        <p className="existing-run-status">
-          {isRunning ? "Replaying frontend execution presentation for stored aggregate SOP results." : "Replay this side to reveal the stored validated SOP result. No analysis is executed or saved."}
-        </p>
-      )}
-    </article>
-  );
-};
-
-const PcaTab = ({ run, evaluation, error, baselineSweep }: { run: UnifiedResearchRun; evaluation: SopEvaluation | null; error: string | null; baselineSweep: BaselineCandidateSweep | null }) => {
+const PcaTab = ({ run, evaluation, error, baselineSweep, geometry }: { run: UnifiedResearchRun; evaluation: SopEvaluation | null; error: string | null; baselineSweep: BaselineCandidateSweep | null; geometry: DefenseGeometry | null }) => {
   const ablation = evaluation?.sop1.ablation;
-  const { enhancedProgress, replayRun } = useSopRunReplay();
 
   if (!ablation) {
     return (
@@ -383,75 +302,51 @@ const PcaTab = ({ run, evaluation, error, baselineSweep }: { run: UnifiedResearc
 
   const [originalCondition, pcaCondition] = ablation.conditions;
   const metricKeys = Object.keys(sopMetricLabels) as SopMetric[];
+  const baselineK2Sizes = baselineSweep?.candidates.find((candidate) => candidate.k === ablation.settings.k)?.clusterSizes;
+  const pcaK2Sizes = evaluation?.sop2.demonstratedK.find((candidate) => candidate.k === ablation.settings.k)?.clusterSizes;
 
   return (
     <div className="summary-tab-panel summary-sop1-panel">
       <section className="summary-sop-intro">
         <p>SOP 1</p>
-        <h2>PCA-Based Dimensionality Reduction</h2>
-      </section>
-      <section className="existing-card"><div className="existing-card-header"><div><p>Final PCA representation</p><h2>PCA Cumulative Explained Variance</h2></div></div><PcaVarianceFigure run={run} /></section>
-
-      <section className="summary-controlled-strip" aria-label="Controlled SOP 1 settings">
-        <div><span>Frozen cohort</span><strong>n = {ablation.settings.cohortN.toLocaleString()}</strong></div>
-        <div><span>Control configuration</span><strong>No PCA • No NbClust • No DPC</strong></div>
-        <div><span>Comparison configuration</span><strong>PCA • No NbClust • No DPC</strong></div>
-        <div><span>Controlled change</span><strong>Only PCA is introduced</strong></div>
-      </section>
-
-      <p className="existing-note">The interactive baseline candidate is independent of the enhanced-side experiment. Controlled tables below retain the validated fixed configurations and 30-run summaries.</p>
-      <section className="summary-sop-comparison">
-        <BaselineCandidateControl sweep={baselineSweep} error={error} />
-        <div className="summary-vs" aria-hidden="true">vs</div>
-        <SopRunPanel
-          side="enhanced"
-          title="PCA-Only K-Means"
-          subtitle="PCA • No NbClust • No DPC"
-          label={`Frozen experiment - k=${ablation.settings.k}`}
-          condition={fromSop1Condition(pcaCondition)}
-          progress={enhancedProgress}
-          onRun={() => replayRun("enhanced")}
-        />
-      </section>
-
-      <section className="space-y-5">
-        <article className="existing-card">
-          <div className="existing-card-header">
-            <div>
-              <p>PCA Transformation</p>
-              <h2>{run.preprocessing.retainedFeatures.length} variables to {run.pca.components} components</h2>
-            </div>
-          </div>
-          <div className="summary-pca-flow">
-            <div><strong>{run.preprocessing.retainedFeatures.length}</strong><span>Original variables</span></div>
-            <b aria-hidden="true">&rarr;</b>
-            <div><strong>PCA</strong><span>Applied</span></div>
-            <b aria-hidden="true">&rarr;</b>
-            <div><strong>{run.pca.components}</strong><span>Components retained</span></div>
-            <b aria-hidden="true">&rarr;</b>
-            <div><strong>K-Means</strong><span>Passed forward</span></div>
-          </div>
-          <div className="summary-pca-variance">
-            <strong>{formatPercent(pcaCondition.varianceRetained)}</strong>
-            <span>cumulative variance retained in {run.pca.components} PCs</span>
-          </div>
-        </article>
-
-
+        <h2>PCA Dimensionality Reduction</h2>
       </section>
 
       <section className="existing-card">
+        <div className="existing-card-header"><div><p>Controlled PCA Comparison</p><h2>PCA Experimental Context</h2></div></div>
+        <div className="summary-controlled-strip" aria-label="Controlled SOP 1 settings">
+          <div><span>Cohort</span><strong>{ablation.settings.cohortN.toLocaleString()} participants</strong></div>
+          <div><span>Control</span><strong>Standardized features</strong></div>
+          <div><span>Comparison</span><strong>PCA-transformed features</strong></div>
+          <div><span>Controlled Change</span><strong>PCA only</strong></div>
+        </div>
+      </section>
+
+      <section className="existing-card"><div className="existing-card-header"><div><p>Current run: PCA retention</p><h2>Cumulative Explained Variance</h2></div></div><PcaVarianceFigure run={run} /></section>
+
+      <section>
+        <div className="summary-sop-intro">
+          <p>Dimensionality Reduction Effect</p>
+          <h2>Baseline K-Means vs PCA-Only K-Means</h2>
+        </div>
+        <div className="summary-sop-two-up">
+          <SopProjectionPanel title="Baseline K-Means" subtitle="Without PCA" sizes={baselineK2Sizes} panel={geometry?.sop1.baseline ?? null} />
+          <SopProjectionPanel title="PCA Only K-Means" subtitle="With PCA" sizes={pcaK2Sizes} panel={geometry?.sop1.pcaOnly ?? null} />
+        </div>
+        {geometry ? <p className="existing-note">Both panels show the same complete PC1-PC2 projection. Only saved seed-0 cluster assignments change. Crosses mark projected means of the saved final assignments; a fixed linear PCA projection preserves cluster means. Cluster labels are arbitrary within each condition.</p> : null}
+      </section>
+      <section className="existing-card">
         <div className="existing-card-header">
           <div>
-            <p>Frozen Controlled Validation</p>
-            <h2>k and initialization held constant</h2>
+            <p>Quantitative Validation</p>
+            <h2>Controlled Internal Validation</h2>
           </div>
         </div>
         <div className="summary-sop-metric-table">
           <div className="summary-sop-metric-head">
             <span>Baseline K-Means</span>
             <span>Metric</span>
-            <span>PCA-Only K-Means</span>
+            <span>PCA Only K-Means</span>
           </div>
           {metricKeys.map((metric) => {
             const originalValue = originalCondition.metrics[metric].mean;
@@ -463,7 +358,7 @@ const PcaTab = ({ run, evaluation, error, baselineSweep }: { run: UnifiedResearc
                 <div>
                   <span>{sopMetricLabels[metric]}</span>
                   <small>{metric === "davies_bouldin" ? "Lower is better" : "Higher is better"}</small>
-                  <em>{change > 0 ? "+" : ""}{change.toFixed(2)}%</em>
+                  <em>{formatSignedPercent(change)}</em>
                 </div>
                 <strong>{formatSopMetric(metric, pcaValue)}</strong>
               </div>
@@ -471,22 +366,18 @@ const PcaTab = ({ run, evaluation, error, baselineSweep }: { run: UnifiedResearc
           })}
         </div>
       </section>
-
-      <FindingNote>
-        In the controlled SOP 1 ablation, introducing PCA before K-Means reduced the representation from {originalCondition.dimensions} dimensions to {pcaCondition.dimensions}, retained {formatPercent(pcaCondition.varianceRetained)} cumulative variance, and improved the mean internal-validation metrics while k and random-initialization settings were held constant.
-      </FindingNote>
     </div>
   );
 };
 
-const NbClustTab = ({ run, evaluation, error, baselineSweep }: { run: UnifiedResearchRun; evaluation: SopEvaluation | null; error: string | null; baselineSweep: BaselineCandidateSweep | null }) => {
-  const { enhancedProgress, replayRun } = useSopRunReplay();
+const NbClustTab = ({ run, evaluation, error }: { run: UnifiedResearchRun; evaluation: SopEvaluation | null; error: string | null }) => {
+  const [manualBaselineK, setManualBaselineK] = useState<number | null>(null);
   const sop2 = evaluation?.sop2;
   const controlled = sop2?.controlledComparison;
   const selection = controlled?.selection ?? sop2?.nbclust;
   const selectedK = controlled?.nbclustOnly.selectedK ?? sop2?.nbclust.selectedK;
 
-  if (!sop2 || !evaluation?.sop1.ablation) {
+  if (!sop2) {
     return (
       <div className="summary-tab-panel">
         <div className="existing-note">{error ?? "Loading aggregate NbClust evaluation details..."}</div>
@@ -494,78 +385,166 @@ const NbClustTab = ({ run, evaluation, error, baselineSweep }: { run: UnifiedRes
     );
   }
 
-  const [baselineCondition] = evaluation.sop1.ablation.conditions;
-  const controlResult = controlled ? fromSop2Condition(controlled.control) : fromSop1Condition(baselineCondition);
+  // Matched 30-run results must come only from the validated SOP 2 comparison.
+  const controlResult = controlled ? fromSop2Condition(controlled.control) : null;
   const nbclustResult = controlled ? fromSop2Condition(controlled.nbclustOnly) : null;
   const metricKeys = Object.keys(sopMetricLabels) as SopMetric[];
+  const baselineSelectedK = controlled?.control.selectedK ?? sop2.maximumSilhouetteSelectedK;
+  const selectedManualBaselineK = manualBaselineK ?? baselineSelectedK;
+  // Representative seed-0 PCA candidates are separate from both the standardized
+  // SOP 1 baselineSweep and the matched 30-run means below. Never substitute either.
+  const pcaCandidates = sop2.candidates;
+  const candidateKs = pcaCandidates.map((candidate) => candidate.k).sort((left, right) => left - right);
+  const minimumK = candidateKs[0];
+  const maximumK = candidateKs[candidateKs.length - 1];
+  const baselineCandidate = pcaCandidates.find((candidate) => candidate.k === selectedManualBaselineK);
+  const baselineMetricValues: Record<SopMetric, number | undefined> = {
+    silhouette: baselineCandidate?.silhouette,
+    davies_bouldin: baselineCandidate?.daviesBouldin,
+    calinski_harabasz: baselineCandidate?.calinskiHarabasz
+  };
+  const baselineSliderFill = maximumK > minimumK ? ((selectedManualBaselineK - minimumK) / (maximumK - minimumK)) * 100 : 0;
+  const pcaRepresentationLabel = sop2.settings.representation;
+  const pcaRepresentationDetail = sop2.settings.representation;
 
   return (
     <div className="summary-tab-panel summary-sop1-panel">
       <section className="summary-sop-intro">
         <p>SOP 2</p>
-        <h2>NbClust-Based Cluster Number Selection</h2>
+        <h2>NbClust Cluster Number Selection</h2>
       </section>
 
-      <section className="summary-controlled-strip" aria-label="Controlled SOP 2 settings">
-        <div><span>Frozen cohort</span><strong>n = {sop2.settings.cohortN.toLocaleString()}</strong></div>
-        <div><span>Control configuration</span><strong>No PCA • No NbClust • No DPC</strong></div>
-        <div><span>Comparison configuration</span><strong>No PCA • NbClust • No DPC</strong></div>
-        <div><span>Controlled change</span><strong>Only NbClust is introduced</strong></div>
+      <section className="existing-card">
+        <div className="existing-card-header"><div><p>Controlled NbClust Comparison</p><h2>Cluster Selection Experimental Context</h2></div></div>
+        <div className="summary-controlled-strip summary-controlled-strip-five" aria-label="Controlled SOP 2 settings">
+          <div><span>Cohort</span><strong>{sop2.settings.cohortN.toLocaleString()} participants</strong></div>
+          <div><span>Shared Input</span><strong>{evaluation?.sop2.settings.representation}</strong></div>
+          <div><span>Control</span><strong>Maximum Silhouette k-selection</strong></div>
+          <div><span>Comparison</span><strong>NbClust index voting</strong></div>
+          <div><span>Controlled Change</span><strong>k-selection only</strong></div>
+        </div>
       </section>
 
-      <p className="existing-note">The interactive baseline candidate is independent of the enhanced-side experiment. Controlled tables below retain the validated fixed configurations and 30-run summaries.</p>
-      <section className="summary-sop-comparison">
-        <BaselineCandidateControl sweep={baselineSweep} error={error} />
-        <div className="summary-vs" aria-hidden="true">vs</div>
-        <SopRunPanel
-          side="enhanced"
-          title="NbClust-Only K-Means"
-          subtitle="No PCA • NbClust • No DPC"
-          label={`Frozen experiment - k=${selectedK}`}
-          condition={nbclustResult ?? controlResult}
-          progress={enhancedProgress}
-          onRun={() => replayRun("enhanced")}
-          resultPending={!nbclustResult}
-        />
+      <p className="existing-note">Current run: NbClust result.</p><FinalNbClustFigure run={run} />
+
+      <section>
+        <div className="summary-sop-intro">
+          <p>Cluster Selection Comparison</p>
+          <h2>Baseline K-Means vs NbClust Selection</h2>
+        </div>
+        <div className="summary-nbclust-comparison">
+          <article className="existing-card summary-nbclust-selection-card">
+            <div className="summary-sop-result-heading">
+              <div>
+                <p>Manual k Selection</p>
+                <h3>Baseline K-Means</h3>
+                <span>Single internal validation criterion</span>
+              </div>
+              <strong>k = {selectedManualBaselineK}</strong>
+            </div>
+            <p className="summary-nbclust-selection-copy">Maximum Silhouette across candidate k values using random initialization and seed 0.</p>
+            <div className="summary-manual-k-control">
+              <label htmlFor="summary-manual-baseline-k">Manual cluster count: {selectedManualBaselineK}</label>
+              <input
+                id="summary-manual-baseline-k"
+                aria-label="Manual baseline cluster count"
+                className="baseline-k-slider"
+                type="range"
+                min={minimumK}
+                max={maximumK}
+                step={1}
+                value={selectedManualBaselineK}
+                disabled={pcaCandidates.length === 0}
+                onChange={(event) => {
+                  const nextK = Number(event.target.value);
+                  if (candidateKs.includes(nextK)) setManualBaselineK(nextK);
+                }}
+                style={{ "--slider-fill": `${baselineSliderFill}%` } as CSSProperties}
+              />
+              <div className="existing-k-ticks" aria-hidden="true">
+                {candidateKs.map((k) => <span key={k}>{k}</span>)}
+              </div>
+            </div>
+            {baselineCandidate ? <SopClusterCounts sizes={baselineCandidate.clusterSizes} /> : null}
+            <div className="summary-nbclust-metrics">
+              {metricKeys.map((metric) => (
+                <div key={metric}>
+                  <span>{sopMetricLabels[metric]}</span>
+                  <strong>{baselineMetricValues[metric] === undefined ? "—" : formatSopMetric(metric, baselineMetricValues[metric])}</strong>
+                  <small>{baselineCandidate ? `Seed ${sop2.settings.seed}, ${baselineCandidate.iterations} iterations` : "Validated result pending"}</small>
+                </div>
+              ))}
+            </div>
+          </article>
+
+          <article className="existing-card summary-nbclust-selection-card">
+            <div className="summary-sop-result-heading">
+              <div>
+                <p>NbClust Selection</p>
+                <h3>NbClust Based K-Means</h3>
+                <span>Multi index consensus</span>
+              </div>
+              <strong>k = {selectedK}</strong>
+            </div>
+            <p className="summary-nbclust-selection-copy">{selection?.votesForSelectedK ?? "—"} of {selection?.usableIndices ?? "—"} usable indices recommended k = {selectedK}. The selected k is carried into the same random initialization Lloyd procedure.</p>
+            <div className="summary-nbclust-facts">
+              <div><span>Representation</span><strong>{pcaRepresentationLabel}</strong><small>{pcaRepresentationDetail}, k={selectedK}</small></div>
+              <div><span>Run count</span><strong>{nbclustResult?.runCount ?? "—"}</strong><small>Predetermined random seeds</small></div>
+            </div>
+            <div className="summary-nbclust-metrics">
+              {metricKeys.map((metric) => {
+                const value = nbclustResult?.metrics[metric].mean;
+                const standardDeviation = nbclustResult?.metrics[metric].standardDeviation;
+                return (
+                  <div key={metric}>
+                    <span>{sopMetricLabels[metric]} mean</span>
+                    <strong>{value === undefined ? "—" : formatSopMetric(metric, value)}</strong>
+                    <small>{standardDeviation === undefined ? "Validated result pending" : `SD ${standardDeviation.toFixed(5)}`}</small>
+                  </div>
+                );
+              })}
+            </div>
+          </article>
+        </div>
       </section>
 
       <section className="existing-card">
         <div className="existing-card-header">
           <div>
-            <p>SOP 2 — NBCLUST</p>
-            <h2>Controlled ablation: original-feature NbClust</h2>
+            <p>SOP 2 NbClust</p>
+            <h2>PCA Representation NbClust Control</h2>
           </div>
         </div>
         <div className="grid gap-3 sm:grid-cols-2">
-          <StatCard label="Baseline selection" value={`k=${controlled?.control.selectedK ?? evaluation.sop1.ablation.settings.k}`} detail="Maximum Silhouette over k=2–10, seed 0" />
-          <StatCard label="NbClust-based selection" value={`k=${selectedK}`} detail={`${selection?.votesForSelectedK}/${selection?.usableIndices} usable votes (${controlled ? "13 original features" : "PCA-based evidence"})`} accent="teal" />
+          <StatCard label="Baseline selection" value={`k=${baselineSelectedK}`} detail="Maximum Silhouette over k=2–10, seed 0" />
+          <StatCard label="NbClust selection" value={`k=${selectedK}`} detail={`${selection?.votesForSelectedK}/${selection?.usableIndices} usable votes (${pcaRepresentationDetail})`} accent="teal" />
         </div>
-        <p className="existing-note">{controlled ? "NbClust votes were computed on the same 13 standardized features and reproduced in two checks. Both selected cluster counts feed the same 30-seed random-initialization Lloyd procedure." : "The available vote distribution is PCA-based evidence. The no-PCA/no-DPC NbClust-only controlled result is pending."}</p>
+        <p className="existing-note">{controlled ? `NbClust votes were computed on the same ${pcaRepresentationLabel} retained from SOP1 and reproduced in two checks. Both selected cluster counts feed the same 30 seed random initialization Lloyd procedure.` : "The available vote distribution is PCA evidence. The no DPC NbClust only controlled result is pending."}</p>
       </section>
 
       <section className="existing-card">
         <div className="existing-card-header">
           <div>
-            <p>Frozen Controlled Validation</p>
-            <h2>PCA and initialization held constant</h2>
+            <p>Quantitative Validation</p>
+            <h2>Controlled Internal Validation</h2>
           </div>
         </div>
         <div className="summary-sop-metric-table">
           <div className="summary-sop-metric-head">
             <span>Baseline K-Means</span>
             <span>Metric</span>
-            <span>NbClust-Only K-Means</span>
+            <span>NbClust Only K-Means</span>
           </div>
           {metricKeys.map((metric) => {
-            const existingValue = controlResult.metrics[metric].mean;
+            const existingValue = controlResult?.metrics[metric].mean;
             const nbclustValue = nbclustResult?.metrics[metric].mean;
             return (
               <div key={metric} className="summary-sop-metric-row">
-                <strong>{formatSopMetric(metric, existingValue)}</strong>
+                <strong>{existingValue === undefined ? "—" : formatSopMetric(metric, existingValue)}</strong>
                 <div>
                   <span>{sopMetricLabels[metric]}</span>
                   <small>{metric === "davies_bouldin" ? "Lower is better" : "Higher is better"}</small>
-                  <em>{nbclustValue === undefined ? "Pending" : Math.abs(nbclustValue - existingValue) < 1e-12 ? "Equal to control mean" :
+                  <em>{existingValue === undefined || nbclustValue === undefined ? "Pending" : Math.abs(nbclustValue - existingValue) < 1e-12 ? "Equal to control mean" :
                     (nbclustValue < existingValue) === (metric === "davies_bouldin") ? "Better than control mean" : "Worse than control mean"}</em>
                 </div>
                 <strong>{nbclustValue === undefined ? "—" : formatSopMetric(metric, nbclustValue)}</strong>
@@ -575,110 +554,166 @@ const NbClustTab = ({ run, evaluation, error, baselineSweep }: { run: UnifiedRes
         </div>
       </section>
 
-      <FindingNote>
-        {controlled ? `On the same 13 standardized features without PCA or DPC, baseline selection chose k=${controlled.control.selectedK} and NbClust chose k=${controlled.nbclustOnly.selectedK}. Only k-selection changes; both use the same 30 random seeds and Lloyd settings. ${controlled.control.selectedK === controlled.nbclustOnly.selectedK ? "Both methods selected the same k, so the paired runs and metrics are identical; no clustering-metric improvement is claimed." : "The displayed metrics summarize all 30 runs for each selected k."}` : "The corrected NbClust-only controlled result is pending because the stored SOP 2 clustering outputs are PCA-based."}
-      </FindingNote>
     </div>
   );
 };
 
-const DpcTab = ({ run, evaluation, error, baselineSweep }: { run: UnifiedResearchRun; evaluation: SopEvaluation | null; error: string | null; baselineSweep: BaselineCandidateSweep | null }) => {
-  const { enhancedProgress, replayRun } = useSopRunReplay();
-  const dpcDeterminism = evaluation?.sop3.dpcDeterminism;
-  const controlled = evaluation?.sop3.controlledComparison;
-  const controlledResult = controlled ? fromSop3DpcResult(controlled) : null;
-  const baselineCondition = evaluation?.sop1.ablation.conditions[0];
+const DpcTab = ({ run, evaluation, error, baselineSweep: _baselineSweep, geometry }: { run: UnifiedResearchRun; evaluation: SopEvaluation | null; error: string | null; baselineSweep: BaselineCandidateSweep | null; geometry: DefenseGeometry | null }) => {
+  const [activeStabilityTab, setActiveStabilityTab] = useState<DpcStabilityTab>("three");
+  const sop3 = evaluation?.sop3;
+  const randomSummary = sop3?.randomRunSummary;
+  const dpcDeterminism = sop3?.dpcDeterminism;
+  const firstThreeRuns = sop3?.firstThreeRandomRuns ?? [];
+  const randomRunCount = sop3?.settings.randomSeeds.length ?? 0;
+  const metricKeys = Object.keys(sopMetricLabels) as SopMetric[];
+  const dpcSeeds = run.initialization.selectedCentroids;
+  const maximumGamma = Math.max(...dpcSeeds.map((centroid) => centroid.gamma), 1);
 
-  if (!baselineCondition || !dpcDeterminism) {
+  if (!sop3 || !randomSummary || !dpcDeterminism) {
     return (
       <div className="summary-tab-panel">
         <div className="existing-note">{error ?? "Loading aggregate DPC evaluation details..."}</div>
-        <DpcSeedFigure run={run} />
       </div>
     );
   }
+
+  const dpcMetrics: Record<SopMetric, number> = {
+    silhouette: dpcDeterminism.metrics.silhouette,
+    davies_bouldin: dpcDeterminism.metrics.daviesBouldin,
+    calinski_harabasz: dpcDeterminism.metrics.calinskiHarabasz
+  };
+  // Directions, changes and assessments are backend evidence, not frontend thresholds.
+  // Legacy aggregate metrics alone cannot establish a validated controlled comparison.
+  const comparisonMetrics = sop3.controlledComparison
+    ? run.baselineComparison.controlledDpcInitializationComparison?.metrics
+    : undefined;
+  const assessmentLabels = { better: "Better", worse: "Worse", equal: "Equal reported value" } as const;
 
   return (
     <div className="summary-tab-panel summary-sop1-panel">
       <section className="summary-sop-intro">
         <p>SOP 3</p>
-        <h2>Density-Peak-Based Deterministic Initialization</h2>
-      </section>
-      <DpcSeedFigure run={run} />
-
-      <section className="summary-controlled-strip" aria-label="Controlled SOP 3 settings">
-        <div><span>Frozen cohort</span><strong>n = {run.cohort.parentN.toLocaleString()}</strong></div>
-        <div><span>Control configuration</span><strong>No PCA • No NbClust • No DPC</strong></div>
-        <div><span>Comparison configuration</span><strong>No PCA • No NbClust • DPC</strong></div>
-        <div><span>Controlled change</span><strong>Only DPC initialization is introduced</strong></div>
-      </section>
-
-      <p className="existing-note">The interactive baseline candidate is independent of the enhanced-side experiment. Controlled tables below retain the validated fixed configurations and 30-run summaries.</p>
-      <section className="summary-sop-comparison">
-        <BaselineCandidateControl sweep={baselineSweep} error={error} />
-        <div className="summary-vs" aria-hidden="true">vs</div>
-        <SopRunPanel
-          side="enhanced"
-          title="DPC-Only K-Means"
-          subtitle="No PCA • No NbClust • DPC"
-          label={`Frozen experiment - k=${controlled?.settings.k ?? run.kSelection.selectedK}`}
-          condition={controlledResult ?? fromSop1Condition(baselineCondition)}
-          progress={enhancedProgress}
-          onRun={() => replayRun("enhanced")}
-          resultPending={!controlledResult}
-        />
+        <h2>Density Peak Deterministic Initialization</h2>
       </section>
 
       <section className="existing-card">
-        <div className="existing-card-header">
-          <div>
-            <p>SOP 3 — DPC</p>
-            <h2>{controlled ? "DPC-only deterministic seed evidence (13 standardized features)" : "Available PCA-based DPC deterministic seed evidence"}</h2>
-          </div>
+        <div className="existing-card-header"><div><p>Controlled DPC Comparison</p><h2>Initialization Experimental Context</h2></div></div>
+        <div className="summary-controlled-strip summary-controlled-strip-five" aria-label="Controlled SOP 3 settings">
+          <div><span>Cohort</span><strong>{sop3.settings.cohortN.toLocaleString()} participants</strong></div>
+          <div><span>Shared Input</span><strong>{evaluation?.sop2.settings.representation}</strong></div>
+          <div><span>Control</span><strong>Random initialization</strong></div>
+          <div><span>Comparison</span><strong>DPC initialization</strong></div>
+          <div><span>Controlled Change</span><strong>Initialization only</strong></div>
         </div>
-        <div className="grid gap-3 sm:grid-cols-2">
-          {(controlled?.selectedCentroids ?? run.initialization.selectedCentroids).map((centroid) => (
-            <div key={centroid.assignedCluster} className="border-l-2 border-teal-700 bg-teal-50/50 px-4 py-3 text-sm">
-              <div className="font-semibold text-ink">Cluster {centroid.assignedCluster} seed</div>
+      </section>
+
+      <section>
+        <div className="summary-sop-intro">
+          <p>Initialization Stability</p>
+          <h2>Random Initialization vs Deterministic DPC Across Repeated Runs</h2>
+        </div>
+        <div className="summary-view-tabs" role="tablist" aria-label="SOP 3 stability views">
+          {[["three", "3 Runs"], ["thirty", "30 Runs"], ["summary", "Summary"]].map(([id, label]) => (
+            <button key={id} type="button" role="tab" aria-selected={activeStabilityTab === id} onClick={() => setActiveStabilityTab(id as DpcStabilityTab)}>{label}</button>
+          ))}
+        </div>
+
+        {activeStabilityTab === "three" ? (
+          <div className="summary-dpc-runs">
+            <div className="summary-dpc-column-heading"><p>Existing K-Means</p><h3>Random Initialization</h3><span>Initial centroids are selected independently for each run</span></div>
+            <div className="summary-dpc-column-heading"><p>Enhanced K-Means</p><h3>Deterministic DPC Initialization</h3><span>Fixed DPC seeds are selected deterministically from the same input</span></div>
+            {firstThreeRuns.map((randomRun) => (
+              <div key={randomRun.runNumber} className="summary-dpc-run-pair">
+                <article className="summary-dpc-plot-card">
+                  <p>Run {randomRun.runNumber}</p>
+                  <DefenseScatter panel={geometry?.sop3.random.find((panel) => panel.runNumber === randomRun.runNumber) ?? null} label={`Random run ${randomRun.runNumber}`} />
+                  <p className="text-xs text-muted">Replayed seed {randomRun.seed}; validated against saved results.</p>
+                  <div className="summary-dpc-plot-metrics">Silhouette {randomRun.silhouette.toFixed(3)} - DBI {randomRun.daviesBouldin.toFixed(3)} - CH {randomRun.calinskiHarabasz.toFixed(1)} - Iter {randomRun.iterations}</div>
+                </article>
+                <article className="summary-dpc-plot-card">
+                  <p>Run {randomRun.runNumber}</p>
+                  <DefenseScatter panel={geometry?.sop3.dpc.find((panel) => panel.checkNumber === randomRun.runNumber) ?? null} label={`DPC check ${randomRun.runNumber}`} />
+                  <p className="text-xs text-muted">{randomRun.runNumber === 1 ? "Saved DPC reference geometry." : "Reconstructed DPC check; validated against the saved reference."}</p>
+                  <div className="summary-dpc-plot-metrics">Silhouette {dpcMetrics.silhouette.toFixed(3)} - DBI {dpcMetrics.davies_bouldin.toFixed(3)} - CH {dpcMetrics.calinski_harabasz.toFixed(1)} - Iter {dpcDeterminism.iterations}</div>
+                </article>
+              </div>
+            ))}
+          </div>
+        ) : activeStabilityTab === "thirty" ? (
+          <div className="summary-dpc-chart-stack">
+            <div className="summary-sop-intro">
+              <p>30-Run Stability</p>
+              <h2>Run-to-Run Internal Validation Metrics</h2>
+              <blockquote>The random-control runs show run-to-run variation, while deterministic DPC remains fixed under identical inputs.</blockquote>
+            </div>
+            {([
+              ["Silhouette", "higher is better", "silhouette"],
+              ["Davies-Bouldin", "lower is better", "daviesBouldin"],
+              ["Calinski-Harabasz", "higher is better", "calinskiHarabasz"]
+            ] as const).map(([label, direction, metric]) => (
+              <article key={label} className="existing-card summary-dpc-chart-missing">
+                <h3>{label} <span>({direction})</span></h3>
+                <SopRunSeriesChart sop3={sop3} metric={metric} />
+              </article>
+            ))}
+          </div>
+        ) : (
+          <div className="existing-card summary-dpc-reproducibility-card">
+            <div className="existing-card-header"><div><h2>Random Initialization vs Deterministic DPC</h2></div></div>
+            <div className="overflow-x-auto">
+              <table className="research-table summary-dpc-reproducibility-table">
+                <thead><tr><th>Dimension</th><th>Random Initialization</th><th className="text-teal-700">Deterministic DPC</th></tr></thead>
+                <tbody>
+                  <tr><td className="font-medium">Initialization</td><td>Varies across runs</td><td className="font-semibold text-teal-800">Fixed deterministic seed set</td></tr>
+                  <tr><td className="font-medium">Seed identities</td><td>Run-dependent</td><td className="font-semibold text-teal-800">Reproduced</td></tr>
+                  <tr><td className="font-medium">Final clustering</td><td>May vary across initializations</td><td className="font-semibold text-teal-800">Reproducible under identical deterministic inputs</td></tr>
+                  <tr><td className="font-medium">Internal validation</td><td>30-run control distribution</td><td className="font-semibold text-teal-800">Fixed deterministic result</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
+      </section>
+
+      {activeStabilityTab === "summary" ? <><section className="existing-card">
+        <div className="existing-card-header"><div><p>Current run: selected density peaks</p><h2>Deterministic DPC Seeds in PCA Space</h2></div></div>
+        <div className="grid gap-4 sm:grid-cols-2">
+          {dpcSeeds.map((centroid, index) => (
+            <div key={centroid.candidateId} className="summary-dpc-seed-card">
+              <div><span>Seed {index + 1} · Cluster {centroid.assignedCluster} Seed</span><strong>Cluster {centroid.assignedCluster} DPC Seed</strong><small>RID {centroid.candidateId}</small></div>
               <dl className="mt-3 grid grid-cols-3 gap-2 text-xs">
-                <div><dt className="text-muted">Density rho</dt><dd className="font-semibold tabular-nums">{centroid.rho.toFixed(5)}</dd></div>
-                <div><dt className="text-muted">Separation delta</dt><dd className="font-semibold tabular-nums">{centroid.delta.toFixed(5)}</dd></div>
-                <div><dt className="text-muted">Priority gamma</dt><dd className="font-semibold tabular-nums">{centroid.gamma.toFixed(5)}</dd></div>
+                <div><dt>rho</dt><dd>{centroid.rho.toFixed(0)}</dd></div>
+                <div><dt>delta</dt><dd>{centroid.delta.toFixed(4)}</dd></div>
+                <div><dt>gamma</dt><dd>{centroid.gamma.toFixed(2)}</dd></div>
               </dl>
+              <div className="mt-4 h-2 overflow-hidden rounded-full bg-slate-100"><span style={{ width: `${(centroid.gamma / maximumGamma) * 100}%` }} /></div>
             </div>
           ))}
         </div>
       </section>
 
-      <section className="existing-card">
-        <div className="existing-card-header">
-          <div>
-            <p>Controlled Initialization Finding</p>
-            <h2>Random initialization/control versus DPC deterministic initialization</h2>
-          </div>
-        </div>
-        <div className="mt-5 overflow-x-auto">
-          <table className="research-table min-w-[640px]">
-            <thead><tr><th>Metric</th><th className="text-right">Random/control mean</th><th className="text-right">DPC-only</th><th className="text-right">Assessment</th></tr></thead>
+      <section className="existing-card summary-dpc-validation-card">
+        <div className="existing-card-header"><div><p>Current run: controlled internal validation</p><h2>Random Initialization vs Deterministic DPC</h2></div></div>
+        <div className="summary-dpc-validation-table-wrap">
+          <table className="research-table summary-dpc-validation-table">
+            <thead><tr><th>Metric</th><th className="text-right">Random/Control Mean</th><th className="text-right">DPC</th><th className="text-right">Assessment</th></tr></thead>
             <tbody>
-              {(Object.keys(sopMetricLabels) as SopMetric[]).map((metric) => (
-                <tr key={metric}>
-                  <td className="font-medium">{sopMetricLabels[metric]}</td>
-                  <td className="text-right tabular-nums">{formatSopMetric(metric, baselineCondition.metrics[metric].mean)}</td>
-                  <td className="text-right tabular-nums">{controlledResult ? formatSopMetric(metric, controlledResult.metrics[metric].mean) : "—"}</td>
-                  <td className="text-right text-muted">{controlledResult ? (
-                    Math.abs(controlledResult.metrics[metric].mean - baselineCondition.metrics[metric].mean) < 1e-12 ? "Equal to control mean" :
-                    (controlledResult.metrics[metric].mean < baselineCondition.metrics[metric].mean) === (metric === "davies_bouldin") ? "Better than control mean" : "Worse than control mean"
-                  ) : "Validated controlled result pending"}</td>
-                </tr>
-              ))}
+              {metricKeys.map((metric) => {
+                const evidence = comparisonMetrics?.find((entry) => entry.metric === metric);
+                return (
+                  <tr key={metric}>
+                    <td className="font-medium">{sopMetricLabels[metric]}<small className="mt-1 block text-muted">{evidence ? evidence.direction === "lower" ? "Lower is better" : "Higher is better" : "Validated direction pending"}</small></td>
+                    <td className="text-right tabular-nums">{evidence ? formatSopMetric(metric, evidence.randomMean) : "—"}</td>
+                    <td className="text-right tabular-nums text-teal-800">{evidence ? formatSopMetric(metric, evidence.dpcValue) : "—"}</td>
+                    <td className="text-right text-muted">{evidence ? `${assessmentLabels[evidence.dpcAssessment]}; ${evidence.signedRelativeChangePercent > 0 ? "+" : ""}${evidence.signedRelativeChangePercent.toFixed(5)}% vs random mean` : "Validated comparison pending"}</td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         </div>
-        <FindingNote>
-          {controlled ? "The comparison uses the same 13 standardized features, fixed k=2, and Lloyd settings without PCA or NbClust. Only initialization changes. DPC seeds and outputs were identical across three checks; metric assessments compare against all 30 random control runs." : "DPC deterministic checks are available in the current aggregate contract, but the corrected no-PCA/no-NbClust DPC-only controlled result is pending. No metric improvement is claimed for SOP 3 here."}
-        </FindingNote>
       </section>
+      </> : null}
     </div>
   );
 };
@@ -874,10 +909,10 @@ const FullComparisonTab = ({ run }: { run: UnifiedResearchRun }) => (
   </>
 );
 
-const renderTab = (activeTab: SummaryTab, run: UnifiedResearchRun, evaluation: SopEvaluation | null, error: string | null, baselineSweep: BaselineCandidateSweep | null) => {
-  if (activeTab === "pca") return <PcaTab run={run} evaluation={evaluation} error={error} baselineSweep={baselineSweep} />;
-  if (activeTab === "nbclust") return <div className="summary-tab-panel"><FinalNbClustFigure run={run} /><NbClustTab run={run} evaluation={evaluation} error={error} baselineSweep={baselineSweep} /></div>;
-  if (activeTab === "dpc") return <DpcTab run={run} evaluation={evaluation} error={error} baselineSweep={baselineSweep} />;
+const renderTab = (activeTab: SummaryTab, run: UnifiedResearchRun, evaluation: SopEvaluation | null, error: string | null, baselineSweep: BaselineCandidateSweep | null, geometry: DefenseGeometry | null) => {
+  if (activeTab === "pca") return <PcaTab run={run} evaluation={evaluation} error={error} baselineSweep={baselineSweep} geometry={geometry} />;
+  if (activeTab === "nbclust") return <NbClustTab run={run} evaluation={evaluation} error={error} />;
+  if (activeTab === "dpc") return <DpcTab run={run} evaluation={evaluation} error={error} baselineSweep={baselineSweep} geometry={geometry} />;
   if (activeTab === "fullComparison") return <FullComparisonTab run={run} />;
   if (activeTab === "profiles") return <ProfilesTab run={run} />;
   return <LongitudinalTab run={run} />;
@@ -885,9 +920,11 @@ const renderTab = (activeTab: SummaryTab, run: UnifiedResearchRun, evaluation: S
 
 export const ClustersPage = ({ run }: ClustersPageProps) => {
   const [activeTab, setActiveTab] = useState<SummaryTab>("pca");
-  const { evaluation, baselineSweep, error } = useSopEvaluation();
+  const { evaluation, baselineSweep, defenseGeometry, error } = useSopEvaluation(run);
 
-  if (!run) return null;
+  if (!run) return <div className="existing-note">Run analysis to view results.</div>;
+
+  const isSopTab = activeTab === "pca" || activeTab === "nbclust" || activeTab === "dpc";
 
   return (
     <div className="existing-algorithm-page">
@@ -925,7 +962,14 @@ export const ClustersPage = ({ run }: ClustersPageProps) => {
         tabIndex={0}
         aria-labelledby={`summary-tab-${activeTab}`}
       >
-        {renderTab(activeTab, run, evaluation, error, baselineSweep)}
+        {isSopTab && !evaluation ? (
+          <div className="existing-note">{error ?? "Frozen-study evaluation pending."}</div>
+        ) : (
+          <>
+            {isSopTab ? <div className="existing-note">SOP 1–3: validated frozen-study evaluation evidence. The active run matches the cohort and PCA-variance source hashes. This does not establish full provenance identity or link the SOP experiments to this run; standardized-matrix and PCA-score hashes are not required in the run payload. Sections labeled Current run show only that run’s reported results.</div> : null}
+            {renderTab(activeTab, run, evaluation, error, baselineSweep, defenseGeometry)}
+          </>
+        )}
       </div>
       <ResearchPageNavigation currentPath="/summary-of-findings" />
     </div>

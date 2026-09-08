@@ -2,6 +2,68 @@
   "contractVersion": "sop-evaluation/v1",
   "scope": "Aggregate-only controlled evaluation; isolated from frozen official results",
   "cohortN": 2437,
+  "pipelines": [
+    {
+      "sop": "SOP1",
+      "pipeline": "Existing",
+      "pca": false,
+      "nbclust": false,
+      "dpc": false,
+      "representation": "13 standardized features",
+      "selectedK": 2,
+      "kSelection": "maximum silhouette; ties choose smaller k"
+    },
+    {
+      "sop": "SOP1",
+      "pipeline": "Enhanced",
+      "pca": true,
+      "nbclust": false,
+      "dpc": false,
+      "representation": "PC1-PC6",
+      "selectedK": 2,
+      "kSelection": "maximum silhouette; ties choose smaller k"
+    },
+    {
+      "sop": "SOP2",
+      "pipeline": "Existing",
+      "pca": true,
+      "nbclust": false,
+      "dpc": false,
+      "representation": "PC1-PC6",
+      "selectedK": 2,
+      "kSelection": "maximum silhouette; ties choose smaller k"
+    },
+    {
+      "sop": "SOP2",
+      "pipeline": "Enhanced",
+      "pca": true,
+      "nbclust": true,
+      "dpc": false,
+      "representation": "PC1-PC6",
+      "selectedK": 2,
+      "kSelection": "NbClust"
+    },
+    {
+      "sop": "SOP3",
+      "pipeline": "Existing",
+      "pca": true,
+      "nbclust": true,
+      "dpc": false,
+      "representation": "PC1-PC6",
+      "selectedK": 2,
+      "kSelection": "NbClust"
+    },
+    {
+      "sop": "SOP3",
+      "pipeline": "Enhanced",
+      "pca": true,
+      "nbclust": true,
+      "dpc": true,
+      "representation": "PC1-PC6",
+      "selectedK": 2,
+      "kSelection": "NbClust"
+    }
+  ],
   "sop1": {
     "redundancy": {
       "featureCount": 13,
@@ -90,6 +152,7 @@
       "settings": {
         "cohortN": 2437,
         "k": 2,
+        "kSelection": "maximum silhouette; ties choose smaller k",
         "initialization": "random",
         "nInit": 1,
         "maxIter": 300,
@@ -153,7 +216,46 @@
               "minimum": 1442.0005704878185,
               "maximum": 1442.0313362431123
             }
-          }
+          },
+          "selectedK": 2,
+          "baselineCandidates": [
+            {
+              "k": 2,
+              "silhouette": 0.33173611492709726
+            },
+            {
+              "k": 3,
+              "silhouette": 0.22567940067764303
+            },
+            {
+              "k": 4,
+              "silhouette": 0.17357756345787867
+            },
+            {
+              "k": 5,
+              "silhouette": 0.14698032047963142
+            },
+            {
+              "k": 6,
+              "silhouette": 0.1469747089176171
+            },
+            {
+              "k": 7,
+              "silhouette": 0.13764256848252976
+            },
+            {
+              "k": 8,
+              "silhouette": 0.1364370679654951
+            },
+            {
+              "k": 9,
+              "silhouette": 0.13815113899808035
+            },
+            {
+              "k": 10,
+              "silhouette": 0.12820049768970135
+            }
+          ]
         },
         {
           "representation": "PC1-PC6",
@@ -179,7 +281,46 @@
               "minimum": 1799.9749087140085,
               "maximum": 1800.0249578026046
             }
-          }
+          },
+          "selectedK": 2,
+          "baselineCandidates": [
+            {
+              "k": 2,
+              "silhouette": 0.3727004724250328
+            },
+            {
+              "k": 3,
+              "silhouette": 0.27167528558338805
+            },
+            {
+              "k": 4,
+              "silhouette": 0.21844111279621883
+            },
+            {
+              "k": 5,
+              "silhouette": 0.1886974176537283
+            },
+            {
+              "k": 6,
+              "silhouette": 0.18397727144347037
+            },
+            {
+              "k": 7,
+              "silhouette": 0.18882474616139547
+            },
+            {
+              "k": 8,
+              "silhouette": 0.1857771416156357
+            },
+            {
+              "k": 9,
+              "silhouette": 0.17816402612178645
+            },
+            {
+              "k": 10,
+              "silhouette": 0.17322363142074343
+            }
+          ]
         }
       ],
       "metricChanges": {
@@ -444,23 +585,16 @@
     "controlledComparison": {
       "settings": {
         "cohortN": 2437,
-        "representation": "13 standardized features",
+        "representation": "PC1-PC6",
         "features": [
-          "MMSE",
-          "ADAS13",
-          "LMI",
-          "LMD",
-          "TMT_A",
-          "TMT_B",
-          "CATEGORY_FLUENCY_ANIMALS",
-          "RAVLT_IMMEDIATE",
-          "RAVLT_DELAYED",
-          "RAVLT_FORGETTING",
-          "CDRSB",
-          "FAQ",
-          "GDS"
+          "PC1",
+          "PC2",
+          "PC3",
+          "PC4",
+          "PC5",
+          "PC6"
         ],
-        "pca": false,
+        "pca": true,
         "dpc": false,
         "controlNbclust": false,
         "comparisonNbclust": true,
@@ -516,96 +650,96 @@
           28,
           29
         ],
-        "inputSha256": "0267afadb86434c203321529cd039ef03b843e76ab56430d9e9d677fee232783"
+        "inputSha256": "abf2c7a98c65f7d0b609bd14389b20be930d5850bc8a4f213d383a8eb432f4b0"
       },
       "control": {
         "selectedK": 2,
-        "representation": "13 standardized features",
-        "dimensions": 13,
+        "representation": "PC1-PC6",
+        "dimensions": 6,
         "runCount": 30,
         "metrics": {
           "silhouette": {
-            "mean": 0.33187500971522454,
-            "standardDeviation": 0.00023426851518023573,
-            "minimum": 0.33173611492709726,
-            "maximum": 0.33225697038257485
+            "mean": 0.3727704309093196,
+            "standardDeviation": 0.00011124244171464769,
+            "minimum": 0.3727004724250328,
+            "maximum": 0.37301323144314236
           },
           "davies_bouldin": {
-            "mean": 1.2241160774005175,
-            "standardDeviation": 0.00042412698636601766,
-            "minimum": 1.2234245639607837,
-            "maximum": 1.224367536833148
+            "mean": 1.075643860715465,
+            "standardDeviation": 0.00037606647915655795,
+            "minimum": 1.0749732416051911,
+            "maximum": 1.0758850311620256
           },
           "calinski_harabasz": {
-            "mean": 1442.0231320417006,
-            "standardDeviation": 0.013837712047094214,
-            "minimum": 1442.0005704878185,
-            "maximum": 1442.0313362431123
+            "mean": 1800.0166092714587,
+            "standardDeviation": 0.014560835305713627,
+            "minimum": 1799.9749087140085,
+            "maximum": 1800.0249578026046
           }
         }
       },
       "nbclustOnly": {
         "selectedK": 2,
-        "representation": "13 standardized features",
-        "dimensions": 13,
+        "representation": "PC1-PC6",
+        "dimensions": 6,
         "runCount": 30,
         "metrics": {
           "silhouette": {
-            "mean": 0.33187500971522454,
-            "standardDeviation": 0.00023426851518023573,
-            "minimum": 0.33173611492709726,
-            "maximum": 0.33225697038257485
+            "mean": 0.3727704309093196,
+            "standardDeviation": 0.00011124244171464769,
+            "minimum": 0.3727004724250328,
+            "maximum": 0.37301323144314236
           },
           "davies_bouldin": {
-            "mean": 1.2241160774005175,
-            "standardDeviation": 0.00042412698636601766,
-            "minimum": 1.2234245639607837,
-            "maximum": 1.224367536833148
+            "mean": 1.075643860715465,
+            "standardDeviation": 0.00037606647915655795,
+            "minimum": 1.0749732416051911,
+            "maximum": 1.0758850311620256
           },
           "calinski_harabasz": {
-            "mean": 1442.0231320417006,
-            "standardDeviation": 0.013837712047094214,
-            "minimum": 1442.0005704878185,
-            "maximum": 1442.0313362431123
+            "mean": 1800.0166092714587,
+            "standardDeviation": 0.014560835305713627,
+            "minimum": 1799.9749087140085,
+            "maximum": 1800.0249578026046
           }
         }
       },
       "baselineCandidates": [
         {
           "k": 2,
-          "silhouette": 0.33173611492709726
+          "silhouette": 0.3727004724250328
         },
         {
           "k": 3,
-          "silhouette": 0.22567940067764303
+          "silhouette": 0.27167528558338805
         },
         {
           "k": 4,
-          "silhouette": 0.17357756345787867
+          "silhouette": 0.21844111279621883
         },
         {
           "k": 5,
-          "silhouette": 0.14698032047963142
+          "silhouette": 0.1886974176537283
         },
         {
           "k": 6,
-          "silhouette": 0.1469747089176171
+          "silhouette": 0.18397727144347037
         },
         {
           "k": 7,
-          "silhouette": 0.13764256848252976
+          "silhouette": 0.18882474616139547
         },
         {
           "k": 8,
-          "silhouette": 0.1364370679654951
+          "silhouette": 0.1857771416156357
         },
         {
           "k": 9,
-          "silhouette": 0.13815113899808035
+          "silhouette": 0.17816402612178645
         },
         {
           "k": 10,
-          "silhouette": 0.12820049768970135
+          "silhouette": 0.17322363142074343
         }
       ],
       "selection": {
@@ -613,19 +747,19 @@
         "reproducible": true,
         "packageVersion": "3.0.1",
         "usableIndices": 24,
-        "votesForSelectedK": 11,
+        "votesForSelectedK": 9,
         "voteDistribution": [
           {
             "k": 2,
-            "votes": 11
+            "votes": 9
           },
           {
             "k": 3,
-            "votes": 7
+            "votes": 6
           },
           {
             "k": 4,
-            "votes": 2
+            "votes": 5
           },
           {
             "k": 5,
@@ -633,7 +767,7 @@
           },
           {
             "k": 6,
-            "votes": 0
+            "votes": 1
           },
           {
             "k": 7,
@@ -641,7 +775,7 @@
           },
           {
             "k": 8,
-            "votes": 0
+            "votes": 1
           },
           {
             "k": 9,
@@ -649,15 +783,15 @@
           },
           {
             "k": 10,
-            "votes": 3
+            "votes": 1
           }
         ],
         "indexResults": [
           {
             "index": "kl",
             "status": "success",
-            "recommended_k": 2,
-            "criterion_value": 3.6097,
+            "recommended_k": 4,
+            "criterion_value": 142.5161,
             "reason": "",
             "warnings": ""
           },
@@ -665,7 +799,7 @@
             "index": "ch",
             "status": "success",
             "recommended_k": 2,
-            "criterion_value": 1442.0313,
+            "criterion_value": 1800.025,
             "reason": "",
             "warnings": ""
           },
@@ -673,15 +807,15 @@
             "index": "hartigan",
             "status": "success",
             "recommended_k": 3,
-            "criterion_value": 250.9502,
+            "criterion_value": 319.0658,
             "reason": "",
             "warnings": ""
           },
           {
             "index": "ccc",
             "status": "success",
-            "recommended_k": 10,
-            "criterion_value": 6.4825,
+            "recommended_k": 8,
+            "criterion_value": 6.8705,
             "reason": "",
             "warnings": ""
           },
@@ -689,7 +823,7 @@
             "index": "scott",
             "status": "success",
             "recommended_k": 3,
-            "criterion_value": 2711.2874,
+            "criterion_value": 2640.3469,
             "reason": "",
             "warnings": ""
           },
@@ -697,7 +831,7 @@
             "index": "marriot",
             "status": "success",
             "recommended_k": 4,
-            "criterion_value": 4.1926628359720385e+38,
+            "criterion_value": 1.3276722161891862e+20,
             "reason": "",
             "warnings": ""
           },
@@ -705,7 +839,7 @@
             "index": "trcovw",
             "status": "success",
             "recommended_k": 3,
-            "criterion_value": 1955156.1048,
+            "criterion_value": 3809337.2325,
             "reason": "",
             "warnings": ""
           },
@@ -713,15 +847,15 @@
             "index": "tracew",
             "status": "success",
             "recommended_k": 3,
-            "criterion_value": 1862.1977,
+            "criterion_value": 1862.0907,
             "reason": "",
             "warnings": ""
           },
           {
             "index": "friedman",
             "status": "success",
-            "recommended_k": 3,
-            "criterion_value": 9.3331,
+            "recommended_k": 4,
+            "criterion_value": 3.3878,
             "reason": "",
             "warnings": ""
           },
@@ -729,15 +863,15 @@
             "index": "rubin",
             "status": "success",
             "recommended_k": 3,
-            "criterion_value": -0.1289,
+            "criterion_value": -0.1596,
             "reason": "",
             "warnings": ""
           },
           {
             "index": "cindex",
             "status": "success",
-            "recommended_k": 7,
-            "criterion_value": 0.2807,
+            "recommended_k": 6,
+            "criterion_value": 0.2547,
             "reason": "",
             "warnings": ""
           },
@@ -745,7 +879,7 @@
             "index": "db",
             "status": "success",
             "recommended_k": 2,
-            "criterion_value": 1.2814,
+            "criterion_value": 1.1441,
             "reason": "",
             "warnings": ""
           },
@@ -753,7 +887,7 @@
             "index": "silhouette",
             "status": "success",
             "recommended_k": 2,
-            "criterion_value": 0.3317,
+            "criterion_value": 0.3727,
             "reason": "",
             "warnings": ""
           },
@@ -761,7 +895,7 @@
             "index": "duda",
             "status": "success",
             "recommended_k": 2,
-            "criterion_value": 1.2162,
+            "criterion_value": 1.1619,
             "reason": "",
             "warnings": ""
           },
@@ -769,7 +903,7 @@
             "index": "pseudot2",
             "status": "success",
             "recommended_k": 2,
-            "criterion_value": -261.8085,
+            "criterion_value": -205.2929,
             "reason": "",
             "warnings": ""
           },
@@ -777,15 +911,15 @@
             "index": "beale",
             "status": "success",
             "recommended_k": 2,
-            "criterion_value": -1.5777,
+            "criterion_value": -0.5356,
             "reason": "",
             "warnings": ""
           },
           {
             "index": "ratkowsky",
             "status": "success",
-            "recommended_k": 2,
-            "criterion_value": 0.4105,
+            "recommended_k": 7,
+            "criterion_value": 0.2226,
             "reason": "",
             "warnings": ""
           },
@@ -793,7 +927,7 @@
             "index": "ball",
             "status": "success",
             "recommended_k": 3,
-            "criterion_value": 4461.6525,
+            "criterion_value": 3798.2955,
             "reason": "",
             "warnings": ""
           },
@@ -801,7 +935,7 @@
             "index": "ptbiserial",
             "status": "success",
             "recommended_k": 2,
-            "criterion_value": 0.5695,
+            "criterion_value": 0.5755,
             "reason": "",
             "warnings": ""
           },
@@ -809,7 +943,7 @@
             "index": "frey",
             "status": "success",
             "recommended_k": 4,
-            "criterion_value": 1.3571,
+            "criterion_value": 1.359,
             "reason": "",
             "warnings": ""
           },
@@ -817,15 +951,15 @@
             "index": "mcclain",
             "status": "success",
             "recommended_k": 2,
-            "criterion_value": 0.5428,
+            "criterion_value": 0.5086,
             "reason": "",
             "warnings": ""
           },
           {
             "index": "dunn",
             "status": "success",
-            "recommended_k": 10,
-            "criterion_value": 0.0798,
+            "recommended_k": 4,
+            "criterion_value": 0.0356,
             "reason": "",
             "warnings": ""
           },
@@ -841,7 +975,7 @@
             "index": "sdindex",
             "status": "success",
             "recommended_k": 2,
-            "criterion_value": 1.4015,
+            "criterion_value": 1.0109,
             "reason": "",
             "warnings": ""
           },
@@ -857,7 +991,7 @@
             "index": "sdbw",
             "status": "success",
             "recommended_k": 10,
-            "criterion_value": 0.472,
+            "criterion_value": 0.2052,
             "reason": "",
             "warnings": ""
           }
@@ -969,9 +1103,9 @@
         "maximum": 1800.0249578026046
       },
       "inertia": {
-        "mean": 15934.910803558596,
-        "standardDeviation": 0.12464161959632508,
-        "minimum": 15934.849377713675,
+        "mean": 15934.910803558598,
+        "standardDeviation": 0.12464161960052642,
+        "minimum": 15934.849377713674,
         "maximum": 15935.267398368695
       },
       "iterations": {
@@ -1005,26 +1139,19 @@
     "controlledComparison": {
       "settings": {
         "cohortN": 2437,
-        "representation": "13 standardized features",
+        "representation": "PC1-PC6",
         "features": [
-          "MMSE",
-          "ADAS13",
-          "LMI",
-          "LMD",
-          "TMT_A",
-          "TMT_B",
-          "CATEGORY_FLUENCY_ANIMALS",
-          "RAVLT_IMMEDIATE",
-          "RAVLT_DELAYED",
-          "RAVLT_FORGETTING",
-          "CDRSB",
-          "FAQ",
-          "GDS"
+          "PC1",
+          "PC2",
+          "PC3",
+          "PC4",
+          "PC5",
+          "PC6"
         ],
-        "pca": false,
-        "nbclust": false,
+        "pca": true,
+        "nbclust": true,
         "k": 2,
-        "kSelection": "fixed",
+        "kSelection": "NbClust",
         "nInit": 1,
         "maxIter": 300,
         "tolerance": 0.0001,
@@ -1064,37 +1191,399 @@
           29
         ],
         "dpcRandomState": 0,
-        "inputSha256": "0267afadb86434c203321529cd039ef03b843e76ab56430d9e9d677fee232783",
+        "inputSha256": "abf2c7a98c65f7d0b609bd14389b20be930d5850bc8a4f213d383a8eb432f4b0",
         "cutoffPercentile": 0.02
       },
       "repeatedChecks": 3,
       "identicalInitialization": true,
       "identicalOutput": true,
       "clusterSizes": [
-        1554,
-        883
+        1553,
+        884
       ],
-      "iterations": 13,
+      "iterations": 12,
       "metrics": {
-        "silhouette": 0.33173611492709726,
-        "daviesBouldin": 1.224367536833148,
-        "calinskiHarabasz": 1442.0313362431123
+        "silhouette": 0.3727004724250328,
+        "daviesBouldin": 1.0758850311620256,
+        "calinskiHarabasz": 1800.0249578026046
       },
       "selectedCentroids": [
         {
           "assignedCluster": 0,
-          "rho": 283,
-          "delta": 11.301038987458114,
-          "gamma": 3198.194033450646
+          "rho": 223,
+          "delta": 10.724562796370238,
+          "gamma": 2391.577503590563
         },
         {
           "assignedCluster": 1,
-          "rho": 271,
-          "delta": 1.330667921603855,
-          "gamma": 360.61100675464473
+          "rho": 218,
+          "delta": 1.1938684434199174,
+          "gamma": 260.263320665542
         }
       ]
-    }
+    },
+    "randomRuns": [
+      {
+        "runNumber": 1,
+        "seed": 0,
+        "silhouette": 0.3727004724250328,
+        "daviesBouldin": 1.0758850311620256,
+        "calinskiHarabasz": 1800.0249578026046,
+        "iterations": 11,
+        "clusterSizes": [
+          1553,
+          884
+        ]
+      },
+      {
+        "runNumber": 2,
+        "seed": 1,
+        "silhouette": 0.3727004724250328,
+        "daviesBouldin": 1.0758850311620256,
+        "calinskiHarabasz": 1800.0249578026046,
+        "iterations": 8,
+        "clusterSizes": [
+          884,
+          1553
+        ]
+      },
+      {
+        "runNumber": 3,
+        "seed": 2,
+        "silhouette": 0.3727004724250328,
+        "daviesBouldin": 1.0758850311620256,
+        "calinskiHarabasz": 1800.0249578026046,
+        "iterations": 10,
+        "clusterSizes": [
+          884,
+          1553
+        ]
+      },
+      {
+        "runNumber": 4,
+        "seed": 3,
+        "silhouette": 0.3727004724250328,
+        "daviesBouldin": 1.0758850311620256,
+        "calinskiHarabasz": 1800.0249578026046,
+        "iterations": 11,
+        "clusterSizes": [
+          1553,
+          884
+        ]
+      },
+      {
+        "runNumber": 5,
+        "seed": 4,
+        "silhouette": 0.37301323144314236,
+        "daviesBouldin": 1.0749732416051911,
+        "calinskiHarabasz": 1799.9749087140085,
+        "iterations": 4,
+        "clusterSizes": [
+          880,
+          1557
+        ]
+      },
+      {
+        "runNumber": 6,
+        "seed": 5,
+        "silhouette": 0.372910934781088,
+        "daviesBouldin": 1.0751119548358608,
+        "calinskiHarabasz": 1800.0034781230065,
+        "iterations": 9,
+        "clusterSizes": [
+          881,
+          1556
+        ]
+      },
+      {
+        "runNumber": 7,
+        "seed": 6,
+        "silhouette": 0.3727004724250328,
+        "daviesBouldin": 1.0758850311620256,
+        "calinskiHarabasz": 1800.0249578026046,
+        "iterations": 13,
+        "clusterSizes": [
+          1553,
+          884
+        ]
+      },
+      {
+        "runNumber": 8,
+        "seed": 7,
+        "silhouette": 0.3727004724250328,
+        "daviesBouldin": 1.0758850311620256,
+        "calinskiHarabasz": 1800.0249578026046,
+        "iterations": 13,
+        "clusterSizes": [
+          884,
+          1553
+        ]
+      },
+      {
+        "runNumber": 9,
+        "seed": 8,
+        "silhouette": 0.3727004724250328,
+        "daviesBouldin": 1.0758850311620256,
+        "calinskiHarabasz": 1800.0249578026046,
+        "iterations": 11,
+        "clusterSizes": [
+          1553,
+          884
+        ]
+      },
+      {
+        "runNumber": 10,
+        "seed": 9,
+        "silhouette": 0.3727004724250328,
+        "daviesBouldin": 1.0758850311620256,
+        "calinskiHarabasz": 1800.0249578026046,
+        "iterations": 10,
+        "clusterSizes": [
+          1553,
+          884
+        ]
+      },
+      {
+        "runNumber": 11,
+        "seed": 10,
+        "silhouette": 0.3727004724250328,
+        "daviesBouldin": 1.0758850311620256,
+        "calinskiHarabasz": 1800.0249578026046,
+        "iterations": 12,
+        "clusterSizes": [
+          1553,
+          884
+        ]
+      },
+      {
+        "runNumber": 12,
+        "seed": 11,
+        "silhouette": 0.3727004724250328,
+        "daviesBouldin": 1.0758850311620256,
+        "calinskiHarabasz": 1800.0249578026046,
+        "iterations": 13,
+        "clusterSizes": [
+          1553,
+          884
+        ]
+      },
+      {
+        "runNumber": 13,
+        "seed": 12,
+        "silhouette": 0.3727004724250328,
+        "daviesBouldin": 1.0758850311620256,
+        "calinskiHarabasz": 1800.0249578026046,
+        "iterations": 10,
+        "clusterSizes": [
+          884,
+          1553
+        ]
+      },
+      {
+        "runNumber": 14,
+        "seed": 13,
+        "silhouette": 0.3727004724250328,
+        "daviesBouldin": 1.0758850311620256,
+        "calinskiHarabasz": 1800.0249578026046,
+        "iterations": 10,
+        "clusterSizes": [
+          884,
+          1553
+        ]
+      },
+      {
+        "runNumber": 15,
+        "seed": 14,
+        "silhouette": 0.3727004724250328,
+        "daviesBouldin": 1.0758850311620256,
+        "calinskiHarabasz": 1800.0249578026046,
+        "iterations": 11,
+        "clusterSizes": [
+          1553,
+          884
+        ]
+      },
+      {
+        "runNumber": 16,
+        "seed": 15,
+        "silhouette": 0.3727004724250328,
+        "daviesBouldin": 1.0758850311620256,
+        "calinskiHarabasz": 1800.0249578026046,
+        "iterations": 12,
+        "clusterSizes": [
+          884,
+          1553
+        ]
+      },
+      {
+        "runNumber": 17,
+        "seed": 16,
+        "silhouette": 0.37301323144314236,
+        "daviesBouldin": 1.0749732416051911,
+        "calinskiHarabasz": 1799.9749087140085,
+        "iterations": 9,
+        "clusterSizes": [
+          1557,
+          880
+        ]
+      },
+      {
+        "runNumber": 18,
+        "seed": 17,
+        "silhouette": 0.3727004724250328,
+        "daviesBouldin": 1.0758850311620256,
+        "calinskiHarabasz": 1800.0249578026046,
+        "iterations": 12,
+        "clusterSizes": [
+          884,
+          1553
+        ]
+      },
+      {
+        "runNumber": 19,
+        "seed": 18,
+        "silhouette": 0.372910934781088,
+        "daviesBouldin": 1.0751119548358608,
+        "calinskiHarabasz": 1800.0034781230065,
+        "iterations": 9,
+        "clusterSizes": [
+          1556,
+          881
+        ]
+      },
+      {
+        "runNumber": 20,
+        "seed": 19,
+        "silhouette": 0.372910934781088,
+        "daviesBouldin": 1.0751119548358608,
+        "calinskiHarabasz": 1800.0034781230065,
+        "iterations": 9,
+        "clusterSizes": [
+          881,
+          1556
+        ]
+      },
+      {
+        "runNumber": 21,
+        "seed": 20,
+        "silhouette": 0.3727004724250328,
+        "daviesBouldin": 1.0758850311620256,
+        "calinskiHarabasz": 1800.0249578026046,
+        "iterations": 10,
+        "clusterSizes": [
+          1553,
+          884
+        ]
+      },
+      {
+        "runNumber": 22,
+        "seed": 21,
+        "silhouette": 0.3727004724250328,
+        "daviesBouldin": 1.0758850311620256,
+        "calinskiHarabasz": 1800.0249578026046,
+        "iterations": 11,
+        "clusterSizes": [
+          884,
+          1553
+        ]
+      },
+      {
+        "runNumber": 23,
+        "seed": 22,
+        "silhouette": 0.372910934781088,
+        "daviesBouldin": 1.0751119548358608,
+        "calinskiHarabasz": 1800.0034781230065,
+        "iterations": 9,
+        "clusterSizes": [
+          1556,
+          881
+        ]
+      },
+      {
+        "runNumber": 24,
+        "seed": 23,
+        "silhouette": 0.372910934781088,
+        "daviesBouldin": 1.0751119548358608,
+        "calinskiHarabasz": 1800.0034781230065,
+        "iterations": 11,
+        "clusterSizes": [
+          881,
+          1556
+        ]
+      },
+      {
+        "runNumber": 25,
+        "seed": 24,
+        "silhouette": 0.3727004724250328,
+        "daviesBouldin": 1.0758850311620256,
+        "calinskiHarabasz": 1800.0249578026046,
+        "iterations": 10,
+        "clusterSizes": [
+          884,
+          1553
+        ]
+      },
+      {
+        "runNumber": 26,
+        "seed": 25,
+        "silhouette": 0.372910934781088,
+        "daviesBouldin": 1.0751119548358608,
+        "calinskiHarabasz": 1800.0034781230065,
+        "iterations": 11,
+        "clusterSizes": [
+          881,
+          1556
+        ]
+      },
+      {
+        "runNumber": 27,
+        "seed": 26,
+        "silhouette": 0.3727004724250328,
+        "daviesBouldin": 1.0758850311620256,
+        "calinskiHarabasz": 1800.0249578026046,
+        "iterations": 11,
+        "clusterSizes": [
+          884,
+          1553
+        ]
+      },
+      {
+        "runNumber": 28,
+        "seed": 27,
+        "silhouette": 0.372910934781088,
+        "daviesBouldin": 1.0751119548358608,
+        "calinskiHarabasz": 1800.0034781230065,
+        "iterations": 11,
+        "clusterSizes": [
+          881,
+          1556
+        ]
+      },
+      {
+        "runNumber": 29,
+        "seed": 28,
+        "silhouette": 0.3727004724250328,
+        "daviesBouldin": 1.0758850311620256,
+        "calinskiHarabasz": 1800.0249578026046,
+        "iterations": 13,
+        "clusterSizes": [
+          884,
+          1553
+        ]
+      },
+      {
+        "runNumber": 30,
+        "seed": 29,
+        "silhouette": 0.3727004724250328,
+        "daviesBouldin": 1.0758850311620256,
+        "calinskiHarabasz": 1800.0249578026046,
+        "iterations": 14,
+        "clusterSizes": [
+          884,
+          1553
+        ]
+      }
+    ]
   },
   "provenance": {
     "officialResultsModified": false,
@@ -1103,15 +1592,8 @@
       "data/interim/clustering_features_standardized.csv": "0267afadb86434c203321529cd039ef03b843e76ab56430d9e9d677fee232783",
       "data/interim/clustering_pca_scores.csv": "abf2c7a98c65f7d0b609bd14389b20be930d5850bc8a4f213d383a8eb432f4b0",
       "data/interim/clustering_pca_explained_variance.csv": "769216258e22de504fc8ca39d1f898f7c4ce1e1d37cd7dd9876dc0571d67f33f",
-      "data/interim/baseline_kmeans_runs.csv": "453e1a161f7a23f58fab251ed62d4ef1aafb019da384410e44e8eb5cfacc135b",
-      "data/interim/dpc_comparison_random_runs.csv": "27a98a52d1302cde2cf054ccee7f196fc82eb1672dbeed8c3c56ec9d31b20b04",
-      "data/interim/dpc_comparison_random_summary.csv": "65205e6f392abc998e021c181413195cc7895284eac128376ab2ea1bb0fb86e6",
-      "data/interim/dpc_comparison_random_stability.csv": "05e40c929b877c6e3e99101cc8b44a698e5f8cada6e4f65f3e3bba9f22280bce",
-      "data/interim/clustering_nbclust_summary.csv": "67cd64c991544e6bc3c5166a10d100a8da120d85028da34516f26f7ca817bf23",
-      "data/interim/clustering_selected_k.csv": "3bee43b1454424c3346b161e7acb99e58298b67335652854fadb84f26d5ac8d6",
-      "data/interim/clustering_dpc_determinism_check.csv": "961eaaec1702367dc6dfc6a66d84b86be3b28d7e5b0cfa52c7253934079e78b1",
-      "data/interim/enhanced_kmeans_metrics.csv": "ed89860e62d3fed1ff761576b905f4d81d7e51c19d2b4d8b21335def6561aa8b",
-      "data/interim/enhanced_kmeans_run_summary.csv": "e77c01dab12b7bae13501a35c2d720965cacb1b0d64c1099694b7685f0a91088"
+      "data/interim/study_entry_cohort_unimputed.csv": "b9983abfd068c4c00006750c2d08e547bc0c7b2769b60080ae9733b4841c04eb",
+      "data/interim/dpc_comparison_random_runs.csv": "27a98a52d1302cde2cf054ccee7f196fc82eb1672dbeed8c3c56ec9d31b20b04"
     }
   }
 }

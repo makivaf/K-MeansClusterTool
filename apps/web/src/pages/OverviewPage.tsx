@@ -6,7 +6,7 @@ import { useSopEvaluation } from "../hooks/useSopEvaluation";
 type OverviewPageProps = { run: UnifiedResearchRun | null };
 
 export const OverviewPage = ({ run }: OverviewPageProps) => {
-  const { baselineSweep, error } = useSopEvaluation();
+  const { baselineSweep, error } = useSopEvaluation(run);
   if (!run) return null;
   const baselineMethod = run.baselineComparison.baselineMethod;
   return (
@@ -15,14 +15,14 @@ export const OverviewPage = ({ run }: OverviewPageProps) => {
         <div>
           <p className="existing-eyebrow">Baseline Method</p>
           <h1>Standard K-Means Clustering</h1>
-          <p>Explore validated baseline candidates from k=2 to 10. Each uses the same 13 standardized study-entry measures, random initialization with seed 0, and Lloyd K-Means. The slider updates cluster membership counts and all three internal validation metrics together.</p>
+          <p>View the current run's dataset information and available frozen-study baseline evaluation.</p>
         </div>
       </section>
       <section className="space-y-5">
         <article className="existing-card existing-card-large existing-cluster-card">
           <div className="existing-card-header">
             <div>
-              <p>Dataset Information</p>
+              <p>Current run: dataset information</p>
               <h2>Study-entry baseline matrix</h2>
             </div>
           </div>
@@ -48,11 +48,11 @@ export const OverviewPage = ({ run }: OverviewPageProps) => {
 
 
       </section>
-      <BaselineCandidateControl sweep={baselineSweep} error={error} />
-      <section className="existing-card">
-        <div className="existing-card-header"><div><p>Manuscript comparison</p><h2>Defined final baseline</h2></div></div>
-        <p className="text-sm text-muted">The final comparison selects k={baselineMethod.selectedK} by maximum Silhouette and summarizes all {baselineMethod.runCount} random-initialization runs. Its frozen values remain in Summary of Findings; the interactive candidate above is the selected single-seed result.</p>
-      </section>
+      {baselineSweep ? <>
+        <p className="existing-note">Validated frozen-study baseline evidence. The active run matches the cohort and PCA-variance source hashes; this does not establish full provenance identity or link these candidate experiments to the run.</p>
+        <BaselineCandidateControl sweep={baselineSweep} error={error} />
+      </> : <p className="existing-note">{error ?? "Frozen-study baseline evaluation pending."}</p>}
+      
       <ResearchPageNavigation currentPath="/existing-algorithm" />
     </div>
   );
