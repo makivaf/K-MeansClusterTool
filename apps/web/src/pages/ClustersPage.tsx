@@ -6,7 +6,6 @@ import { LongitudinalProgressionChart } from "../components/charts/LongitudinalP
 import { ResearchPageNavigation } from "../components/layout/ResearchPageNavigation";
 import { StatCard } from "../components/ui/StatCard";
 import { useSopEvaluation } from "../hooks/useSopEvaluation";
-import { BASELINE_K_MAX, BASELINE_K_MIN, selectBaselineCandidate } from "../utils/baselineCandidate";
 import { getMeasureLabel } from "../utils/measureLabels";
 
 type ClustersPageProps = { run: UnifiedResearchRun | null };
@@ -50,13 +49,6 @@ const sopMetricLabels: Record<SopMetric, string> = {
 
 const formatSopMetric = (_metric: SopMetric, value: number) => value.toFixed(5);
 const formatSignedPercent = (value: number) => `${value > 0 ? "+" : ""}${value.toFixed(2)}%`;
-
-const fromSop1Condition = (condition: SopEvaluation["sop1"]["ablation"]["conditions"][number]): SopRunResult => ({
-  representation: condition.representation,
-  dimensions: condition.dimensions,
-  runCount: condition.runCount,
-  metrics: condition.metrics
-});
 
 const fromSop2Condition = (condition: NonNullable<SopEvaluation["sop2"]["controlledComparison"]>["control"]): SopRunResult => ({
   representation: `${condition.representation}, k=${condition.selectedK}`,
@@ -380,14 +372,14 @@ const PcaTab = ({ run, evaluation, error, baselineSweep }: { run: UnifiedResearc
   );
 };
 
-const NbClustTab = ({ run, evaluation, error, baselineSweep }: { run: UnifiedResearchRun; evaluation: SopEvaluation | null; error: string | null; baselineSweep: BaselineCandidateSweep | null }) => {
+const NbClustTab = ({ run, evaluation, error }: { run: UnifiedResearchRun; evaluation: SopEvaluation | null; error: string | null }) => {
   const [manualBaselineK, setManualBaselineK] = useState<number | null>(null);
   const sop2 = evaluation?.sop2;
   const controlled = sop2?.controlledComparison;
   const selection = controlled?.selection ?? sop2?.nbclust;
   const selectedK = controlled?.nbclustOnly.selectedK ?? sop2?.nbclust.selectedK;
 
-  if (!sop2 || !evaluation?.sop1.ablation) {
+  if (!sop2) {
     return (
       <div className="summary-tab-panel">
         <div className="existing-note">{error ?? "Loading aggregate NbClust evaluation details..."}</div>
@@ -395,19 +387,25 @@ const NbClustTab = ({ run, evaluation, error, baselineSweep }: { run: UnifiedRes
     );
   }
 
-  const [baselineCondition] = evaluation.sop1.ablation.conditions;
-  const controlResult = controlled ? fromSop2Condition(controlled.control) : fromSop1Condition(baselineCondition);
+  // Matched 30-run results must come only from the validated SOP 2 comparison.
+  const controlResult = controlled ? fromSop2Condition(controlled.control) : null;
   const nbclustResult = controlled ? fromSop2Condition(controlled.nbclustOnly) : null;
   const metricKeys = Object.keys(sopMetricLabels) as SopMetric[];
-  const baselineSelectedK = controlled?.control.selectedK ?? evaluation.sop1.ablation.settings.k;
+  const baselineSelectedK = controlled?.control.selectedK ?? sop2.maximumSilhouetteSelectedK;
   const selectedManualBaselineK = manualBaselineK ?? baselineSelectedK;
-  const baselineCandidate = selectBaselineCandidate(baselineSweep, selectedManualBaselineK);
-  const baselineMetricValues: Record<SopMetric, number> = {
-    silhouette: baselineCandidate?.silhouette ?? controlResult.metrics.silhouette.mean,
-    davies_bouldin: baselineCandidate?.daviesBouldin ?? controlResult.metrics.davies_bouldin.mean,
-    calinski_harabasz: baselineCandidate?.calinskiHarabasz ?? controlResult.metrics.calinski_harabasz.mean
+  // Representative seed-0 PCA candidates are separate from both the standardized
+  // SOP 1 baselineSweep and the matched 30-run means below. Never substitute either.
+  const pcaCandidates = sop2.candidates;
+  const candidateKs = pcaCandidates.map((candidate) => candidate.k).sort((left, right) => left - right);
+  const minimumK = candidateKs[0];
+  const maximumK = candidateKs[candidateKs.length - 1];
+  const baselineCandidate = pcaCandidates.find((candidate) => candidate.k === selectedManualBaselineK);
+  const baselineMetricValues: Record<SopMetric, number | undefined> = {
+    silhouette: baselineCandidate?.silhouette,
+    davies_bouldin: baselineCandidate?.daviesBouldin,
+    calinski_harabasz: baselineCandidate?.calinskiHarabasz
   };
-  const baselineSliderFill = ((selectedManualBaselineK - BASELINE_K_MIN) / (BASELINE_K_MAX - BASELINE_K_MIN)) * 100;
+  const baselineSliderFill = maximumK > minimumK ? ((selectedManualBaselineK - minimumK) / (maximumK - minimumK)) * 100 : 0;
   const pcaRepresentationLabel = `${run.pca.components} PCs`;
   const pcaRepresentationDetail = `PC1-PC${run.pca.components}`;
 
@@ -454,20 +452,19 @@ const NbClustTab = ({ run, evaluation, error, baselineSweep }: { run: UnifiedRes
                 aria-label="Manual baseline cluster count"
                 className="baseline-k-slider"
                 type="range"
-                min={BASELINE_K_MIN}
-                max={BASELINE_K_MAX}
+                min={minimumK}
+                max={maximumK}
                 step={1}
                 value={selectedManualBaselineK}
-                disabled={!baselineSweep}
+                disabled={pcaCandidates.length === 0}
                 onChange={(event) => {
                   const nextK = Number(event.target.value);
-                  selectBaselineCandidate(baselineSweep, nextK);
-                  setManualBaselineK(nextK);
+                  if (candidateKs.includes(nextK)) setManualBaselineK(nextK);
                 }}
                 style={{ "--slider-fill": `${baselineSliderFill}%` } as CSSProperties}
               />
               <div className="existing-k-ticks" aria-hidden="true">
-                {Array.from({ length: BASELINE_K_MAX - BASELINE_K_MIN + 1 }, (_, index) => BASELINE_K_MIN + index).map((k) => <span key={k}>{k}</span>)}
+                {candidateKs.map((k) => <span key={k}>{k}</span>)}
               </div>
             </div>
             {baselineCandidate ? <SopClusterCounts sizes={baselineCandidate.clusterSizes} /> : null}
@@ -475,8 +472,8 @@ const NbClustTab = ({ run, evaluation, error, baselineSweep }: { run: UnifiedRes
               {metricKeys.map((metric) => (
                 <div key={metric}>
                   <span>{sopMetricLabels[metric]}</span>
-                  <strong>{formatSopMetric(metric, baselineMetricValues[metric])}</strong>
-                  <small>{baselineCandidate ? `Seed ${baselineSweep?.seed ?? 0}, ${baselineCandidate.iterations} iterations` : controlResult.metrics[metric].standardDeviation === undefined ? (metric === "davies_bouldin" ? "Lower is better" : "Higher is better") : `SD ${controlResult.metrics[metric].standardDeviation?.toFixed(5)}`}</small>
+                  <strong>{baselineMetricValues[metric] === undefined ? "—" : formatSopMetric(metric, baselineMetricValues[metric])}</strong>
+                  <small>{baselineCandidate ? `Seed ${sop2.settings.seed}, ${baselineCandidate.iterations} iterations` : "Validated result pending"}</small>
                 </div>
               ))}
             </div>
@@ -494,7 +491,7 @@ const NbClustTab = ({ run, evaluation, error, baselineSweep }: { run: UnifiedRes
             <p className="summary-nbclust-selection-copy">{selection?.votesForSelectedK ?? "—"} of {selection?.usableIndices ?? "—"} usable indices recommended k = {selectedK}. The selected k is carried into the same random initialization Lloyd procedure.</p>
             <div className="summary-nbclust-facts">
               <div><span>Representation</span><strong>{pcaRepresentationLabel}</strong><small>{pcaRepresentationDetail}, k={selectedK}</small></div>
-              <div><span>Run count</span><strong>{nbclustResult?.runCount ?? controlResult.runCount}</strong><small>Predetermined random seeds</small></div>
+              <div><span>Run count</span><strong>{nbclustResult?.runCount ?? "—"}</strong><small>Predetermined random seeds</small></div>
             </div>
             <div className="summary-nbclust-metrics">
               {metricKeys.map((metric) => {
@@ -521,7 +518,7 @@ const NbClustTab = ({ run, evaluation, error, baselineSweep }: { run: UnifiedRes
           </div>
         </div>
         <div className="grid gap-3 sm:grid-cols-2">
-          <StatCard label="Baseline selection" value={`k=${controlled?.control.selectedK ?? evaluation.sop1.ablation.settings.k}`} detail="Maximum Silhouette over k=2–10, seed 0" />
+          <StatCard label="Baseline selection" value={`k=${baselineSelectedK}`} detail="Maximum Silhouette over k=2–10, seed 0" />
           <StatCard label="NbClust selection" value={`k=${selectedK}`} detail={`${selection?.votesForSelectedK}/${selection?.usableIndices} usable votes (${pcaRepresentationDetail})`} accent="teal" />
         </div>
         <p className="existing-note">{controlled ? `NbClust votes were computed on the same ${pcaRepresentationLabel} retained from SOP1 and reproduced in two checks. Both selected cluster counts feed the same 30 seed random initialization Lloyd procedure.` : "The available vote distribution is PCA evidence. The no DPC NbClust only controlled result is pending."}</p>
@@ -541,15 +538,15 @@ const NbClustTab = ({ run, evaluation, error, baselineSweep }: { run: UnifiedRes
             <span>NbClust Only K-Means</span>
           </div>
           {metricKeys.map((metric) => {
-            const existingValue = controlResult.metrics[metric].mean;
+            const existingValue = controlResult?.metrics[metric].mean;
             const nbclustValue = nbclustResult?.metrics[metric].mean;
             return (
               <div key={metric} className="summary-sop-metric-row">
-                <strong>{formatSopMetric(metric, existingValue)}</strong>
+                <strong>{existingValue === undefined ? "—" : formatSopMetric(metric, existingValue)}</strong>
                 <div>
                   <span>{sopMetricLabels[metric]}</span>
                   <small>{metric === "davies_bouldin" ? "Lower is better" : "Higher is better"}</small>
-                  <em>{nbclustValue === undefined ? "Pending" : Math.abs(nbclustValue - existingValue) < 1e-12 ? "Equal to control mean" :
+                  <em>{existingValue === undefined || nbclustValue === undefined ? "Pending" : Math.abs(nbclustValue - existingValue) < 1e-12 ? "Equal to control mean" :
                     (nbclustValue < existingValue) === (metric === "davies_bouldin") ? "Better than control mean" : "Worse than control mean"}</em>
                 </div>
                 <strong>{nbclustValue === undefined ? "—" : formatSopMetric(metric, nbclustValue)}</strong>
@@ -929,7 +926,7 @@ const FullComparisonTab = ({ run }: { run: UnifiedResearchRun }) => (
 
 const renderTab = (activeTab: SummaryTab, run: UnifiedResearchRun, evaluation: SopEvaluation | null, error: string | null, baselineSweep: BaselineCandidateSweep | null) => {
   if (activeTab === "pca") return <PcaTab run={run} evaluation={evaluation} error={error} baselineSweep={baselineSweep} />;
-  if (activeTab === "nbclust") return <NbClustTab run={run} evaluation={evaluation} error={error} baselineSweep={baselineSweep} />;
+  if (activeTab === "nbclust") return <NbClustTab run={run} evaluation={evaluation} error={error} />;
   if (activeTab === "dpc") return <DpcTab run={run} evaluation={evaluation} error={error} baselineSweep={baselineSweep} />;
   if (activeTab === "fullComparison") return <FullComparisonTab run={run} />;
   if (activeTab === "profiles") return <ProfilesTab run={run} />;
