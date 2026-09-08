@@ -585,18 +585,12 @@ const DpcTab = ({ run, evaluation, error, baselineSweep: _baselineSweep }: { run
     davies_bouldin: dpcDeterminism.metrics.daviesBouldin,
     calinski_harabasz: dpcDeterminism.metrics.calinskiHarabasz
   };
-  const metricSummary = {
-    silhouette: randomSummary.silhouette,
-    davies_bouldin: randomSummary.davies_bouldin,
-    calinski_harabasz: randomSummary.calinski_harabasz
-  };
-  const assessMetric = (metric: SopMetric) => {
-    const randomMean = metricSummary[metric].mean;
-    const dpcValue = dpcMetrics[metric];
-    const delta = dpcValue - randomMean;
-    if (Math.abs(delta) < 0.01) return "Comparable";
-    return `Comparable; slightly ${delta > 0 ? "higher" : "lower"}`;
-  };
+  // Directions, changes and assessments are backend evidence, not frontend thresholds.
+  // Legacy aggregate metrics alone cannot establish a validated controlled comparison.
+  const comparisonMetrics = sop3.controlledComparison
+    ? run.baselineComparison.controlledDpcInitializationComparison?.metrics
+    : undefined;
+  const assessmentLabels = { better: "Better", worse: "Worse", equal: "Equal reported value" } as const;
 
   return (
     <div className="summary-tab-panel summary-sop1-panel">
@@ -684,7 +678,7 @@ const DpcTab = ({ run, evaluation, error, baselineSweep: _baselineSweep }: { run
                   <tr><td className="font-medium">Initialization</td><td>Varies across runs</td><td className="font-semibold text-teal-800">Fixed deterministic seed set</td></tr>
                   <tr><td className="font-medium">Seed identities</td><td>Run-dependent</td><td className="font-semibold text-teal-800">Reproduced</td></tr>
                   <tr><td className="font-medium">Final clustering</td><td>May vary across initializations</td><td className="font-semibold text-teal-800">Reproducible under identical deterministic inputs</td></tr>
-                  <tr><td className="font-medium">Internal validation</td><td>30-run control distribution</td><td className="font-semibold text-teal-800">Comparable deterministic result</td></tr>
+                  <tr><td className="font-medium">Internal validation</td><td>30-run control distribution</td><td className="font-semibold text-teal-800">Fixed deterministic result</td></tr>
                 </tbody>
               </table>
             </div>
@@ -715,14 +709,17 @@ const DpcTab = ({ run, evaluation, error, baselineSweep: _baselineSweep }: { run
           <table className="research-table summary-dpc-validation-table">
             <thead><tr><th>Metric</th><th className="text-right">Random/Control Mean</th><th className="text-right">DPC</th><th className="text-right">Assessment</th></tr></thead>
             <tbody>
-              {metricKeys.map((metric) => (
-                <tr key={metric}>
-                  <td className="font-medium">{sopMetricLabels[metric]}<small className="mt-1 block text-muted">{metric === "davies_bouldin" ? "Lower is better" : "Higher is better"}</small></td>
-                  <td className="text-right tabular-nums">{formatSopMetric(metric, metricSummary[metric].mean)}</td>
-                  <td className="text-right tabular-nums text-teal-800">{formatSopMetric(metric, dpcMetrics[metric])}</td>
-                  <td className="text-right text-muted">{assessMetric(metric)}</td>
-                </tr>
-              ))}
+              {metricKeys.map((metric) => {
+                const evidence = comparisonMetrics?.find((entry) => entry.metric === metric);
+                return (
+                  <tr key={metric}>
+                    <td className="font-medium">{sopMetricLabels[metric]}<small className="mt-1 block text-muted">{evidence ? evidence.direction === "lower" ? "Lower is better" : "Higher is better" : "Validated direction pending"}</small></td>
+                    <td className="text-right tabular-nums">{evidence ? formatSopMetric(metric, evidence.randomMean) : "—"}</td>
+                    <td className="text-right tabular-nums text-teal-800">{evidence ? formatSopMetric(metric, evidence.dpcValue) : "—"}</td>
+                    <td className="text-right text-muted">{evidence ? `${assessmentLabels[evidence.dpcAssessment]}; ${evidence.signedRelativeChangePercent > 0 ? "+" : ""}${evidence.signedRelativeChangePercent.toFixed(5)}% vs random mean` : "Validated comparison pending"}</td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         </div>
