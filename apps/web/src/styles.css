@@ -3,8 +3,20 @@
 @tailwind utilities;
 
 :root {
-  color: #152528;
-  background: #f6f9f9;
+  --research-primary: #0f766e;
+  --research-primary-hover: #0b625c;
+  --research-ink: #1e1e1e;
+  --research-muted: #4f6672;
+  --research-canvas: #f6f9fa;
+  --research-border: #e5edef;
+  --research-control-border: #dce6e9;
+  --research-selected-border: #b7d9d5;
+  --research-success: #edf8f5;
+  --research-comparison: #e58a00;
+  --research-card-radius: 12px;
+  --research-control-radius: 8px;
+  color: var(--research-ink);
+  background: var(--research-canvas);
   font-family:
     Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   font-synthesis: none;
@@ -39,8 +51,42 @@ input:focus-visible {
 }
 
 .recharts-wrapper text {
-  fill: #657579;
+  fill: var(--research-muted);
   font-size: 11px;
+}
+
+/* Shared research surfaces follow Simulation Runs and the Figma design guide. */
+.research-page { font-size: 14px; }
+.research-page .page-heading { border: 0; padding: 0 6px; margin-bottom: 24px; }
+.research-page .page-heading h1 { font-size: 30px; line-height: 1.25; font-weight: 600; letter-spacing: -0.025em; }
+.research-page .page-heading p { font-size: 14px; line-height: 21px; }
+.research-page .research-panel { border-radius: var(--research-card-radius); }
+.research-page .research-panel-heading { flex-wrap: wrap; gap: 16px; padding: 24px 24px 0; border: 0; }
+.research-page .research-panel-heading h2 { font-size: 22px; line-height: 30px; letter-spacing: -0.02em; }
+.research-page .research-panel-body { padding: 24px; }
+.research-page .research-table thead { background: transparent; border-top: 0; font-size: 12px; text-transform: none; letter-spacing: normal; }
+.research-page .research-table th { font-weight: 400; padding: 12px; }
+.research-page .research-table td { padding: 16px 12px; vertical-align: middle; }
+.research-primary-button, .research-secondary-button { display: inline-flex; min-height: 42px; align-items: center; justify-content: center; gap: 10px; border-radius: var(--research-control-radius); padding: 10px 20px; font-size: 14px; font-weight: 600; transition: background-color 150ms; }
+.research-primary-button { background: var(--research-primary); color: white; }
+.research-primary-button:hover { background: var(--research-primary-hover); }
+.research-primary-button:disabled { cursor: not-allowed; background: #e2e8f0; color: var(--research-muted); }
+.research-secondary-button { border: 1px solid var(--research-control-border); background: white; color: var(--research-primary); }
+.research-secondary-button:hover { background: #f3f9f8; border-color: var(--research-selected-border); }
+.research-text-action { color: var(--research-primary); font-size: 12px; font-weight: 600; }
+.research-text-action:hover { color: var(--research-primary-hover); text-decoration: underline; }
+.research-file-action { cursor: pointer; }
+.research-file-action:focus-within { outline: 3px solid var(--research-selected-border); outline-offset: 3px; }
+.research-file-action[aria-disabled="true"] { cursor: not-allowed; opacity: 0.55; }
+.research-badge { display: inline-flex; align-items: center; gap: 6px; border-radius: 7px; padding: 6px 10px; background: var(--research-canvas); color: var(--research-muted); font-size: 12px; font-weight: 600; white-space: nowrap; }
+.research-badge.is-valid { background: var(--research-success); color: var(--research-primary-hover); }
+.research-badge.is-invalid { background: #fef2f2; color: #b91c1c; }
+.study-readiness { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 24px; padding-block: 8px; }
+.research-status-icon { display: inline-flex; flex-shrink: 0; padding: 10px; border-radius: var(--research-control-radius); background: var(--research-success); color: var(--research-primary); }
+@media (max-width: 767px) {
+  .research-page .research-panel-heading { padding: 16px 16px 0; }
+  .research-page .research-panel-body { padding: 16px; }
+  .research-page .research-table th, .research-page .research-table td { padding-inline: 8px; }
 }
 
 @layer components {

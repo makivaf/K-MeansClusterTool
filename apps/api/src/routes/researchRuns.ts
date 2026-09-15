@@ -13,7 +13,7 @@ import { researchRunLifecycle } from "../services/researchRunLifecycle";
 import { ResearchAdmissionError } from "../services/researchRunLifecycle";
 import { createFixedWindowRateLimiter, requireTrustedBrowserOrigin } from "../httpSecurity";
 
-type ResearchRunLifecyclePort = Pick<typeof researchRunLifecycle, "enqueue" | "get">;
+type ResearchRunLifecyclePort = Pick<typeof researchRunLifecycle, "enqueue" | "get" | "getForUpload">;
 
 export const createResearchRunsRouter = (lifecycle: ResearchRunLifecyclePort = researchRunLifecycle) => {
   const router = express.Router();
@@ -29,6 +29,13 @@ export const createResearchRunsRouter = (lifecycle: ResearchRunLifecyclePort = r
     try {
       const payload = ResearchRunRequestSchema.parse(request.body);
       const uploadDirectory = resolveUploadDirectory(payload.upload_ref);
+      // Reconnect an uncertain POST without executing the same batch twice,
+      // including after success has removed its temporary CSVs.
+      const existing = lifecycle.getForUpload(payload.upload_ref);
+      if (existing && existing.status !== "failed") {
+        response.status(202).json(ResearchRunResponseSchema.parse({ run: existing }));
+        return;
+      }
       if (!fs.existsSync(uploadDirectory)) {
         response.status(404).json({ error: "Upload reference was not found on local disk." });
         return;

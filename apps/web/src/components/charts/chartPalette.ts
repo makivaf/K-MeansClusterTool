@@ -1,8 +1,8 @@
 export const chartPalette = {
-  primary: "#0f7977",
-  comparison: "#d88a00",
+  primary: "var(--research-primary)",
+  comparison: "var(--research-comparison)",
   centroid: "#dc2626",
   neutral: "#64748b",
-  grid: "#dbe4e4",
-  text: "#475569"
+  grid: "var(--research-border)",
+  text: "var(--research-muted)"
 } as const;
