@@ -8,7 +8,7 @@ import {
   UploadCloud
 } from "lucide-react";
 import { useState, type ReactNode } from "react";
-import { NavLink } from "react-router-dom";
+import { NavLink, useLocation } from "react-router-dom";
 import { researchPages } from "./researchNavigation";
 const navIcons = [UploadCloud, BarChart3, FlaskConical];
 const navItems = researchPages.map((page, index) => ({ ...page, icon: navIcons[index] }));
@@ -26,6 +26,7 @@ const collapsedNavigationClass = ({ isActive }: { isActive: boolean }) => [
 ].join(" ");
 
 export const AppShell = ({ children }: AppShellProps) => {
+  const { pathname } = useLocation();
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const sidebarWidthClass = sidebarCollapsed ? "lg:w-[76px]" : "lg:w-[248px]";
@@ -94,7 +95,7 @@ export const AppShell = ({ children }: AppShellProps) => {
         </div>
       </header>
 
-      <div className="mx-auto max-w-[1320px] min-w-0 px-4 py-6 sm:px-6 sm:py-8">
+      <div className={`mx-auto ${pathname === "/simulation-runs" ? "max-w-[1568px]" : "max-w-[1320px]"} min-w-0 px-4 py-6 sm:px-6 sm:py-8`}>
         {children}
       </div>
     </main>
