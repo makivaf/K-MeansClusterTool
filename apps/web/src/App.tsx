@@ -25,7 +25,7 @@ export default function App() {
         <Route path="/" element={<Navigate to="/dataset-setup" replace />} />
         <Route path="/dataset-setup" element={null} />
         <Route path="/study-findings" element={analysis.run ? <StudyFindings run={analysis.run} /> : gate} />
-        <Route path="/simulation-runs" element={analysis.run ? <SimulationRuns /> : gate} />
+        <Route path="/simulation-runs" element={<SimulationRuns />} />
         <Route path="/upload-run" element={<Navigate to="/dataset-setup" replace />} />
         <Route path="/run-history" element={<Navigate to="/simulation-runs" replace />} />
         {/* Retired URLs never select historical or simulation results. */}
