@@ -83,7 +83,7 @@ export class ResearchRunLifecycle {
   private readonly diagnoseFailure: NonNullable<LifecycleDependencies["diagnoseFailure"]>;
   private readonly maxQueuedTasks: number;
   private readonly queue: QueuedTask[] = [];
-  private readonly admittedUploadRefs = new Set<string>();
+  private readonly uploadJobs = new Map<string, string>();
   private draining = false;
   private idleWaiters: Array<() => void> = [];
 
@@ -97,17 +97,23 @@ export class ResearchRunLifecycle {
   }
 
   enqueue(request: ResearchRunRequest, uploadDirectory: string): ResearchRunStatus {
+    const existing = this.getForUpload(request.upload_ref);
+    if (existing && existing.status !== "failed") return existing;
     if (this.queue.length >= this.maxQueuedTasks) throw new ResearchAdmissionError("The local research queue is full. Try again after an active run finishes.");
-    if (this.admittedUploadRefs.has(request.upload_ref)) throw new ResearchAdmissionError("This upload batch is already queued or running.");
     const job = this.repository.create();
     this.queue.push({ runId: job.run_id, request, uploadDirectory });
-    this.admittedUploadRefs.add(request.upload_ref);
+    this.uploadJobs.set(request.upload_ref, job.run_id);
     queueMicrotask(() => { void this.drain(); });
     return job;
   }
 
   get(runId: string): ResearchRunStatus | null {
     return this.repository.get(runId);
+  }
+
+  getForUpload(uploadRef: string): ResearchRunStatus | null {
+    const jobId = this.uploadJobs.get(uploadRef);
+    return jobId ? this.repository.get(jobId) : null;
   }
 
   whenIdle(): Promise<void> {
@@ -140,9 +146,10 @@ export class ResearchRunLifecycle {
           }
           this.repository.markFailed(currentTask.runId, sanitizeResearchFailure(error));
         } finally {
-          this.admittedUploadRefs.delete(currentTask.request.upload_ref);
           try {
-            this.cleanupUpload(currentTask.uploadDirectory);
+            // Failed jobs may retry the validated batch; existing TTL cleanup
+            // still removes abandoned uploads. Successful jobs need no CSVs.
+            if (this.get(currentTask.runId)?.status === "complete") this.cleanupUpload(currentTask.uploadDirectory);
           } catch {
             console.warn("A completed research upload directory could not be removed.");
           }

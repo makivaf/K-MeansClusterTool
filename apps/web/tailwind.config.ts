@@ -5,16 +5,17 @@ export default {
   theme: {
     extend: {
       colors: {
-        ink: "#152528",
-        muted: "#657579",
-        line: "#dbe4e4",
+        ink: "var(--research-ink)",
+        muted: "var(--research-muted)",
+        line: "var(--research-border)",
         panel: "#ffffff",
-        canvas: "#f6f9f9",
+        canvas: "var(--research-canvas)",
         teal: {
           50: "#e8f6f5",
           100: "#c9ebe8",
-          600: "#0f7977",
-          700: "#0b6665",
+          600: "var(--research-primary)",
+          700: "var(--research-primary)",
+          800: "var(--research-primary-hover)",
           900: "#083c3d"
         },
         amber: {

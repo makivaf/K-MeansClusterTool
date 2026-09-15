@@ -3,6 +3,7 @@ import { Navigate, Route, Routes, useLocation } from "react-router-dom";
 import type { UploadResponse } from "../../../packages/shared/src";
 import { AppShell } from "./components/layout/AppShell";
 import { useStudyFindings } from "./hooks/useStudyFindings";
+import { readValidatedDataset, saveValidatedDataset } from "./utils/validatedDataset";
 
 const DatasetSetup = lazy(() => import("./pages/UploadAndCluster").then((module) => ({ default: module.UploadAndCluster })));
 const StudyFindings = lazy(() => import("./pages/StudyFindingsPage").then((module) => ({ default: module.StudyFindingsPage })));
@@ -10,21 +11,20 @@ const SimulationRuns = lazy(() => import("./pages/SimulationRunsPage").then((mod
 
 export default function App() {
   const { pathname } = useLocation();
-  // Validation belongs to these files. Refreshing requires validation again.
-  const [dataset, setDataset] = useState<UploadResponse | null>(null);
-  const analysis = useStudyFindings();
+  const [dataset, setDataset] = useState<UploadResponse | null>(readValidatedDataset);
+  const analysis = useStudyFindings(dataset);
   const onValidated = (value: UploadResponse | null) => {
     analysis.reset();
+    saveValidatedDataset(value);
     setDataset(value);
   };
-  const gate = <p role="status">No analysis results yet. Upload, validate, and run the required datasets first.</p>;
   return <AppShell>
     <Suspense fallback={<p role="status">Loading page…</p>}>
-      <div hidden={pathname !== "/dataset-setup"}><DatasetSetup onValidated={onValidated} analysis={analysis} dataset={dataset} /></div>
+      <div hidden={pathname !== "/dataset-setup"}><DatasetSetup onValidated={onValidated} dataset={dataset} /></div>
       <Routes>
         <Route path="/" element={<Navigate to="/dataset-setup" replace />} />
         <Route path="/dataset-setup" element={null} />
-        <Route path="/study-findings" element={analysis.run ? <StudyFindings run={analysis.run} /> : gate} />
+        <Route path="/study-findings" element={<StudyFindings analysis={analysis} dataset={dataset} />} />
         <Route path="/simulation-runs" element={<SimulationRuns />} />
         <Route path="/upload-run" element={<Navigate to="/dataset-setup" replace />} />
         <Route path="/run-history" element={<Navigate to="/simulation-runs" replace />} />

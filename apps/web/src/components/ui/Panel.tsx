@@ -30,11 +30,11 @@ const bodyStyles = {
 };
 
 export const Panel = ({ title, children, action, className = "", variant = "legacy" }: PanelProps) => (
-  <section className={`${panelStyles[variant]} ${className}`}>
-    <div className={`flex items-center justify-between ${headerStyles[variant]}`}>
+  <section className={`research-panel ${panelStyles[variant]} ${className}`}>
+    <div className={`research-panel-heading flex items-center justify-between ${headerStyles[variant]}`}>
       <h2 className={variant === "result" ? "text-lg font-semibold tracking-tight text-teal-900" : "text-base font-semibold tracking-tight text-ink"}>{title}</h2>
       {action}
     </div>
-    <div className={bodyStyles[variant]}>{children}</div>
+    <div className={`research-panel-body ${bodyStyles[variant]}`}>{children}</div>
   </section>
 );
