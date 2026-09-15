@@ -3,63 +3,71 @@ import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { researchPages } from "../../../web/src/components/layout/researchNavigation";
+import { countDpcMatches } from "../../../web/src/utils/studyFindings";
+import { FrozenUnifiedStudyResultSchema } from "../../../../packages/shared/src/schema";
+import { SimulationCapabilitiesSchema } from "../../../../packages/shared/src/simulation";
+import { adaptUnifiedResult } from "./unifiedResultAdapter";
+import { loadSopEvaluation } from "./sopEvaluationArtifact";
+import { app } from "../app";
+import { once } from "node:events";
+import type { AddressInfo } from "node:net";
+
 const repositoryRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../../../..");
-const read = (relative: string) => fs.readFileSync(path.join(repositoryRoot, "apps/web/src", relative), "utf8");
-const app = read("App.tsx");
-const shell = read("components/layout/AppShell.tsx");
-const upload = read("pages/UploadAndCluster.tsx");
-const hook = read("hooks/useRunData.ts");
-const overview = read("pages/OverviewPage.tsx");
-const clusters = read("pages/ClustersPage.tsx");
-const charts = read("components/charts/FinalFindingsCharts.tsx");
-const control = read("components/BaselineCandidateControl.tsx");
-assert.deepEqual(researchPages.map(({ label }) => label), ["Existing Algorithm", "Enhanced Algorithm", "Summary of Findings", "Run History"]);
-for (const page of researchPages) assert.ok(app.includes('path="' + page.path + '"'));
-assert.ok(shell.includes("Run Analysis"));
-assert.ok(!/Axis A|Axis B|selectedAxis/.test([app, shell, hook, upload, overview, clusters, charts, control].join("\n")));
-console.log("PASS frontend contract: redesigned four-page navigation and unified run action preserved");
+const read = (name: string) => fs.readFileSync(path.join(repositoryRoot, "apps/web/src", name), "utf8");
+const application = read("App.tsx");
+const setup = read("pages/UploadAndCluster.tsx");
+const study = read("pages/StudyFindingsPage.tsx");
+const simulations = read("pages/SimulationRunsPage.tsx");
+assert.deepEqual(researchPages.map(({ label }) => label), ["Dataset Setup", "Study Findings", "Simulation Runs"]);
+for (const page of researchPages) assert.ok(application.includes('path="' + page.path + '"'));
+assert.ok(application.includes('path="/run-history" element={<Navigate to="/simulation-runs" replace'));
+assert.ok(!/OverviewPage|EnhancedKMeansPage|ClustersPage|RunHistoryPage|useRunData/.test(application));
+assert.ok(!/Unified thesis pipeline|Run Analysis|Run History/.test(read("components/layout/AppShell.tsx")));
+assert.ok(setup.includes('to="/study-findings"'));
+assert.ok(setup.includes("/api/upload") && !setup.includes("/api/research/runs"));
+assert.ok(setup.includes("onValidated(null)"));
+assert.ok(!/demo dataset|source.hash|privacy/i.test(setup));
+assert.ok(!/Scatter|DefenseScatter|SopRunSeriesChart/.test(study + simulations + read("components/charts/LongitudinalProgressionChart.tsx")));
+assert.ok(!/signedRelativeChangePercent|relativeMeanChangePercent/.test(study + simulations));
+assert.ok(!/useRunData|useStudyFindings|useSopEvaluation|2437|1950|Math.random|setTimeout/.test(simulations));
+assert.ok(simulations.includes("[1, 2, 3, 4, 5] as const"));
+assert.ok(simulations.includes("Not run") && simulations.includes("No results."));
+const hook = read("hooks/useStudyFindings.ts");
+assert.ok(hook.includes('STUDY_RUN_ID = "validated-unified-study-run"'));
+assert.ok(hook.includes("FrozenUnifiedStudyResultSchema.parse"));
+assert.ok(!/searchParams|selectedRun|sessionStorage/.test(hook));
+console.log("PASS final routes, study/simulation separation, validation-only setup, and aggregate-only figures");
 
-for (const dataset of ["ADAS", "CDR", "FAQ", "MMSE", "NEUROBAT", "NPI-Q", "GDSCALE"]) {
-  if (!upload.includes(`[\"${dataset}\"`)) throw new Error(`Run Analysis is missing required dataset slot: ${dataset}`);
+const frozen = adaptUnifiedResult(path.join(repositoryRoot, "data/interim"), { runId: "validated-unified-study-run" });
+FrozenUnifiedStudyResultSchema.parse(frozen);
+const unrelated = structuredClone(frozen);
+unrelated.cohort.parentN = 1950;
+assert.equal(FrozenUnifiedStudyResultSchema.safeParse(unrelated).success, false);
+const sop = loadSopEvaluation();
+assert.ok(sop);
+assert.equal(countDpcMatches(sop.sop3), 21);
+assert.equal(countDpcMatches({ ...sop.sop3, randomRuns: undefined }), null);
+const changed = structuredClone(sop.sop3);
+assert.ok(changed.randomRuns);
+changed.randomRuns[0].silhouette += 0.01;
+assert.equal(countDpcMatches(changed), 20);
+const permuted = structuredClone(sop.sop3);
+permuted.randomRuns?.forEach((run) => run.clusterSizes.reverse());
+assert.equal(countDpcMatches(permuted), 21);
+console.log("PASS frozen cohort rejection and artifact-derived, label-invariant DPC agreement");
+
+const server = app.listen(0, "127.0.0.1");
+try {
+  await once(server, "listening");
+  const port = (server.address() as AddressInfo).port;
+  const response = await fetch(`http://127.0.0.1:${port}/api/simulations/capabilities`);
+  assert.equal(response.status, 200);
+  assert.equal(response.headers.get("cache-control"), "no-store");
+  const capability = SimulationCapabilitiesSchema.parse(await response.json());
+  assert.equal(capability.executionAvailable, false);
+  assert.equal(capability.code, "SUBSAMPLE_RUNNER_UNAVAILABLE");
+  assert.equal(SimulationCapabilitiesSchema.safeParse({ ...capability, executionAvailable: true }).success, false);
+  console.log("PASS live capability API truthfully rejects unsupported execution");
+} finally {
+  await new Promise<void>((resolve, reject) => server.close((error) => error ? reject(error) : resolve()));
 }
-for (const state of ["Missing", "Selected", "Validating", "Valid", "Error"]) {
-  if (!upload.includes(`\"${state}\"`)) throw new Error(`Run Analysis is missing file state: ${state}`);
-}
-for (const stage of [
-  "preparing_inputs", "constructing_study_entry_cohort", "preprocessing", "pca", "selecting_k",
-  "deterministic_initialization", "enhanced_kmeans", "baseline_comparison", "matching_longitudinal_records",
-  "longitudinal_eligibility", "longitudinal_analysis", "aggregate_artifact_validation"
-]) if (!upload.includes(`\"${stage}\"`)) throw new Error(`Run Analysis is missing observable stage mapping: ${stage}`);
-if (!upload.includes("Uploading and validating inputs") || !upload.includes("No estimated completion time is available")) throw new Error("Run Analysis does not communicate indeterminate validation or long-running work");
-if (/completedStages|totalStages|\bpercent(age)?\b|% complete/i.test(upload)) throw new Error("Run Analysis must not derive or display fake percentage progress");
-if (!upload.includes("View Overview") || !upload.includes("aggregate result passed the required application contract validation")) throw new Error("Run Analysis completion state is incomplete");
-if (!upload.includes("Resume status check") || !upload.includes("sessionStorage") || !upload.includes("RESEARCH_RUN_COMPLETE_EVENT")) throw new Error("Run Analysis lifecycle reconnection or run-selector refresh is missing");
-if (!upload.includes('aria-live="polite"') || !upload.includes('aria-label="Frozen research pipeline stages"')) throw new Error("Run Analysis execution updates are not accessible");
-if (!upload.includes("Participant-level rows, identifiers, scores, and histories are not displayed") || /CSV preview|raw rows\.map|PTID\s*[:=]/.test(upload)) throw new Error("Run Analysis participant-data protection copy or aggregate-only rendering is invalid");
-if (!app.includes("allowWithoutRun") || !shell.includes("allowWithoutRun")) throw new Error("Run Analysis cannot bypass the empty aggregate guard");
-console.log("PASS frontend contract: Run Analysis has seven-file validation, real stages, safe lifecycle recovery, and aggregate-only completion UX");
-
-
-for (const tab of ["pca", "nbclust", "dpc", "fullComparison", "profiles", "longitudinal"]) assert.ok(clusters.includes('id: "' + tab + '"'));
-for (const page of [overview, clusters]) assert.ok(page.includes("<BaselineCandidateControl sweep={baselineSweep}"));
-assert.ok(!/buildIllustrativePoints|buildSopScatterPoints|Frozen baseline metrics/.test(overview + clusters));
-assert.ok(control.includes("selectBaselineCandidate(sweep, k)"));
-assert.ok(control.includes("candidate.clusterSizes.map"));
-assert.ok(control.includes("candidate.silhouette") && control.includes("candidate.daviesBouldin") && control.includes("candidate.calinskiHarabasz"));
-assert.equal((clusters.match(/<FinalNbClustFigure /g) ?? []).length, 1);
-assert.ok(!clusters.includes("votes.map"));
-assert.ok(charts.includes("data={run.pca.scree}"));
-assert.ok(charts.includes("<ReferenceLine y={0.85}"));
-assert.ok(charts.includes("<ReferenceDot x={run.pca.components}"));
-assert.ok(charts.includes("const selection = run.kSelection"));
-assert.ok(!/majority/i.test(charts));
-assert.ok(clusters.includes("controlled?.selection") && clusters.includes("Controlled ablation: original-feature NbClust"));
-assert.ok(charts.includes("run.initialization.selectedCentroids") && charts.includes("projection is unavailable"));
-assert.ok(charts.includes("run.baselineComparison.metrics"));
-assert.ok(charts.includes("run.clusterProfiles.smdRanking"));
-assert.ok(clusters.includes("data={run.longitudinal.timeSeries}"));
-assert.ok(clusters.includes("same study-entry cluster assignments") && clusters.includes("No second longitudinal K-Means"));
-assert.ok(!/PTID|RID|participantId|coordinates=/.test(charts + control));
-assert.ok(charts.includes("chartPalette") && read("components/charts/LongitudinalProgressionChart.tsx").includes("chartPalette"));
-assert.ok(!fs.existsSync(path.join(repositoryRoot, "apps/web/public/pca-cluster-scatter.png")));
-console.log("PASS Summary contracts: distinct frozen/controlled sources, shared candidate control, one final vote chart, full PCA threshold curve, aggregate-only figures and fixed longitudinal assignments");

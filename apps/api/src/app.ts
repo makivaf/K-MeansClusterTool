@@ -8,6 +8,7 @@ import { getRunById, listRuns } from "./services/runRepository";
 import { allowedBrowserOrigins } from "./httpSecurity";
 import { loadBaselineCandidateSweep, loadSopEvaluation } from "./services/sopEvaluationArtifact";
 import { loadDefenseGeometry } from "./services/defenseGeometryArtifact";
+import { SimulationCapabilitiesSchema } from "../../../packages/shared/src/simulation";
 
 export const app = express();
 
@@ -34,6 +35,16 @@ app.use(express.json({ limit: "32kb", strict: true }));
 
 app.get("/api/health", (_request, response) => {
   response.json({ ok: true });
+});
+
+// Read-only capability discovery. The full-cohort research endpoint must never
+// be presented as a subsample simulation runner.
+app.get("/api/simulations/capabilities", (_request, response) => {
+  response.json(SimulationCapabilitiesSchema.parse({
+    executionAvailable: false,
+    code: "SUBSAMPLE_RUNNER_UNAVAILABLE",
+    message: "Simulation execution is unavailable. The backend does not yet support participant-subsample runs."
+  }));
 });
 
 app.get("/api/runs", async (_request, response, next) => {

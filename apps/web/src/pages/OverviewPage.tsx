@@ -53,7 +53,7 @@ export const OverviewPage = ({ run }: OverviewPageProps) => {
         <BaselineCandidateControl sweep={baselineSweep} error={error} />
       </> : <p className="existing-note">{error ?? "Frozen-study baseline evaluation pending."}</p>}
       
-      <ResearchPageNavigation currentPath="/existing-algorithm" />
+      <ResearchPageNavigation currentPath="/study-findings" />
     </div>
   );
 };
