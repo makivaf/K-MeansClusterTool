@@ -25,7 +25,7 @@ const Fact = ({ label, value }: { label: string; value: string | number }) => <d
 
 export const StudyFindingsPage = ({ analysis, dataset }: { analysis: AnalysisRunState; dataset: UploadResponse | null }) => {
   const ready = isDatasetReady(dataset);
-  if (ready && analysis.status === "complete" && analysis.run) return <StudyResults run={analysis.run} />;
+  if (analysis.status === "complete" && analysis.run) return <StudyResults run={analysis.run} />;
   const running = analysis.locked;
   const interrupted = analysis.status === "interrupted";
   return <div className="research-page">

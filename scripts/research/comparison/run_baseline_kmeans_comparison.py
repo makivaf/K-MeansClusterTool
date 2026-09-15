@@ -86,7 +86,7 @@ def _require_finite(name: str, values: np.ndarray) -> None:
         raise AssertionError(f"{name} contains NaN or infinite values")
 
 
-def load_baseline_input() -> tuple[list[str], list[str], np.ndarray]:
+def load_baseline_input(*, expected_shape: tuple[int, int] = EXPECTED_SHAPE) -> tuple[list[str], list[str], np.ndarray]:
     """Load the locked standardized 13-feature matrix without transforming it."""
     if not STANDARDIZED_PATH.is_file():
         raise FileNotFoundError(STANDARDIZED_PATH)
@@ -120,7 +120,7 @@ def load_baseline_input() -> tuple[list[str], list[str], np.ndarray]:
             values.append(feature_values)
 
     X = np.asarray(values, dtype=np.float64)
-    if X.shape != EXPECTED_SHAPE:
+    if X.shape != expected_shape:
         raise AssertionError(f"Baseline matrix shape is {X.shape}; expected {EXPECTED_SHAPE}")
     _require_finite("Baseline standardized matrix", X)
     if len(set(ptids)) != len(ptids):
@@ -134,7 +134,7 @@ def fit_random_kmeans(
     X: np.ndarray,
     k: int,
     seed: int,
-    run_number: int,
+    run_number: int, *, expected_shape: tuple[int, int] = EXPECTED_SHAPE,
 ) -> BaselineRun:
     """Fit one retained baseline run with one random initialization."""
     model = KMeans(
@@ -147,12 +147,12 @@ def fit_random_kmeans(
         algorithm=ALGORITHM,
     )
     labels = np.asarray(model.fit_predict(X), dtype=np.int64)
-    if labels.shape != (EXPECTED_SHAPE[0],):
+    if labels.shape != (expected_shape[0],):
         raise AssertionError(f"Seed {seed} returned an invalid assignment shape")
     if set(labels.tolist()) != set(range(k)):
         raise AssertionError(f"Seed {seed} did not produce exactly {k} clusters")
     cluster_sizes = tuple(int(np.count_nonzero(labels == label)) for label in range(k))
-    if sum(cluster_sizes) != EXPECTED_SHAPE[0]:
+    if sum(cluster_sizes) != expected_shape[0]:
         raise AssertionError(f"Seed {seed} cluster sizes do not sum to 2,437")
 
     silhouette = float(silhouette_score(X, labels, metric="euclidean"))
@@ -179,10 +179,10 @@ def fit_random_kmeans(
     )
 
 
-def select_baseline_k(X: np.ndarray) -> tuple[int, list[BaselineRun]]:
+def select_baseline_k(X: np.ndarray, *, expected_shape: tuple[int, int] = EXPECTED_SHAPE) -> tuple[int, list[BaselineRun]]:
     """Select baseline k by maximum fixed-seed Silhouette over exactly 2--10."""
     candidate_runs = [
-        fit_random_kmeans(X, k, K_SELECTION_SEED, run_number=0)
+        fit_random_kmeans(X, k, K_SELECTION_SEED, run_number=0, expected_shape=expected_shape)
         for k in K_CANDIDATES
     ]
     selected = min(candidate_runs, key=lambda run: (-run.silhouette, run.k))
@@ -191,10 +191,10 @@ def select_baseline_k(X: np.ndarray) -> tuple[int, list[BaselineRun]]:
     return selected.k, candidate_runs
 
 
-def run_baseline_replications(X: np.ndarray, baseline_k: int) -> list[BaselineRun]:
+def run_baseline_replications(X: np.ndarray, baseline_k: int, *, expected_shape: tuple[int, int] = EXPECTED_SHAPE) -> list[BaselineRun]:
     """Execute and retain exactly 30 random-initialization runs, seeds 0--29."""
     runs = [
-        fit_random_kmeans(X, baseline_k, seed, run_number=run_number)
+        fit_random_kmeans(X, baseline_k, seed, run_number=run_number, expected_shape=expected_shape)
         for run_number, seed in enumerate(BASELINE_SEEDS, start=1)
     ]
     if len(runs) != 30 or tuple(run.seed for run in runs) != BASELINE_SEEDS:

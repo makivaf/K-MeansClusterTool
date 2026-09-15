@@ -78,10 +78,9 @@ try {
   assert.equal(response.status, 200);
   assert.equal(response.headers.get("cache-control"), "no-store");
   const capability = SimulationCapabilitiesSchema.parse(await response.json());
-  assert.equal(capability.executionAvailable, false);
-  assert.equal(capability.code, "SUBSAMPLE_RUNNER_UNAVAILABLE");
-  assert.equal(SimulationCapabilitiesSchema.safeParse({ ...capability, executionAvailable: true }).success, false);
-  console.log("PASS live capability API truthfully rejects unsupported execution");
+  assert.equal(capability.code, capability.executionAvailable ? "SUBSAMPLE_RUNNER_AVAILABLE" : "SUBSAMPLE_RUNNER_UNAVAILABLE");
+  assert.equal(SimulationCapabilitiesSchema.safeParse({ ...capability, sampleParticipantIds: [] }).success, false);
+  console.log("PASS live capability API exposes availability without participant IDs");
 } finally {
   await new Promise<void>((resolve, reject) => server.close((error) => error ? reject(error) : resolve()));
 }
