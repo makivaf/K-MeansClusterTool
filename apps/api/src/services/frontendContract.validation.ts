@@ -4,6 +4,8 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { researchPages } from "../../../web/src/components/layout/researchNavigation";
 import { countDpcMatches } from "../../../web/src/utils/studyFindings";
+import { completedAnalysisResult } from "../../../web/src/utils/completedAnalysisResult";
+import { DATASETS, isDatasetReady } from "../../../web/src/utils/validatedDataset";
 import { FrozenUnifiedStudyResultSchema } from "../../../../packages/shared/src/schema";
 import { SimulationCapabilitiesSchema } from "../../../../packages/shared/src/simulation";
 import { adaptUnifiedResult } from "./unifiedResultAdapter";
@@ -30,16 +32,28 @@ assert.ok(!/demo dataset|source.hash|privacy/i.test(setup));
 assert.ok(!/Scatter|DefenseScatter|SopRunSeriesChart/.test(study + simulations + read("components/charts/LongitudinalProgressionChart.tsx")));
 assert.ok(!/signedRelativeChangePercent|relativeMeanChangePercent/.test(study + simulations));
 assert.ok(!/useRunData|useStudyFindings|useSopEvaluation|2437|1950|Math.random|setTimeout/.test(simulations));
-assert.ok(simulations.includes("[1, 2, 3, 4, 5] as const"));
-assert.ok(simulations.includes("Not run") && simulations.includes("No results."));
+assert.ok(!/ANALYSIS_JOB_KEY|ad-clustering.analysis-job|\/api\/research\/runs/.test(simulations));
 const hook = read("hooks/useStudyFindings.ts");
-assert.ok(hook.includes('STUDY_RUN_ID = "validated-unified-study-run"'));
-assert.ok(hook.includes("FrozenUnifiedStudyResultSchema.parse"));
-assert.ok(!/searchParams|selectedRun|sessionStorage/.test(hook));
+assert.ok(hook.includes("/api/research/runs") && hook.includes("completedAnalysisResult"));
+assert.ok(!/STUDY_RUN_ID|searchParams|selectedRun|FrozenUnifiedStudyResultSchema/.test(hook));
+assert.ok(study.includes("Run Comparison") && !study.includes("useStudyFindings()"));
+assert.equal(isDatasetReady(null), false);
+const validated = { upload_ref: "test-upload", filenames: DATASETS.map(([, name]) => name), file_count: 7 };
+assert.equal(isDatasetReady(validated), true);
+assert.equal(isDatasetReady({ ...validated, filenames: validated.filenames.slice(1) }), false);
+assert.equal(isDatasetReady({ ...validated, filenames: Array(7).fill(validated.filenames[0]) }), false);
 console.log("PASS final routes, study/simulation separation, validation-only setup, and aggregate-only figures");
 
 const frozen = adaptUnifiedResult(path.join(repositoryRoot, "data/interim"), { runId: "validated-unified-study-run" });
 FrozenUnifiedStudyResultSchema.parse(frozen);
+const completedJob = {
+  pipeline: "unified" as const, status: "complete" as const, run_id: "explicit-study-job",
+  created_at: new Date().toISOString(), started_at: new Date().toISOString(), finished_at: new Date().toISOString(),
+  result_run_id: frozen.run_id, persistence: "memory_only" as const
+};
+assert.equal(completedAnalysisResult(completedJob, { run: frozen }).run_id, frozen.run_id);
+assert.throws(() => completedAnalysisResult({ ...completedJob, result_run_id: "another-result" }, { run: frozen }));
+assert.throws(() => completedAnalysisResult({ pipeline: "unified", status: "queued", run_id: "pending", created_at: completedJob.created_at }, { run: frozen }));
 const unrelated = structuredClone(frozen);
 unrelated.cohort.parentN = 1950;
 assert.equal(FrozenUnifiedStudyResultSchema.safeParse(unrelated).success, false);
