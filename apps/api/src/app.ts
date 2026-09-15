@@ -9,6 +9,7 @@ import { allowedBrowserOrigins } from "./httpSecurity";
 import { loadBaselineCandidateSweep, loadSopEvaluation } from "./services/sopEvaluationArtifact";
 import { loadDefenseGeometry } from "./services/defenseGeometryArtifact";
 import { SimulationCapabilitiesSchema } from "../../../packages/shared/src/simulation";
+import { createSimulationMetadataRouter } from "./routes/simulations";
 
 export const app = express();
 
@@ -36,6 +37,8 @@ app.use(express.json({ limit: "32kb", strict: true }));
 app.get("/api/health", (_request, response) => {
   response.json({ ok: true });
 });
+
+app.use("/api/simulations", createSimulationMetadataRouter());
 
 // Read-only capability discovery. The full-cohort research endpoint must never
 // be presented as a subsample simulation runner.

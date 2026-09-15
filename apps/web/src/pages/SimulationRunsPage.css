@@ -2,7 +2,6 @@
   --simulation-teal: #0f766e;
   --simulation-muted: #4f6672;
   width: 100%;
-  max-width: 1520px;
   margin-inline: auto;
   color: #1e1e1e;
   background: #f6f9fa;
@@ -21,11 +20,12 @@
 .simulation-surface { min-width: 0; border: 1px solid #e5edef; border-radius: 12px; background: #fff; }
 .simulation-controls,
 .simulation-comparison { padding: 24px; }
+.simulation-choices { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 8px; }
 .simulation-choice { display: inline-flex; height: 40px; align-items: center; justify-content: center; gap: 8px; padding: 0 20px; border: 1px solid #dce6e9; border-radius: 8px; background: white; font-size: 13px; transition: background-color 150ms, border-color 150ms; }
 .simulation-choice:hover { border-color: #b7d9d5; background: #f3f9f8; }
 .simulation-choice.is-selected { border-color: var(--simulation-teal); background: var(--simulation-teal); color: white; font-weight: 600; }
 .simulation-control-row { display: flex; flex-wrap: wrap; align-items: center; gap: 24px; margin-top: 24px; }
-.simulation-metadata { display: grid; flex: 1 1 700px; grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.5fr) minmax(0, 1fr); align-items: center; gap: 16px 24px; }
+.simulation-metadata { display: grid; flex: 1 1 700px; grid-template-columns: repeat(3, minmax(0, 1fr)); align-items: center; gap: 16px 24px; }
 .simulation-metadata-group { display: flex; min-width: 0; align-items: center; gap: 12px; }
 .simulation-metadata-group + .simulation-metadata-group { border-left: 1px solid #e8eff1; padding-left: 24px; }
 .simulation-metadata-icon { flex: 0 0 auto; color: var(--simulation-teal); }
@@ -33,6 +33,7 @@
 .simulation-metadata dd { margin-top: 3px; font-size: 14px; font-weight: 600; }
 .simulation-run-button { display: inline-flex; min-height: 42px; flex-shrink: 0; align-items: center; justify-content: center; gap: 10px; margin-left: auto; border-radius: 8px; background: var(--simulation-teal); padding: 10px 20px; color: white; font-size: 14px; font-weight: 600; transition: background-color 150ms; }
 .simulation-run-button:hover { background: #0b625c; }
+.simulation-run-button:disabled { cursor: not-allowed; opacity: 0.5; background: var(--simulation-teal); }
 .simulation-section-heading { display: flex; flex-direction: column; gap: 4px; margin-bottom: 16px; }
 .simulation-section-title { font-size: 22px; font-weight: 600; letter-spacing: -0.02em; }
 .simulation-table-container { width: 100%; }
@@ -53,7 +54,14 @@
 .simulation-method-tab:hover { color: var(--simulation-teal); }
 .simulation-method-tab.is-active { border-color: var(--simulation-teal); color: var(--simulation-teal); font-weight: 600; }
 .simulation-method-content { padding: 24px; }
-.simulation-existing-summaries { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 12px; }
+.simulation-method-content > * + * { margin-top: 24px; }
+.simulation-configuration { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; }
+.simulation-configuration dd { overflow-wrap: anywhere; }
+.simulation-distribution-label { display: flex; align-items: baseline; gap: 8px; }
+.simulation-distribution-values { display: flex; flex: 1; align-items: baseline; justify-content: space-between; gap: 8px; }
+.simulation-distribution-track { height: 10px; margin-top: 8px; overflow: hidden; border-radius: 8px; background: #e8eff1; }
+.simulation-distribution-bar { height: 100%; border-radius: inherit; background: var(--simulation-teal); }
+.simulation-distribution-bar.is-light { background: #b7d9d5; }
 .simulation-summary { min-width: 0; border-radius: 8px; background: #f6f9fa; padding: 16px; }
 .simulation-stage { border-top: 2px solid #b7d9d5; }
 .simulation-stage-title { margin-bottom: 12px; color: var(--simulation-teal); font-size: 16px; font-weight: 600; }
@@ -70,7 +78,8 @@
   .simulation-controls,
   .simulation-comparison,
   .simulation-method-content { padding: 16px; }
-  .simulation-existing-summaries { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .simulation-configuration { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .simulation-choices { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .simulation-metadata { display: flex; flex-direction: column; align-items: flex-start; gap: 16px; }
   .simulation-metadata-group + .simulation-metadata-group { padding-left: 0; border-left: 0; }
   .simulation-choice { padding-inline: 12px; }

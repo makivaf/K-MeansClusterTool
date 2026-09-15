@@ -10,6 +10,7 @@ apps/web/dist
 apps/api/dist
 apps/api/uploads
 apps/api/work
+apps/api/private
 packages/shared/dist
 *.log
 
