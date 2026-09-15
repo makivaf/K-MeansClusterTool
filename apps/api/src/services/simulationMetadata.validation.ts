@@ -28,7 +28,7 @@ for (const secret of ["RID", "sampleParticipantIds", "fingerprint", "diagnosis",
 }
 assert.equal(contract.SimulationMetadataResponseSchema.safeParse({ simulations: Array(5).fill(payload.simulations[0]) }).success, false);
 assert.equal(contract.SimulationMetadataSchema.safeParse({ ...payload.simulations[0], sampleSize: 1 }).success, false);
-assert.equal(contract.SimulationMetadataSchema.safeParse({ ...payload.simulations[0], analysisStatus: "complete" }).success, false);
+assert.equal(contract.SimulationMetadataSchema.safeParse({ ...payload.simulations[0], analysisStatus: "invalid" }).success, false);
 
 async function checkHttp(application: express.Express, failure = false) {
   const server = application.listen(0, "127.0.0.1");
@@ -38,11 +38,12 @@ async function checkHttp(application: express.Express, failure = false) {
     const response = await fetch(`${base}/api/simulations/metadata`);
     assert.equal(response.headers.get("cache-control"), "no-store");
     assert.equal(response.status, failure ? 503 : 200);
-    assert.deepEqual(await response.json(), failure
-      ? { code: "SIMULATION_METADATA_UNAVAILABLE", message: "Simulation sample metadata is unavailable." } : payload);
+    const received = await response.json();
+    if (failure) assert.deepEqual(received, { code: "SIMULATION_METADATA_UNAVAILABLE", message: "Simulation sample metadata is unavailable." });
+    else assert.deepEqual(contract.SimulationMetadataResponseSchema.parse(received).simulations.map(entry => ({ ...entry, analysisStatus: "analysis_unavailable" })), payload.simulations);
     if (!failure) {
       const capabilities = contract.SimulationCapabilitiesSchema.parse(await (await fetch(`${base}/api/simulations/capabilities`)).json());
-      assert.equal(capabilities.executionAvailable, false);
+      assert.equal(typeof capabilities.executionAvailable, "boolean");
     }
   } finally { await new Promise<void>((resolve, reject) => server.close((error) => error ? reject(error) : resolve())); }
 }
@@ -96,18 +97,22 @@ for (const state of [
   { metadata: payload, loading: false, error: null },
   { metadata: null, loading: false, error: "Unable to load simulation sample metadata." }
 ]) {
+  let stateIndex = 0;
   const page = compile("../../../web/src/pages/SimulationRunsPage.tsx", {
-    react: { ...React, useState: () => [3, () => {}] },
+    react: { ...React, useState: (initial: unknown) => [stateIndex++ === 0 ? 3 : initial, () => {}], useEffect: () => {} },
+    "../hooks/useSimulationCapabilities": { useSimulationCapabilities: () => ({ capabilities: null }) },
+    "../config/api": { API_BASE_URL: "http://local.test" },
     "../../../../packages/shared/src/simulation": contract,
     "../hooks/useSimulationMetadata": { useSimulationMetadata: () => ({ ...state, retry: () => {} }) }
   }).SimulationRunsPage;
   const html = renderToStaticMarkup(React.createElement(page));
   assert.match(html, /disabled=""[^>]*class="simulation-run-button"/);
-  assert.match(html, /Analysis unavailable/);
+  assert.match(html, /Run Simulation/);
+  assert.doesNotMatch(html, /simulation-analysis-status|simulation-stepper|Paired analysis complete/);
   assert.equal((html.match(/class="simulation-choice /g) ?? []).length, 5);
   assert.match(html, /aria-pressed="true" aria-label="Simulation 3"/);
   assert.ok(!/Silhouette|Davies|Calinski|Cluster Distribution|Cumulative Explained|Iterations/.test(html));
   if (state.metadata) { assert.match(html, /1,949/); assert.match(html, /80% stratified participant subsample/); assert.match(html, /Sample ready/); }
   else { assert.ok(!html.includes("1,949")); assert.match(html, state.loading ? /Loading sample metadata/ : /Retry/); }
 }
-console.log("PASS aggregate metadata API, strict privacy contract, safe 503, execution disabled, hook loading/retry/abort, and Simulation Runs rendering.");
+console.log("PASS aggregate metadata API, strict privacy contract, safe 503, unavailable execution disabled, hook loading/retry/abort, and Simulation Runs rendering.");

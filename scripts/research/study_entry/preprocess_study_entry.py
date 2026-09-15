@@ -100,7 +100,7 @@ def validate_scope_audit() -> None:
         )
 
 
-def build_retained_feature_table(source: pd.DataFrame) -> pd.DataFrame:
+def build_retained_feature_table(source: pd.DataFrame, *, expected_phase_counts: dict[str, int] = EXPECTED_PHASE_COUNTS, expected_rows: int = EXPECTED_COHORT_ROWS) -> pd.DataFrame:
     """Filter the audited study-entry artifact and select exactly 13 features."""
     required = set(IDENTIFIERS) | {"ENTRY_PHASE"} | set(RETAINED_FEATURES)
     missing_columns = sorted(required - set(source.columns))
@@ -109,11 +109,11 @@ def build_retained_feature_table(source: pd.DataFrame) -> pd.DataFrame:
 
     scoped = source.loc[source["ENTRY_PHASE"].isin(SCOPE_PHASES)].copy()
     phase_counts = scoped["ENTRY_PHASE"].value_counts().to_dict()
-    if phase_counts != EXPECTED_PHASE_COUNTS:
+    if phase_counts != expected_phase_counts:
         raise AssertionError(
             f"Scope phase counts differ from the locked cohort: {phase_counts}"
         )
-    if len(scoped) != EXPECTED_COHORT_ROWS:
+    if len(scoped) != expected_rows:
         raise AssertionError(f"Expected {EXPECTED_COHORT_ROWS} rows, found {len(scoped)}")
 
     retained = scoped.loc[:, [*IDENTIFIERS, *RETAINED_FEATURES]].copy()
@@ -140,7 +140,7 @@ def build_retained_feature_table(source: pd.DataFrame) -> pd.DataFrame:
 
 
 def median_impute_features(
-    retained: pd.DataFrame,
+    retained: pd.DataFrame, *, expected_missing_counts: dict[str, int] = EXPECTED_MISSING_COUNTS,
 ) -> tuple[pd.DataFrame, pd.DataFrame]:
     """Median-impute each retained feature and create its traceable QC summary."""
     imputed = retained.copy()
@@ -149,7 +149,7 @@ def median_impute_features(
     for feature in RETAINED_FEATURES:
         before = retained[feature]
         missing_before = int(before.isna().sum())
-        expected_missing = EXPECTED_MISSING_COUNTS[feature]
+        expected_missing = expected_missing_counts[feature]
         if missing_before != expected_missing:
             raise AssertionError(
                 f"{feature} missing count is {missing_before}; expected {expected_missing}. "
@@ -227,13 +227,13 @@ def standardize_features(
 
 
 def apply_pca(
-    standardized: pd.DataFrame, variance_threshold: float = VARIANCE_THRESHOLD
+    standardized: pd.DataFrame, variance_threshold: float = VARIANCE_THRESHOLD, *, expected_rows: int = EXPECTED_COHORT_ROWS
 ) -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame, PCA, int]:
     """Apply enhanced SOP 1 and retain the minimum PCs reaching the threshold."""
     if not 0.0 < variance_threshold <= 1.0:
         raise ValueError("variance_threshold must be in (0, 1]")
     values = standardized.loc[:, RETAINED_FEATURES].to_numpy(dtype=float)
-    if values.shape != (EXPECTED_COHORT_ROWS, len(RETAINED_FEATURES)):
+    if values.shape != (expected_rows, len(RETAINED_FEATURES)):
         raise AssertionError(f"Unexpected standardized matrix shape: {values.shape}")
     if not np.isfinite(values).all():
         raise AssertionError("Standardized PCA input contains NaN or infinite values")
@@ -279,7 +279,7 @@ def validate_final_outputs(
     standardized: pd.DataFrame,
     scores: pd.DataFrame,
     variance: pd.DataFrame,
-    retained_components: int,
+    retained_components: int, *, expected_rows: int = EXPECTED_COHORT_ROWS,
 ) -> None:
     """Enforce every locked cohort, feature, imputation, and PCA assertion."""
     for name, table in (
@@ -288,7 +288,7 @@ def validate_final_outputs(
         ("standardized", standardized),
         ("PCA scores", scores),
     ):
-        if len(table) != EXPECTED_COHORT_ROWS:
+        if len(table) != expected_rows:
             raise AssertionError(f"{name} row count changed to {len(table)}")
         for identifier in IDENTIFIERS:
             if table[identifier].duplicated().any():
@@ -304,9 +304,9 @@ def validate_final_outputs(
         raise AssertionError("Infinite values exist after imputation")
     if not retained["RAVLT_FORGETTING"].lt(0).any():
         raise AssertionError("No valid negative RAVLT_FORGETTING values remain")
-    if standardized.loc[:, RETAINED_FEATURES].shape != (EXPECTED_COHORT_ROWS, 13):
+    if standardized.loc[:, RETAINED_FEATURES].shape != (expected_rows, 13):
         raise AssertionError("Standardized feature matrix is not (2437, 13)")
-    if scores.shape != (EXPECTED_COHORT_ROWS, len(IDENTIFIERS) + retained_components):
+    if scores.shape != (expected_rows, len(IDENTIFIERS) + retained_components):
         raise AssertionError("PCA score artifact has an unexpected shape")
     cumulative = float(variance.loc[retained_components - 1, "cumulative_explained_variance"])
     if cumulative < VARIANCE_THRESHOLD:

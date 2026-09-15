@@ -176,10 +176,10 @@ def load_locked_inputs() -> tuple[list[str], list[str], np.ndarray, int, np.ndar
 def run_enhanced_kmeans(
     X_pca: np.ndarray,
     initial_centroids: np.ndarray,
-    k: int,
+    k: int, *, expected_shape: tuple[int, int] = EXPECTED_SHAPE,
 ) -> EnhancedRun:
     """Fit the enhanced path with fixed DPC seeds and standard Lloyd updates."""
-    if X_pca.shape != EXPECTED_SHAPE:
+    if X_pca.shape != expected_shape:
         raise AssertionError(f"Enhanced input shape is {X_pca.shape}; expected {EXPECTED_SHAPE}")
     if initial_centroids.shape != (k, X_pca.shape[1]):
         raise AssertionError("Initial centroid matrix is incompatible with X_pca and k")

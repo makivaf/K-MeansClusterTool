@@ -10,6 +10,7 @@ import { loadBaselineCandidateSweep, loadSopEvaluation } from "./services/sopEva
 import { loadDefenseGeometry } from "./services/defenseGeometryArtifact";
 import { SimulationCapabilitiesSchema } from "../../../packages/shared/src/simulation";
 import { createSimulationMetadataRouter } from "./routes/simulations";
+import { simulationCapabilities } from "./services/simulationExecution";
 
 export const app = express();
 
@@ -30,6 +31,7 @@ app.use(cors({
   origin: (origin, callback) => callback(null, !origin || allowedBrowserOrigins.has(origin)),
   methods: ["GET", "POST"],
   allowedHeaders: ["Content-Type"],
+  exposedHeaders: ["Retry-After"],
   maxAge: 600
 }));
 app.use(express.json({ limit: "32kb", strict: true }));
@@ -43,11 +45,7 @@ app.use("/api/simulations", createSimulationMetadataRouter());
 // Read-only capability discovery. The full-cohort research endpoint must never
 // be presented as a subsample simulation runner.
 app.get("/api/simulations/capabilities", (_request, response) => {
-  response.json(SimulationCapabilitiesSchema.parse({
-    executionAvailable: false,
-    code: "SUBSAMPLE_RUNNER_UNAVAILABLE",
-    message: "Simulation execution is unavailable. The backend does not yet support participant-subsample runs."
-  }));
+  response.json(SimulationCapabilitiesSchema.parse(simulationCapabilities()));
 });
 
 app.get("/api/runs", async (_request, response, next) => {

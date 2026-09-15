@@ -1,11 +1,12 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { ZodError } from "zod";
-import { ResearchRunResponseSchema, type ResearchRunStatus, type UnifiedResearchRun, type UploadResponse } from "../../../../packages/shared/src/schema";
+import { ResearchRunCompleteSchema, ResearchRunResponseSchema, type ResearchRunStatus, type UnifiedResearchRun, type UploadResponse } from "../../../../packages/shared/src/schema";
 import { API_BASE_URL } from "../config/api";
 import { completedAnalysisResult } from "../utils/completedAnalysisResult";
 import { isDatasetReady } from "../utils/validatedDataset";
 
 export const ANALYSIS_JOB_KEY = "ad-clustering.analysis-job";
+export const ANALYSIS_COMPLETION_KEY = "ad-clustering.analysis-completion";
 type Status = "idle" | "submitting" | "queued" | "running" | "verifying" | "complete" | "failed" | "admission_failed" | "interrupted";
 type State = { status: Status; run: UnifiedResearchRun | null; error: string | null; jobId: string | null; stage: string | null; uploadRef: string | null };
 const empty: State = { status: "idle", run: null, error: null, jobId: null, stage: null, uploadRef: null };
@@ -18,6 +19,14 @@ const readJob = (uploadRef: string | undefined): string | null => {
     return uploadRef && saved?.uploadRef === uploadRef && typeof saved.jobId === "string" ? saved.jobId : null;
   } catch { return null; }
 };
+const readCompletion = (uploadRef: string | undefined) => {
+  try {
+    const saved = JSON.parse(sessionStorage.getItem(ANALYSIS_COMPLETION_KEY) ?? "null");
+    const job = ResearchRunCompleteSchema.safeParse(saved?.job);
+    return job.success && typeof saved.uploadRef === "string" && (!uploadRef || saved.uploadRef === uploadRef)
+      ? { uploadRef: saved.uploadRef as string, job: job.data } : null;
+  } catch { return null; }
+};
 const delay = (signal: AbortSignal) => new Promise<void>((resolve, reject) => {
   const abort = () => { clearTimeout(timer); reject(new DOMException("Aborted", "AbortError")); };
   const timer = setTimeout(() => { signal.removeEventListener("abort", abort); resolve(); }, 1000);
@@ -28,6 +37,8 @@ const delay = (signal: AbortSignal) => new Promise<void>((resolve, reject) => {
 export const useStudyFindings = (dataset: UploadResponse | null) => {
   const uploadRef = isDatasetReady(dataset) ? dataset.upload_ref : undefined;
   const [state, setState] = useState<State>(() => {
+    const completed = readCompletion(uploadRef);
+    if (completed) return { ...empty, uploadRef: completed.uploadRef, jobId: completed.job.run_id, status: "verifying" };
     const jobId = readJob(uploadRef);
     return jobId && uploadRef ? { ...empty, uploadRef, jobId, status: "verifying" } : empty;
   });
@@ -63,6 +74,10 @@ export const useStudyFindings = (dataset: UploadResponse | null) => {
         const run = completedAnalysisResult(job, await response.json());
         if (controller.signal.aborted) return;
         lockedRef.current = false;
+        // Save only the identity of a completion whose exact persisted result
+        // passed validation. Restoration does not depend on temporary uploads
+        // or the API's in-memory job registry.
+        sessionStorage.setItem(ANALYSIS_COMPLETION_KEY, JSON.stringify({ uploadRef: sourceRef, job }));
         setState({ ...empty, uploadRef: sourceRef, status: "complete", run, jobId });
         return;
       }
@@ -72,13 +87,13 @@ export const useStudyFindings = (dataset: UploadResponse | null) => {
     }
   }, []);
 
-  const resume = useCallback(async (jobId: string, sourceRef: string) => {
+  const resume = useCallback(async (jobId: string, sourceRef: string, completed?: ResearchRunStatus) => {
     controllerRef.current?.abort();
     const controller = new AbortController();
     controllerRef.current = controller;
     lockedRef.current = true;
     setState({ ...empty, uploadRef: sourceRef, status: "verifying", jobId });
-    try { await monitor(jobId, sourceRef, controller); }
+    try { await monitor(jobId, sourceRef, controller, completed); }
     catch (caught) {
       if (!controller.signal.aborted) {
         lockedRef.current = false;
@@ -89,8 +104,10 @@ export const useStudyFindings = (dataset: UploadResponse | null) => {
   }, [monitor]);
 
   useEffect(() => {
+    const completed = readCompletion(uploadRef);
     const jobId = readJob(uploadRef);
-    if (jobId && uploadRef) void resume(jobId, uploadRef);
+    if (completed) void resume(completed.job.run_id, completed.uploadRef, completed.job);
+    else if (jobId && uploadRef) void resume(jobId, uploadRef);
     return () => controllerRef.current?.abort();
   }, [uploadRef, resume]);
 
@@ -99,6 +116,7 @@ export const useStudyFindings = (dataset: UploadResponse | null) => {
     controllerRef.current?.abort();
     lockedRef.current = false;
     sessionStorage.removeItem(ANALYSIS_JOB_KEY);
+    sessionStorage.removeItem(ANALYSIS_COMPLETION_KEY);
     setState(empty);
   }, []);
 
@@ -138,11 +156,15 @@ export const useStudyFindings = (dataset: UploadResponse | null) => {
       }
     }
   };
-  // A result is only visible for the exact validated upload that started it.
-  const current = state.uploadRef === uploadRef ? state : empty;
+  // A completed workflow survives upload expiry, but never attaches to a
+  // different dataset. Explicit dataset changes still call reset().
+  const completed = readCompletion(uploadRef);
+  const current = state.uploadRef === uploadRef ||
+    (completed && state.jobId === completed.job.run_id && state.uploadRef === completed.uploadRef) ? state : empty;
   return {
     ...current, start, reset,
-    resume: () => current.jobId && uploadRef ? resume(current.jobId, uploadRef) : start(),
+    resume: () => completed ? resume(completed.job.run_id, completed.uploadRef, completed.job)
+      : current.jobId && uploadRef ? resume(current.jobId, uploadRef) : start(),
     locked: ["submitting", "queued", "running", "verifying"].includes(current.status)
   };
 };
