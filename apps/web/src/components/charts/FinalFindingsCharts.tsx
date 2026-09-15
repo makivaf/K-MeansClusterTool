@@ -31,9 +31,9 @@ export const DpcSeedFigure = ({ run }: { run: UnifiedResearchRun }) => (
   </section>
 );
 
-export const PcaVarianceFigure = ({ run }: { run: UnifiedResearchRun }) => (
+export const PcaVarianceFigure = ({ run, compact = false }: { run: UnifiedResearchRun; compact?: boolean }) => (
   <figure>
-    <div className="overflow-x-auto"><div className="h-96 min-w-[720px] w-full" role="img" aria-label={`PCA cumulative explained variance; ${run.pca.components} PCs selected, ${percent(run.pca.cumulativeExplainedVariance)} retained.`}>
+    <div className="overflow-x-auto"><div className={compact ? "h-64 min-w-[560px] w-full" : "h-96 min-w-[720px] w-full"} role="img" aria-label={`PCA cumulative explained variance; ${run.pca.components} PCs selected, ${percent(run.pca.cumulativeExplainedVariance)} retained.`}>
       <ResponsiveContainer>
         <LineChart data={run.pca.scree} margin={{ top: 30, right: 38, bottom: 30, left: 10 }}>
           <CartesianGrid vertical={false} stroke={chartPalette.grid} />
@@ -47,19 +47,18 @@ export const PcaVarianceFigure = ({ run }: { run: UnifiedResearchRun }) => (
         </LineChart>
       </ResponsiveContainer>
     </div></div>
-    <figcaption className="mt-3 text-base text-muted"><strong>{run.pca.components} PCs retained · {percent(run.pca.cumulativeExplainedVariance)} cumulative explained variance.</strong> {run.pca.scree.find((point) => point.cumulativeVariance >= 0.85)?.component === run.pca.components ? `PC${run.pca.components} is the first component count satisfying the ≥85% criterion.` : ""}</figcaption>
+    {compact ? null : <figcaption className="mt-3 text-base text-muted"><strong>{run.pca.components} PCs retained · {percent(run.pca.cumulativeExplainedVariance)} cumulative explained variance.</strong> {run.pca.scree.find((point) => point.cumulativeVariance >= 0.85)?.component === run.pca.components ? `PC${run.pca.components} is the first component count satisfying the ≥85% criterion.` : ""}</figcaption>}
   </figure>
 );
 
-export const FinalNbClustFigure = ({ run }: { run: UnifiedResearchRun }) => {
-  const selection = run.kSelection;
+export const FinalNbClustFigure = ({ run }: { run: UnifiedResearchRun }) => <NbClustVotesFigure selection={run.kSelection} />;
+
+export const NbClustVotesFigure = ({ selection }: { selection: UnifiedResearchRun["kSelection"] }) => {
   // Missing recommendations remain missing, rather than being presented as zero votes.
   const data = selection.candidateK.map((k) => ({ k, votes: selection.voteDistribution.find((row) => row.k === k)?.votes }));
   return (
-    <section className="existing-card">
-      <div className="existing-card-header"><div><p>Frozen enhanced result</p><h2>Final Enhanced NbClust Vote Distribution</h2></div></div>
       <figure>
-        <div className="h-80 w-full" role="img" aria-label={`Final NbClust votes. Selected k=${selection.selectedK}: ${selection.votesForSelectedK} of ${selection.usableVotes} usable index recommendations.`}>
+        <div className="h-64 w-full" role="img" aria-label={`Final NbClust votes. Selected k=${selection.selectedK}: ${selection.votesForSelectedK} of ${selection.usableVotes} usable index recommendations.`}>
           <ResponsiveContainer>
             <BarChart data={data} margin={{ top: 30, right: 20, bottom: 30, left: 5 }}>
               <CartesianGrid vertical={false} stroke={chartPalette.grid} />
@@ -73,10 +72,8 @@ export const FinalNbClustFigure = ({ run }: { run: UnifiedResearchRun }) => {
             </BarChart>
           </ResponsiveContainer>
         </div>
-        <figcaption className="mt-3 text-base text-muted">Selected <strong>k = {selection.selectedK}</strong>, with <strong>{selection.votesForSelectedK} of {selection.usableVotes}</strong> usable index recommendations. This is the final PCA-based enhanced result.</figcaption>
         {data.some((row) => row.votes === undefined) ? <p className="existing-note">Vote counts not exposed for: {data.filter((row) => row.votes === undefined).map((row) => `k=${row.k}`).join(", ")}. Missing bars do not indicate zero votes.</p> : null}
       </figure>
-    </section>
   );
 };
 

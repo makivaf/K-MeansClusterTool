@@ -5,7 +5,7 @@ import {
   type UnifiedResearchRun,
   type DefenseGeometry,
   type BaselineCandidateSweep
-} from "../../../../packages/shared/src";
+} from "../../../../packages/shared/src/schema";
 import { API_BASE_URL } from "../config/api";
 
 export const hasSharedSopProvenance = (run: UnifiedResearchRun, evaluation: SopEvaluation) => {

@@ -56,6 +56,6 @@ export const RunHistoryPage = ({ runs, selectedRunId, onSelectRun }: RunHistoryP
       )}
     </Panel>
 
-    <ResearchPageNavigation currentPath="/run-history" />
+    <ResearchPageNavigation currentPath="/simulation-runs" />
   </>
 );

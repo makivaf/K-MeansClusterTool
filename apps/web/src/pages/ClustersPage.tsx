@@ -971,7 +971,7 @@ export const ClustersPage = ({ run }: ClustersPageProps) => {
           </>
         )}
       </div>
-      <ResearchPageNavigation currentPath="/summary-of-findings" />
+      <ResearchPageNavigation currentPath="/study-findings" />
     </div>
   );
 };
