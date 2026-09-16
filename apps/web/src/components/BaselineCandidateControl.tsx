@@ -27,7 +27,7 @@ export const BaselineCandidateControl = ({ sweep, error }: { sweep: BaselineCand
         </div>
         <h3 className="mt-5 text-base font-semibold">Internal validation · k={candidate.k}</h3>
         <div className="existing-metrics">
-          {[["Silhouette", candidate.silhouette, "Higher is better"], ["Davies-Bouldin", candidate.daviesBouldin, "Lower is better"], ["Calinski-Harabasz", candidate.calinskiHarabasz, "Higher is better"]].map(([label, value, direction]) => <div key={label}><span>{label}</span><strong>{Number(value).toFixed(5)}</strong><small>{direction}</small></div>)}
+          {[["Silhouette Coefficient", candidate.silhouette, "Higher is better"], ["Davies-Bouldin Index", candidate.daviesBouldin, "Lower is better"], ["Calinski-Harabasz Index", candidate.calinskiHarabasz, "Higher is better"]].map(([label, value, direction]) => <div key={label}><span>{label}</span><strong>{Number(value).toFixed(5)}</strong><small>{direction}</small></div>)}
         </div>
         <p className="mt-4 text-sm text-muted">{candidate.iterations} Lloyd iterations. Counts show the actual candidate assignments in aggregate; cluster numbers are arbitrary within each k. These single-seed candidate metrics are separate from the frozen 30-run manuscript comparison.</p>
       </> : <p role="status" className="existing-note">{error ?? "Validated baseline candidate values are not available yet."}</p>}

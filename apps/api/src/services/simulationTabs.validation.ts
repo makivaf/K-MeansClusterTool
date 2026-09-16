@@ -40,6 +40,7 @@ assert.ok(existingHtml.includes("695 participants"));
 assert.ok(existingHtml.includes("Iterations (range)"));
 assert.ok(existingHtml.includes("5\u201315"));
 assert.ok(!completeHtml.includes("Scatter"));
+assert.ok(completeHtml.includes("<dt>Random runs matching DPC solution</dt><dd>30 / 30</dd>"));
 assert.ok(!completeHtml.includes("<table", completeHtml.indexOf("simulation-method-content")));
 const readyHtml = renderPage(null);
 assert.match(readyHtml, /<button type="button" class="simulation-run-button"/);

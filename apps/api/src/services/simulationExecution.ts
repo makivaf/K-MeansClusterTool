@@ -107,7 +107,8 @@ export function createSimulationExecutor(execute = executeSimulation, useCache =
   const states = new Map<number, SimulationRunState>();
   const get = (id: number): SimulationRunState => {
     const sample = getSimulationSample(id);
-    if (states.has(id)) return states.get(id)!;
+    // An explicit control evaluation may extend a completed cache while the API is running.
+    if (states.has(id) && (!useCache || states.get(id)!.status !== "complete")) return states.get(id)!;
     if (useCache) {
       try {
         const saved = JSON.parse(fs.readFileSync(path.join(simulationRunRoot, `${id}.json`), "utf8"));
@@ -117,7 +118,7 @@ export function createSimulationExecutor(execute = executeSimulation, useCache =
         }
       } catch { /* No valid completed run cached. */ }
     }
-    return { simulationId: id, status: "sample_ready", result: null, message: null };
+    return states.get(id) ?? { simulationId: id, status: "sample_ready", result: null, message: null };
   };
   const start = (id: number) => {
     const current = get(id);

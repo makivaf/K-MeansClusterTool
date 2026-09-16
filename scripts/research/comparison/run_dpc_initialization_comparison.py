@@ -141,10 +141,14 @@ def load_locked_inputs() -> tuple[list[str], list[str], np.ndarray, int, dict[st
     return ptids, rids, X, selected_k, dpc_metrics, dpc_summary
 
 
-def fit_random_pca_kmeans(X: np.ndarray, seed: int, run_number: int) -> RandomPCARun:
+def fit_random_pca_kmeans(X: np.ndarray, seed: int, run_number: int, *,
+                          expected_shape: tuple[int, int] = EXPECTED_SHAPE,
+                          selected_k: int = EXPECTED_K) -> RandomPCARun:
     """Fit one retained PCA-space random-initialization comparator run."""
+    if X.shape != expected_shape:
+        raise AssertionError(f"PCA matrix shape is {X.shape}; expected {expected_shape}")
     model = KMeans(
-        n_clusters=EXPECTED_K,
+        n_clusters=selected_k,
         init="random",
         n_init=N_INIT,
         max_iter=MAX_ITER,
@@ -153,11 +157,11 @@ def fit_random_pca_kmeans(X: np.ndarray, seed: int, run_number: int) -> RandomPC
         random_state=seed,
     )
     labels = np.asarray(model.fit_predict(X), dtype=np.int64)
-    if labels.shape != (EXPECTED_SHAPE[0],) or set(labels.tolist()) != {0, 1}:
+    if labels.shape != (expected_shape[0],) or set(labels.tolist()) != set(range(selected_k)):
         raise AssertionError(f"Seed {seed} returned invalid cluster assignments")
-    cluster_sizes = tuple(int(np.count_nonzero(labels == label)) for label in range(EXPECTED_K))
-    if sum(cluster_sizes) != EXPECTED_SHAPE[0]:
-        raise AssertionError(f"Seed {seed} cluster sizes do not sum to 2,437")
+    cluster_sizes = tuple(int(np.count_nonzero(labels == label)) for label in range(selected_k))
+    if sum(cluster_sizes) != expected_shape[0]:
+        raise AssertionError(f"Seed {seed} cluster sizes do not sum to {expected_shape[0]}")
     silhouette = float(silhouette_score(X, labels, metric="euclidean"))
     davies_bouldin = float(davies_bouldin_score(X, labels))
     calinski_harabasz = float(calinski_harabasz_score(X, labels))

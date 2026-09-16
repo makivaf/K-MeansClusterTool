@@ -30,6 +30,11 @@ export type SimulationMetadataResponse = z.infer<typeof SimulationMetadataRespon
 const finite = z.number().finite();
 const count = z.number().int().nonnegative();
 export const SimulationMetricsSchema = z.object({ silhouette: finite, davies_bouldin: finite, calinski_harabasz: finite }).strict();
+export const SimulationDpcControlSchema = z.object({
+  totalRandomRuns: z.literal(30), matchingRuns: count.max(30),
+  randomMean: SimulationMetricsSchema,
+  randomSd: SimulationMetricsSchema.refine(value => Object.values(value).every(sd => sd >= 0))
+}).strict();
 const sizes = z.array(z.number().int().positive()).min(2).max(10).refine(values => values.reduce((a, b) => a + b, 0) === 1949);
 const run = z.object({ seed: count, iterations: z.number().int().positive(), convergedBeforeMaxIter: z.boolean(), clusterSizes: sizes, metrics: SimulationMetricsSchema }).strict();
 export const SimulationAnalysisSchema = z.object({
@@ -45,7 +50,8 @@ export const SimulationAnalysisSchema = z.object({
       indices: z.array(z.object({ index: z.string(), status: z.string(), recommendedK: count.nullable() }).strict()),
       tieOccurred: z.boolean(), reproducible: z.literal(true) }).strict(),
     dpc: z.object({ cutoffPercentile: finite, distanceCutoff: finite, centroidCount: count, dimensions: count, pairwiseDistanceCount: count,
-      determinismPassed: z.literal(true), centers: z.array(z.object({ rho: count, delta: finite, gamma: finite }).strict()) }).strict()
+      determinismPassed: z.literal(true), centers: z.array(z.object({ rho: count, delta: finite, gamma: finite }).strict()),
+      randomControl: SimulationDpcControlSchema.optional() }).strict()
   }).strict().refine(value => value.clusterSizes.length === value.selectedK && value.dpc.centroidCount === value.selectedK && value.dpc.centers.length === value.selectedK && value.dpc.dimensions === value.pcaComponents)
 }).strict();
 export type SimulationAnalysis = z.infer<typeof SimulationAnalysisSchema>;

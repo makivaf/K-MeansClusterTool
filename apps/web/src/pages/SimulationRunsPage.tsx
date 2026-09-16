@@ -64,7 +64,7 @@ export const SimulationTabPanel = ({ analysis, method }: { analysis: Analysis; m
         <div className="simulation-compact-evidence">
           <section className="simulation-summary simulation-stage"><h4>PCA</h4><dl><div><dt>Retained input variables</dt><dd>{enhanced.retainedVariables.length}</dd></div><div><dt>Components retained</dt><dd>{enhanced.pcaComponents}</dd></div><div><dt>Cumulative variance</dt><dd>{percent(enhanced.cumulativeExplainedVariance)}</dd></div></dl></section>
           <section className="simulation-summary simulation-stage"><h4>NbClust</h4><dl><div><dt>Selected k</dt><dd>{enhanced.selectedK}</dd></div><div><dt>Supporting / usable indices</dt><dd>{supportingIndices ?? "Unavailable"} of {usableIndices}</dd></div><div><dt>Repeated selection</dt><dd>{enhanced.nbclust.reproducible ? "Reproduced" : "Not verified"}</dd></div></dl></section>
-          <section className="simulation-summary simulation-stage"><h4>DPC Initialization &amp; Reproducibility</h4><dl><div><dt>Initialization</dt><dd>{enhanced.initialization === "DPC" ? "Deterministic" : enhanced.initialization}</dd></div><div><dt>Centers selected</dt><dd>{enhanced.dpc.centroidCount}</dd></div><div><dt>Reproducibility status</dt><dd>{enhanced.dpc.determinismPassed ? "Passed" : "Not verified"}</dd></div></dl></section>
+          <section className="simulation-summary simulation-stage"><h4>DPC</h4><dl><div><dt>Initialization</dt><dd>{enhanced.initialization === "DPC" ? "Deterministic" : enhanced.initialization}</dd></div><div><dt>Centers selected</dt><dd>{enhanced.dpc.centroidCount}</dd></div><div><dt>Random runs matching DPC solution</dt><dd>{enhanced.dpc.randomControl ? `${enhanced.dpc.randomControl.matchingRuns} / ${enhanced.dpc.randomControl.totalRandomRuns}` : "Unavailable"}</dd></div></dl></section>
         </div>
       </section>
       <div className="simulation-compact-charts">
@@ -96,8 +96,8 @@ export const SimulationResults = ({ result }: { result: NonNullable<SimulationRu
     <section className="simulation-surface simulation-comparison">
       <div className="simulation-section-heading"><h2 className="simulation-section-title">Existing vs Enhanced</h2>
         </div>
-      <table className="simulation-comparison-table"><thead><tr><th>Metric</th><th>Existing</th><th>Enhanced</th></tr></thead>
-        <tbody>{result.comparison.map(row => <tr key={row.metric}><th>{({ silhouette: "Silhouette", davies_bouldin: "Davies-Bouldin", calinski_harabasz: "Calinski-Harabasz" })[row.metric]}<br /><span>{row.direction === "lower_is_better" ? "Lower is better" : "Higher is better"}</span></th><td>{format(row.existing)}</td><td>{format(row.enhanced)}</td></tr>)}</tbody></table>
+      <table className="simulation-comparison-table"><thead><tr><th>Metric</th><th>Existing K-Means</th><th>Enhanced K-means</th></tr></thead>
+        <tbody>{result.comparison.map(row => <tr key={row.metric}><th>{({ silhouette: "Silhouette Coefficient", davies_bouldin: "Davies-Bouldin Index", calinski_harabasz: "Calinski-Harabasz Index" })[row.metric]}<br /><span>{row.direction === "lower_is_better" ? "Lower is better" : "Higher is better"}</span></th><td>{format(row.existing)}</td><td>{format(row.enhanced)}</td></tr>)}</tbody></table>
     </section>
     <section className="simulation-surface">
       <div className="simulation-method-tabs" role="group" aria-label="Method details">{(["existing", "enhanced"] as const).map(value => <button key={value} type="button" aria-pressed={method === value} className={`simulation-method-tab ${method === value ? "is-active" : ""}`} onClick={() => setMethod(value)}>{value === "existing" ? "Existing" : "Enhanced"} K-means</button>)}</div>

@@ -195,9 +195,17 @@ globalThis.fetch = async (url, options) => {
     assert.deepEqual(requests.slice(requestCount).map(r => r.options.method), ["GET"]);
     for (const state of saved) {
       const html = renderToStaticMarkup(React.createElement(page.SimulationTabPanel, { analysis: state.result.analysis, method: "enhanced" }));
-      assert.match(html, /DPC Initialization &amp; Reproducibility/);
+      const control = state.result.analysis.enhanced.dpc.randomControl;
+      const expected = control ? `${control.matchingRuns} / ${control.totalRandomRuns}` : "Unavailable";
+      assert.ok(html.includes(`<dt>Random runs matching DPC solution</dt><dd>${expected}</dd>`));
+      if (state.simulationId === 1) assert.equal(expected, "30 / 30");
+      assert.ok(html.indexOf("Random runs matching DPC solution") > html.indexOf("<h4>DPC</h4>"));
+      assert.ok(html.indexOf("Random runs matching DPC solution") < html.indexOf("Enhanced Cluster Distribution"));
+      const baselineHtml = renderToStaticMarkup(React.createElement(page.SimulationTabPanel, { analysis: state.result.analysis, method: "existing" }));
+      assert.doesNotMatch(baselineHtml, /Random runs matching DPC solution|DPC Initialization|Random SD/);
+      assert.match(html, /<dt>Initialization<\/dt><dd>Deterministic<\/dd>/);
       assert.match(html, /<dt>Centers selected<\/dt><dd>2<\/dd>/);
-      assert.match(html, /<dt>Reproducibility status<\/dt><dd>Passed<\/dd>/);
+      assert.doesNotMatch(html, /DPC Initialization|Reproducibility status|Random mean|Random SD|<table/);
       assert.doesNotMatch(html, /Count unavailable|Repeated checks|3\s*\/\s*3 identical|21\/30/);
     }
     console.log("PASS GET-first recovery, 200/202 responses, 429/Retry-After handling, GET failure without POST, sequential progress, completion/failure, selection isolation, and current DPC card for all five simulations.");

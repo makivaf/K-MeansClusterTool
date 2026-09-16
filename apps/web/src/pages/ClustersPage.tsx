@@ -32,9 +32,9 @@ const summaryTabs: Array<{ id: SummaryTab; label: string }> = [
 ];
 
 const metricLabels: Record<ComparisonMetric["metric"], string> = {
-  silhouette: "Silhouette",
-  davies_bouldin: "Davies-Bouldin",
-  calinski_harabasz: "Calinski-Harabasz"
+  silhouette: "Silhouette Coefficient",
+  davies_bouldin: "Davies-Bouldin Index",
+  calinski_harabasz: "Calinski-Harabasz Index"
 };
 
 const formatComparisonMetric = (_metric: ComparisonMetric["metric"], value: number) => value.toFixed(5);
@@ -44,9 +44,9 @@ const formatPercent = (value: number) => `${(value * 100).toFixed(2)}%`;
 const formatPValue = (value: number) => value.toFixed(5);
 
 const sopMetricLabels: Record<SopMetric, string> = {
-  silhouette: "Silhouette",
-  davies_bouldin: "Davies-Bouldin",
-  calinski_harabasz: "Calinski-Harabasz"
+  silhouette: "Silhouette Coefficient",
+  davies_bouldin: "Davies-Bouldin Index",
+  calinski_harabasz: "Calinski-Harabasz Index"
 };
 
 const formatSopMetric = (_metric: SopMetric, value: number) => value.toFixed(5);

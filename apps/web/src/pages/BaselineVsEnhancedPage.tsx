@@ -10,9 +10,9 @@ type BaselineVsEnhancedPageProps = { run: UnifiedResearchRun | null };
 type EvaluationTab = "sop1" | "sop2" | "sop3" | "overall";
 
 const labels = {
-  silhouette: "Silhouette",
-  davies_bouldin: "Davies–Bouldin",
-  calinski_harabasz: "Calinski–Harabasz"
+  silhouette: "Silhouette Coefficient",
+  davies_bouldin: "Davies–Bouldin Index",
+  calinski_harabasz: "Calinski–Harabasz Index"
 } as const;
 
 const metricInterpretations = {
@@ -135,9 +135,9 @@ const Sop2View = ({ evaluation }: { evaluation: SopEvaluation }) => {
 const Sop3View = ({ evaluation }: { evaluation: SopEvaluation }) => {
   const { firstThreeRandomRuns, randomRunSummary, partitionStability, dpcDeterminism } = evaluation.sop3;
   const metricRows = [
-    ["Silhouette", randomRunSummary.silhouette],
-    ["Davies–Bouldin", randomRunSummary.davies_bouldin],
-    ["Calinski–Harabasz", randomRunSummary.calinski_harabasz]
+    ["Silhouette Coefficient", randomRunSummary.silhouette],
+    ["Davies–Bouldin Index", randomRunSummary.davies_bouldin],
+    ["Calinski–Harabasz Index", randomRunSummary.calinski_harabasz]
   ] as const;
   return (
     <div className="sop-flow">
@@ -157,7 +157,7 @@ const Sop3View = ({ evaluation }: { evaluation: SopEvaluation }) => {
         </div>
       </Stage>
       <Stage number={4} title="Finding"><Conclusion>DPC did not improve clustering geometry in this controlled comparison. Its demonstrated benefit is deterministic reproducibility and removal of arbitrary seed dependence.</Conclusion></Stage>
-      <details className="research-disclosure"><summary>Predetermined seeds, 30-run variability, and DPC details</summary><div className="py-5"><h3 className="text-sm font-semibold">First three predetermined seeds</h3><p className="mt-1 text-xs leading-5 text-muted">Cluster labels are arbitrary, so sizes are normalized from largest to smallest for display and are not treated as evidence of instability.</p><div className="mt-3 grid gap-3 md:grid-cols-3">{firstThreeRandomRuns.map((run) => { const normalizedSizes = [...run.clusterSizes].sort((left, right) => right - left); return <article key={run.seed} className="sop-seed-run"><div className="flex items-center justify-between"><h3>Seed {run.seed}</h3><span>{run.iterations} iterations</span></div><ClusterComposition sizes={normalizedSizes} total={evaluation.cohortN} /><div className="mt-3 text-sm font-semibold tabular-nums">Silhouette {run.silhouette.toFixed(4)}</div></article>; })}</div><div className="mt-6 grid gap-6 xl:grid-cols-2"><div><h3 className="text-sm font-semibold">Random initialization summary</h3><div className="mt-3 overflow-x-auto"><table className="research-table"><thead><tr><th>Metric</th><th className="text-right">Mean</th><th className="text-right">SD</th><th className="text-right">Range</th></tr></thead><tbody>{metricRows.map(([label, metric]) => <tr key={label}><td>{label}</td><td className="text-right tabular-nums">{metric.mean.toFixed(6)}</td><td className="text-right tabular-nums">{metric.standardDeviation.toFixed(6)}</td><td className="text-right tabular-nums">{metric.minimum.toFixed(4)}–{metric.maximum.toFixed(4)}</td></tr>)}</tbody></table></div></div><div><h3 className="text-sm font-semibold">Repeated DPC result</h3><dl className="mt-3 space-y-3 text-sm"><div className="flex justify-between border-b border-line pb-2"><dt className="text-muted">Cluster sizes</dt><dd className="font-semibold tabular-nums">{dpcDeterminism.clusterSizes.join(" / ")}</dd></div><div className="flex justify-between border-b border-line pb-2"><dt className="text-muted">Silhouette</dt><dd className="font-semibold tabular-nums">{dpcDeterminism.metrics.silhouette.toFixed(6)}</dd></div><div className="flex justify-between border-b border-line pb-2"><dt className="text-muted">Identical centroid matrix</dt><dd className="font-semibold text-teal-800">Yes</dd></div><div className="flex justify-between"><dt className="text-muted">Identical output</dt><dd className="font-semibold text-teal-800">Yes</dd></div></dl></div></div></div></details>
+      <details className="research-disclosure"><summary>Predetermined seeds, 30-run variability, and DPC details</summary><div className="py-5"><h3 className="text-sm font-semibold">First three predetermined seeds</h3><p className="mt-1 text-xs leading-5 text-muted">Cluster labels are arbitrary, so sizes are normalized from largest to smallest for display and are not treated as evidence of instability.</p><div className="mt-3 grid gap-3 md:grid-cols-3">{firstThreeRandomRuns.map((run) => { const normalizedSizes = [...run.clusterSizes].sort((left, right) => right - left); return <article key={run.seed} className="sop-seed-run"><div className="flex items-center justify-between"><h3>Seed {run.seed}</h3><span>{run.iterations} iterations</span></div><ClusterComposition sizes={normalizedSizes} total={evaluation.cohortN} /><div className="mt-3 text-sm font-semibold tabular-nums">Silhouette Coefficient{run.silhouette.toFixed(4)}</div></article>; })}</div><div className="mt-6 grid gap-6 xl:grid-cols-2"><div><h3 className="text-sm font-semibold">Random initialization summary</h3><div className="mt-3 overflow-x-auto"><table className="research-table"><thead><tr><th>Metric</th><th className="text-right">Mean</th><th className="text-right">SD</th><th className="text-right">Range</th></tr></thead><tbody>{metricRows.map(([label, metric]) => <tr key={label}><td>{label}</td><td className="text-right tabular-nums">{metric.mean.toFixed(6)}</td><td className="text-right tabular-nums">{metric.standardDeviation.toFixed(6)}</td><td className="text-right tabular-nums">{metric.minimum.toFixed(4)}–{metric.maximum.toFixed(4)}</td></tr>)}</tbody></table></div></div><div><h3 className="text-sm font-semibold">Repeated DPC result</h3><dl className="mt-3 space-y-3 text-sm"><div className="flex justify-between border-b border-line pb-2"><dt className="text-muted">Cluster sizes</dt><dd className="font-semibold tabular-nums">{dpcDeterminism.clusterSizes.join(" / ")}</dd></div><div className="flex justify-between border-b border-line pb-2"><dt className="text-muted">Silhouette Coefficient</dt><dd className="font-semibold tabular-nums">{dpcDeterminism.metrics.silhouette.toFixed(6)}</dd></div><div className="flex justify-between border-b border-line pb-2"><dt className="text-muted">Identical centroid matrix</dt><dd className="font-semibold text-teal-800">Yes</dd></div><div className="flex justify-between"><dt className="text-muted">Identical output</dt><dd className="font-semibold text-teal-800">Yes</dd></div></dl></div></div></div></details>
     </div>
   );
 };
