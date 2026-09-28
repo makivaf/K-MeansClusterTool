@@ -3,7 +3,6 @@ import { Navigate, Route, Routes, useLocation } from "react-router-dom";
 import type { UploadResponse } from "../../../packages/shared/src";
 import { AppShell } from "./components/layout/AppShell";
 import { useStudyFindings } from "./hooks/useStudyFindings";
-import { readValidatedDataset, saveValidatedDataset } from "./utils/validatedDataset";
 
 const DatasetSetup = lazy(() => import("./pages/UploadAndCluster").then((module) => ({ default: module.UploadAndCluster })));
 const StudyFindings = lazy(() => import("./pages/StudyFindingsPage").then((module) => ({ default: module.StudyFindingsPage })));
@@ -11,11 +10,11 @@ const SimulationRuns = lazy(() => import("./pages/SimulationRunsPage").then((mod
 
 export default function App() {
   const { pathname } = useLocation();
-  const [dataset, setDataset] = useState<UploadResponse | null>(readValidatedDataset);
+  // Validation belongs to this running app; navigation preserves it, reloads do not.
+  const [dataset, setDataset] = useState<UploadResponse | null>(null);
   const analysis = useStudyFindings(dataset);
   const onValidated = (value: UploadResponse | null) => {
     analysis.reset();
-    saveValidatedDataset(value);
     setDataset(value);
   };
   return <AppShell>

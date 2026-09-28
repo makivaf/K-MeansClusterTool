@@ -95,6 +95,7 @@ globalThis.fetch = async (url, options) => {
     assert.equal(requests.length, 0, "Cached complete metadata must not start a run or fetch results");
     button().props.onClick(); hooks.render();
     assert.equal(button().props.disabled, true);
+    assert.equal(find(hooks.output, node => node.type === "fieldset").props.disabled, true);
     assert.ok(progress());
     await hooks.settle();
     assert.deepEqual(requests.map(r => r.options.method), ["GET"], "Cached success must not POST");
@@ -149,21 +150,14 @@ globalThis.fetch = async (url, options) => {
     assert.equal(button().props.disabled, false);
     assert.equal((progressHtml().match(/simulation-step is-reached/g) || []).length, 0);
     assert.equal(requests.filter(r => r.options.method === "POST").length, 2, "An explicitly retried failed run may POST after GET");
-    find(hooks.output, node => node.props?.["aria-label"] === "Simulation 2").props.onClick(); hooks.render();
-    assert.equal(result(), undefined, "Never display another simulation's result");
-    assert.equal(progress(), null);
-    assert.match(renderToStaticMarkup(button()), /Run Simulation/);
-    // Abort an in-flight request on selection change, even if transport later resolves.
-    serverState = { simulationId: 2, status: "sample_ready", result: null, message: null };
-    button().props.onClick(); hooks.render(); await hooks.settle();
-    const latePost = resolvePost;
-    find(hooks.output, node => node.props?.["aria-label"] === "Simulation 3").props.onClick(); hooks.render();
-    latePost(saved[1]); await hooks.settle(); await advance(4000);
-    assert.equal(result(), undefined);
-    assert.equal(progress(), null);
-    assert.equal(find(hooks.output, node => node.props?.id === "simulation-analysis-status"), null);
+    // Configuration controls are frontend-only and preserve the existing run route.
+    find(hooks.output, node => node.type === "button" && node.props.children === "Custom Sample").props.onClick(); hooks.render();
+    find(hooks.output, node => node.props?.id === "simulation-sample-count").props.onChange({ target: { value: "500" } }); hooks.render();
+    find(hooks.output, node => node.props?.["aria-label"] === "Increase manual k").props.onClick(); hooks.render();
+    assert.match(renderToStaticMarkup(hooks.output), /Preview: 500 of 2,437 participants/);
+    assert.equal(find(hooks.output, node => node.props?.["aria-label"] === "Simulation 2"), null);
     // Throttling is a request failure, not a failed analytical result.
-    serverState = { simulationId: 3, status: "sample_ready", result: null, message: null };
+    serverState = { simulationId: 1, status: "sample_ready", result: null, message: null };
     throttlePost = true;
     button().props.onClick(); hooks.render(); await hooks.settle();
     const statusText = () => renderToStaticMarkup(find(hooks.output, node => node.props?.id === "simulation-analysis-status"));
@@ -176,13 +170,13 @@ globalThis.fetch = async (url, options) => {
     find(alert(), node => node.type === "button").props.onClick(); hooks.render(); await hooks.settle();
     assert.deepEqual(requests.slice(requestCount).map(r => r.options.method), ["GET"], "Retry-After blocks another POST but permits status recovery");
     assert.match(statusText(), /Simulation request throttled/);
-    serverState = { simulationId: 3, status: "running", result: null, message: null };
+    serverState = { simulationId: 1, status: "running", result: null, message: null };
     requestCount = requests.length;
     find(alert(), node => node.type === "button").props.onClick(); hooks.render(); await hooks.settle();
     assert.deepEqual(requests.slice(requestCount).map(r => r.options.method), ["GET"], "Recover active work without POST");
     await advance(400); await advance(400);
-    serverState = saved[2]; await advance(2000); await advance(400); await advance(400);
-    assert.deepEqual(result(), saved[2].result);
+    serverState = saved[0]; await advance(2000); await advance(400); await advance(400);
+    assert.deepEqual(result(), saved[0].result);
     failGet = true; requestCount = requests.length;
     button().props.onClick(); hooks.render(); await hooks.settle();
     assert.deepEqual(requests.slice(requestCount).map(r => r.options.method), ["GET"], "Never POST when status is unknown");
@@ -191,23 +185,32 @@ globalThis.fetch = async (url, options) => {
     failGet = false; requestCount = requests.length;
     find(alert(), node => node.type === "button").props.onClick(); hooks.render(); await hooks.settle();
     for (let i = 0; i < 4; i++) await advance(400);
-    assert.deepEqual(result(), saved[2].result);
+    assert.deepEqual(result(), saved[0].result);
     assert.deepEqual(requests.slice(requestCount).map(r => r.options.method), ["GET"]);
     for (const state of saved) {
-      const html = renderToStaticMarkup(React.createElement(page.SimulationTabPanel, { analysis: state.result.analysis, method: "enhanced" }));
+      const html = renderToStaticMarkup(React.createElement(page.SimulationResults, { result: state.result, manualK: 3 }));
+      const headings = ["Feature Representation", "Cluster Number Selection", "Initialization", "Standard vs Enhanced Comparison"];
+      let last = -1;
+      for (const heading of headings) {
+        const next = html.indexOf(`class="simulation-section-title">${heading}</h2>`);
+        assert.ok(next > last, `${heading} follows the previous section`);
+        last = next;
+      }
       const control = state.result.analysis.enhanced.dpc.randomControl;
-      const expected = control ? `${control.matchingRuns} / ${control.totalRandomRuns}` : "Unavailable";
-      assert.ok(html.includes(`<dt>Random runs matching DPC solution</dt><dd>${expected}</dd>`));
-      if (state.simulationId === 1) assert.equal(expected, "30 / 30");
-      assert.ok(html.indexOf("Random runs matching DPC solution") > html.indexOf("<h4>DPC</h4>"));
-      assert.ok(html.indexOf("Random runs matching DPC solution") < html.indexOf("Enhanced Cluster Distribution"));
-      const baselineHtml = renderToStaticMarkup(React.createElement(page.SimulationTabPanel, { analysis: state.result.analysis, method: "existing" }));
-      assert.doesNotMatch(baselineHtml, /Random runs matching DPC solution|DPC Initialization|Random SD/);
-      assert.match(html, /<dt>Initialization<\/dt><dd>Deterministic<\/dd>/);
-      assert.match(html, /<dt>Centers selected<\/dt><dd>2<\/dd>/);
-      assert.doesNotMatch(html, /DPC Initialization|Reproducibility status|Random mean|Random SD|<table/);
-      assert.doesNotMatch(html, /Count unavailable|Repeated checks|3\s*\/\s*3 identical|21\/30/);
+      assert.match(html, /Solution agreement with DPC initialization:/);
+      if (control) assert.ok(html.includes(`${control.matchingRuns} of ${control.totalRandomRuns} random starts`));
+      assert.match(html, /manual k = 3/);
+      assert.match(html, /Relative Change/);
+      assert.match(html, /PC1 and PC2 are used only for 2D visualization/);
+      assert.match(html, /Selected Centers/);
+      assert.doesNotMatch(html, /Existing vs Enhanced|Simulation 1|SOP 1/);
+      for (const row of state.result.comparison) {
+        const format = value => value.toLocaleString("en-US", { maximumFractionDigits: 6 });
+        assert.ok(html.includes(format(row.existing)));
+        assert.ok(html.includes(format(row.enhanced)));
+      }
     }
-    console.log("PASS GET-first recovery, 200/202 responses, 429/Retry-After handling, GET failure without POST, sequential progress, completion/failure, selection isolation, and current DPC card for all five simulations.");
+    assert.ok(requests.every(r => r.url === "http://simulation.test/api/simulations/1/run" && r.options.body === undefined));
+    console.log("PASS initial visibility, GET-first recovery, unchanged requests, progress/completion, failure/retry, throttling, frontend configuration, ordered results and preserved metrics for all five saved runs.");
   } finally { hooks.unmount(); globalThis.fetch = originalFetch; globalThis.setTimeout = originalSetTimeout; globalThis.clearTimeout = originalClearTimeout; }
 })().catch(error => { console.error(error); process.exitCode = 1; });
