@@ -24,7 +24,7 @@ const provenanceSchema = z.object({
     sha256: digestSchema,
     constructionId: z.string().uuid(),
     inputs: z.array(z.object({ filename: z.string().min(1), sha256: digestSchema }).strict()).length(7)
-      .refine((entries) => entries.every((entry, index) => entry.filename === analysisInputManifest[index].filename)),
+      .refine((entries) => entries.every((entry, index) => entry.filename.replace(/^All_Subjects_(ADAS|CDR|FAQ|MMSE|NEUROBAT|NPIQ|GDSCALE)_(?:10Aug2026|Aug102026)\.csv$/, "$1.csv") === analysisInputManifest[index].filename)),
     scripts: z.array(z.object({ filename: z.string().min(1), sha256: digestSchema }).strict()).length(4)
       .refine((entries) => entries.every((entry, index) => entry.filename === cohortConstructionScripts[index]))
   }).strict(),

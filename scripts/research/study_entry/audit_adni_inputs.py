@@ -21,13 +21,13 @@ RAW_DIRECTORY = REPOSITORY_ROOT / "data" / "raw" / "adni"
 OUTPUT_DIRECTORY = REPOSITORY_ROOT / "data" / "interim"
 
 TARGET_FILES = (
-    "All_Subjects_ADAS_10Aug2026.csv",
-    "All_Subjects_CDR_10Aug2026.csv",
-    "All_Subjects_FAQ_10Aug2026.csv",
-    "All_Subjects_MMSE_10Aug2026.csv",
-    "All_Subjects_NEUROBAT_10Aug2026.csv",
-    "All_Subjects_NPIQ_10Aug2026.csv",
-    "All_Subjects_GDSCALE_10Aug2026.csv",
+    "ADAS.csv",
+    "CDR.csv",
+    "FAQ.csv",
+    "MMSE.csv",
+    "NEUROBAT.csv",
+    "NPIQ.csv",
+    "GDSCALE.csv",
 )
 
 TEXTUAL_MISSING_CANDIDATES = {

@@ -10,17 +10,17 @@ The same batch feeds both dependent stages. Enhanced K-Means cohort construction
 
 ## Required files and headers
 
-Filenames are fixed by the frozen research entry points. Header matching is case-sensitive.
+The short filenames below are canonical for uploads and runtime research entry points. Their CSV contents are unchanged from the verified thesis source copies. The browser accepts legacy export filenames as aliases and submits the canonical names; existing provenance records retain their original filenames and hashes. Header matching is case-sensitive.
 
 | File | Use | Required headers |
 | --- | --- | --- |
-| `All_Subjects_ADAS_10Aug2026.csv` | Clustering and longitudinal progression | `RID`, `PTID`, `PHASE`, `VISCODE`, `VISCODE2`, `VISDATE`, `TOTAL13` |
-| `All_Subjects_CDR_10Aug2026.csv` | Clustering | common identity/phase/visit/date headers plus `CDRSB` |
-| `All_Subjects_FAQ_10Aug2026.csv` | Clustering | common headers plus `FAQTOTAL` |
-| `All_Subjects_MMSE_10Aug2026.csv` | Clustering | common headers plus `MMSCORE` |
-| `All_Subjects_NEUROBAT_10Aug2026.csv` | Clustering | common headers plus `LIMMTOTAL`, `LDELTOTAL`, `TRAASCOR`, `TRABSCOR`, `CATANIMSC`, `BNTTOTAL`, `AVTOT1`–`AVTOT5`, `AVDEL30MIN` |
-| `All_Subjects_NPIQ_10Aug2026.csv` | Clustering scope audit | common headers plus `NPISCORE` |
-| `All_Subjects_GDSCALE_10Aug2026.csv` | Clustering | common headers plus `GDTOTAL` |
+| `ADAS.csv` | Clustering and longitudinal progression | `RID`, `PTID`, `PHASE`, `VISCODE`, `VISCODE2`, `VISDATE`, `TOTAL13` |
+| `CDR.csv` | Clustering | common identity/phase/visit/date headers plus `CDRSB` |
+| `FAQ.csv` | Clustering | common headers plus `FAQTOTAL` |
+| `MMSE.csv` | Clustering | common headers plus `MMSCORE` |
+| `NEUROBAT.csv` | Clustering | common headers plus `LIMMTOTAL`, `LDELTOTAL`, `TRAASCOR`, `TRABSCOR`, `CATANIMSC`, `BNTTOTAL`, `AVTOT1`–`AVTOT5`, `AVDEL30MIN` |
+| `NPIQ.csv` | Clustering scope audit | common headers plus `NPISCORE` |
+| `GDSCALE.csv` | Clustering | common headers plus `GDTOTAL` |
 
 Here, common headers are `RID`, `PTID`, `PHASE`, `VISCODE`, `VISCODE2`, and `VISDATE`.
 

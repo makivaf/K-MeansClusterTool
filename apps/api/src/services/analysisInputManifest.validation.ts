@@ -1,7 +1,10 @@
+import assert from "node:assert/strict";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { analysisInputManifest, validateAnalysisInputManifest } from "./analysisInputManifest";
+
+assert.deepEqual(analysisInputManifest.map(file => file.filename), ["ADAS.csv", "CDR.csv", "FAQ.csv", "MMSE.csv", "NEUROBAT.csv", "NPIQ.csv", "GDSCALE.csv"]);
 
 const root = fs.mkdtempSync(path.join(os.tmpdir(), "analysis-input-contract-"));
 try {

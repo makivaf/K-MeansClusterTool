@@ -10,12 +10,12 @@ export type AnalysisInputFileSpec = {
 const commonColumns = ["RID", "PTID", "PHASE", "VISCODE", "VISCODE2", "VISDATE"] as const;
 
 export const analysisInputManifest: readonly AnalysisInputFileSpec[] = [
-  { filename: "All_Subjects_ADAS_10Aug2026.csv", usedBy: "clustering_and_longitudinal", requiredColumns: [...commonColumns, "TOTAL13"] },
-  { filename: "All_Subjects_CDR_10Aug2026.csv", usedBy: "clustering", requiredColumns: [...commonColumns, "CDRSB"] },
-  { filename: "All_Subjects_FAQ_10Aug2026.csv", usedBy: "clustering", requiredColumns: [...commonColumns, "FAQTOTAL"] },
-  { filename: "All_Subjects_MMSE_10Aug2026.csv", usedBy: "clustering", requiredColumns: [...commonColumns, "MMSCORE"] },
+  { filename: "ADAS.csv", usedBy: "clustering_and_longitudinal", requiredColumns: [...commonColumns, "TOTAL13"] },
+  { filename: "CDR.csv", usedBy: "clustering", requiredColumns: [...commonColumns, "CDRSB"] },
+  { filename: "FAQ.csv", usedBy: "clustering", requiredColumns: [...commonColumns, "FAQTOTAL"] },
+  { filename: "MMSE.csv", usedBy: "clustering", requiredColumns: [...commonColumns, "MMSCORE"] },
   {
-    filename: "All_Subjects_NEUROBAT_10Aug2026.csv",
+    filename: "NEUROBAT.csv",
     usedBy: "clustering",
     requiredColumns: [
       ...commonColumns,
@@ -23,8 +23,8 @@ export const analysisInputManifest: readonly AnalysisInputFileSpec[] = [
       "AVTOT1", "AVTOT2", "AVTOT3", "AVTOT4", "AVTOT5", "AVDEL30MIN"
     ]
   },
-  { filename: "All_Subjects_NPIQ_10Aug2026.csv", usedBy: "clustering", requiredColumns: [...commonColumns, "NPISCORE"] },
-  { filename: "All_Subjects_GDSCALE_10Aug2026.csv", usedBy: "clustering", requiredColumns: [...commonColumns, "GDTOTAL"] }
+  { filename: "NPIQ.csv", usedBy: "clustering", requiredColumns: [...commonColumns, "NPISCORE"] },
+  { filename: "GDSCALE.csv", usedBy: "clustering", requiredColumns: [...commonColumns, "GDTOTAL"] }
 ] as const;
 
 export class AnalysisInputError extends Error {

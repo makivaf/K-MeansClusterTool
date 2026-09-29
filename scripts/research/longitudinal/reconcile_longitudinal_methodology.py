@@ -17,7 +17,7 @@ import pandas as pd
 
 
 ROOT = Path(__file__).resolve().parents[3]
-ADAS_PATH = ROOT / "data" / "raw" / "adni" / "All_Subjects_ADAS_10Aug2026.csv"
+ADAS_PATH = ROOT / "data" / "raw" / "adni" / "ADAS.csv"
 ROSTER_PATH = ROOT / "data" / "interim" / "study_entry_cohort_unimputed.csv"
 PRIOR_AUDIT_PATH = ROOT / "data" / "interim" / "longitudinal_records_audit.json"
 OUTPUT_PATH = ROOT / "data" / "interim" / "longitudinal_methodology_reconciliation.json"
