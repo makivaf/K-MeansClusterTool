@@ -58,11 +58,8 @@ input:focus-visible {
 /* Shared research surfaces follow Simulation Runs and the Figma design guide. */
 .research-page { font-size: 14px; }
 .research-page .page-heading { border: 0; padding: 0 6px; margin-bottom: 24px; }
-.research-page .page-heading h1 { font-size: 30px; line-height: 1.25; font-weight: 600; letter-spacing: -0.025em; }
-.research-page .page-heading p { font-size: 14px; line-height: 21px; }
 .research-page .research-panel { border-radius: var(--research-card-radius); }
 .research-page .research-panel-heading { flex-wrap: wrap; gap: 16px; padding: 24px 24px 0; border: 0; }
-.research-page .research-panel-heading h2 { font-size: 22px; line-height: 30px; letter-spacing: -0.02em; }
 .research-page .research-panel-body { padding: 24px; }
 .research-page .research-table thead { background: transparent; border-top: 0; font-size: 12px; text-transform: none; letter-spacing: normal; }
 .research-page .research-table th { font-weight: 400; padding: 12px; }

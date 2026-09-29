@@ -10,7 +10,7 @@ import {
 import { useState, type ReactNode } from "react";
 import { NavLink, useLocation } from "react-router-dom";
 import { researchPages } from "./researchNavigation";
-const navIcons = [UploadCloud, BarChart3, FlaskConical];
+const navIcons = [UploadCloud, FlaskConical, BarChart3];
 const navItems = researchPages.map((page, index) => ({ ...page, icon: navIcons[index] }));
 
 type AppShellProps = { children: ReactNode };
@@ -95,7 +95,7 @@ export const AppShell = ({ children }: AppShellProps) => {
         </div>
       </header>
 
-      <div className={`mx-auto ${pathname === "/simulation-runs" ? "max-w-none" : "max-w-[1320px]"} min-w-0 px-4 py-6 sm:px-6 sm:py-8`}>
+      <div className={`mx-auto ${pathname === "/simulation-runs" || pathname === "/study-findings" ? "max-w-none" : "max-w-[1320px]"} min-w-0 px-4 py-6 sm:px-6 sm:py-8`}>
         {children}
       </div>
     </main>

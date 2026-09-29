@@ -1,4 +1,4 @@
-import { lazy, Suspense, useState } from "react";
+import { lazy, Suspense, useEffect, useState } from "react";
 import { Navigate, Route, Routes, useLocation } from "react-router-dom";
 import type { UploadResponse } from "../../../packages/shared/src";
 import { AppShell } from "./components/layout/AppShell";
@@ -10,6 +10,10 @@ const SimulationRuns = lazy(() => import("./pages/SimulationRunsPage").then((mod
 
 export default function App() {
   const { pathname } = useLocation();
+  const [simulationVisited, setSimulationVisited] = useState(false);
+  useEffect(() => {
+    if (pathname === "/simulation-runs") setSimulationVisited(true);
+  }, [pathname]);
   // Validation belongs to this running app; navigation preserves it, reloads do not.
   const [dataset, setDataset] = useState<UploadResponse | null>(null);
   const analysis = useStudyFindings(dataset);
@@ -20,11 +24,14 @@ export default function App() {
   return <AppShell>
     <Suspense fallback={<p role="status">Loading page…</p>}>
       <div hidden={pathname !== "/dataset-setup"}><DatasetSetup onValidated={onValidated} dataset={dataset} /></div>
+      {/* Keep the visited simulation mounted, as with Dataset Setup, so route
+          changes preserve configuration, results, and in-flight polling. */}
+      {(simulationVisited || pathname === "/simulation-runs") && <div hidden={pathname !== "/simulation-runs"}><SimulationRuns /></div>}
       <Routes>
         <Route path="/" element={<Navigate to="/dataset-setup" replace />} />
         <Route path="/dataset-setup" element={null} />
         <Route path="/study-findings" element={<StudyFindings analysis={analysis} dataset={dataset} />} />
-        <Route path="/simulation-runs" element={<SimulationRuns />} />
+        <Route path="/simulation-runs" element={null} />
         <Route path="/upload-run" element={<Navigate to="/dataset-setup" replace />} />
         <Route path="/run-history" element={<Navigate to="/simulation-runs" replace />} />
         {/* Retired URLs never select historical or simulation results. */}
