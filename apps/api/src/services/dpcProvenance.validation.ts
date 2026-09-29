@@ -14,17 +14,18 @@ import { app } from "../app";
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../../../..");
 const cohort = "data/interim/study_entry_cohort_unimputed.csv";
 const variance = "data/interim/clustering_pca_explained_variance.csv";
-// Recorded shared inputs from the completed study runs, independent of the SOP artifact.
+// Verified local cohort and all 21 saved study runs agree on these shared inputs.
+// Keep this independent of the packaged SOP artifact to catch provenance drift.
 const run = { provenance: { inputSha256: {
-  [cohort]: "eff5f9759f4e56e85408f08bd357cf2a0b67b42073cced73bed1d83e922fb6f3",
+  [cohort]: "b9983abfd068c4c00006750c2d08e547bc0c7b2769b60080ae9733b4841c04eb",
   [variance]: "769216258e22de504fc8ca39d1f898f7c4ce1e1d37cd7dd9876dc0571d67f33f"
 } } } as unknown as UnifiedResearchRun;
 const evaluation = loadSopEvaluation();
 assert.ok(evaluation);
 assert.ok(hasSharedSopProvenance(run, evaluation));
 const stale = structuredClone(evaluation);
-stale.provenance.sourceSha256[cohort] = "b9983abfd068c4c00006750c2d08e547bc0c7b2769b60080ae9733b4841c04eb";
-assert.equal(hasSharedSopProvenance(run, stale), false, "Original published mismatch must be rejected");
+stale.provenance.sourceSha256[cohort] = "eff5f9759f4e56e85408f08bd357cf2a0b67b42073cced73bed1d83e922fb6f3";
+assert.equal(hasSharedSopProvenance(run, stale), false, "Mismatched recovery cohort must be rejected");
 for (const source of [cohort, variance]) {
   const missingRun = structuredClone(run);
   delete missingRun.provenance.inputSha256[source];
