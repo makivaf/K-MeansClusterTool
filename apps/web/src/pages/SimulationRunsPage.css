@@ -238,6 +238,7 @@
 .simulation-slider-label { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin: 8px 0; color: var(--simulation-muted); font-size: 12px; }
 .simulation-slider-label output { padding: 6px 12px; border: 1px solid var(--research-border); border-radius: 4px; color: var(--research-ink); font-size: 14px; background: var(--research-canvas); }
 .simulation-sample-controls input[type=range] { width: 100%; accent-color: var(--simulation-teal); }
+.simulation-sample-number { width: 88px; margin-left: auto; border: 1px solid var(--research-control-border); border-radius: 4px; padding: 4px 8px; background: var(--research-canvas); text-align: right; font-size: 14px; font-weight: 600; }
 .simulation-preview-note { margin-top: 18px; padding: 12px 16px; border-radius: 6px; background: #fff8e6; color: #785614; font-size: 12px; line-height: 1.6; }
 .simulation-results-section > .simulation-preview-note { margin-bottom: 20px; }
 .simulation-manual-control { margin-top: 16px; border-top: 1px solid var(--research-border); padding-top: 16px; }

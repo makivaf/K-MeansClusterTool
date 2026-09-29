@@ -8,17 +8,18 @@ const slate = chartPalette.neutral;
 const tick = { fontSize: 14, fill: chartPalette.text };
 const percent = (value: number) => `${(value * 100).toFixed(2)}%`;
 
-export const CorrelationHeatmap = ({ correlation }: { correlation: StudyEvidence["correlation"] }) => <figure>
+export const CorrelationHeatmap = ({ correlation, compact = false }: { correlation: StudyEvidence["correlation"]; compact?: boolean }) => <figure>
   <div className="overflow-x-auto" role="region" aria-label="Pre-PCA correlation heatmap" tabIndex={0}>
-    <table className="research-table min-w-[900px]">
+    <table className={`research-table ${compact ? "study-correlation-table" : "min-w-[900px]"}`}>
       <thead><tr><th>Variable</th>{correlation.features.map((feature, i) => <th key={feature} className="text-center" title={getMeasureLabel(feature)}>{i + 1}</th>)}</tr></thead>
       <tbody>{correlation.matrix.map((row, i) => <tr key={correlation.features[i]}>
-        <th scope="row" className="whitespace-nowrap text-left">{i + 1}. {getMeasureLabel(correlation.features[i])}</th>
+        <th scope="row" className="whitespace-nowrap text-left" title={getMeasureLabel(correlation.features[i])}>{compact ? i + 1 : `${i + 1}. ${getMeasureLabel(correlation.features[i])}`}</th>
         {row.map((value, j) => <td key={j} className="text-center tabular-nums" title={`${correlation.features[i]} / ${correlation.features[j]}: ${value.toFixed(6)}`}
-          style={{ backgroundColor: `color-mix(in srgb, ${value >= 0 ? teal : chartPalette.comparison} ${Math.abs(value) * 45}%, transparent)` }}>{value.toFixed(2)}</td>)}
+          style={{ backgroundColor: `color-mix(in srgb, ${value >= 0 ? teal : chartPalette.comparison} ${Math.abs(value) * 45}%, transparent)` }}><span className={compact ? "sr-only" : undefined}>{value.toFixed(2)}</span></td>)}
       </tr>)}</tbody>
     </table>
   </div>
+  {compact && <ol className="study-correlation-key">{correlation.features.map((feature, i) => <li key={feature} title={getMeasureLabel(feature)}>{i + 1}. {feature.replace(/_/g, " ")}</li>)}</ol>}
   <figcaption className="mt-3 text-xs text-muted">Pearson r (−1 to +1), 13 retained variables before PCA · n = 2,437. Correlated original features provide evidence of redundancy.</figcaption>
 </figure>;
 
@@ -78,11 +79,11 @@ export const DpcSeedFigure = ({ run }: { run: UnifiedResearchRun }) => (
 
 export const PcaVarianceFigure = ({ run, compact = false }: { run: UnifiedResearchRun; compact?: boolean }) => (
   <figure>
-    <div className="overflow-x-auto"><div className={compact ? "h-64 min-w-[560px] w-full" : "h-96 min-w-[720px] w-full"} role="img" aria-label={`PCA cumulative explained variance; ${run.pca.components} PCs selected, ${percent(run.pca.cumulativeExplainedVariance)} retained.`}>
+    <div className="overflow-x-auto"><div className={compact ? "h-64 min-w-[320px] w-full" : "h-96 min-w-[720px] w-full"} role="img" aria-label={`PCA cumulative explained variance; ${run.pca.components} PCs selected, ${percent(run.pca.cumulativeExplainedVariance)} retained.`}>
       <ResponsiveContainer>
         <LineChart data={run.pca.scree} margin={{ top: 30, right: 38, bottom: 30, left: 10 }}>
           <CartesianGrid vertical={false} stroke={chartPalette.grid} />
-          <XAxis dataKey="component" tick={tick} interval={0} tickFormatter={(value) => `PC${value}`} label={{ value: "Principal component count", position: "bottom", fontSize: 14 }} />
+          <XAxis dataKey="component" tick={tick} interval={compact ? "preserveStartEnd" : 0} tickFormatter={(value) => `PC${value}`} label={{ value: "Principal component count", position: "bottom", fontSize: 14 }} />
           <YAxis domain={[0, 1]} tick={tick} tickFormatter={(value: number) => `${value * 100}%`} />
           <Tooltip formatter={(value: number) => [percent(value), "Cumulative variance"]} labelFormatter={(value) => `PC${value}`} />
           <ReferenceLine x={run.pca.components} stroke={teal} strokeDasharray="5 4" label={{ value: "Selected", position: "top", fill: teal, fontSize: 14 }} />
