@@ -18,7 +18,7 @@ import pandas as pd
 
 ROOT = Path(__file__).resolve().parents[3]
 INTERIM = ROOT / "data" / "interim"
-NPIQ_PATH = ROOT / "data" / "raw" / "adni" / "All_Subjects_NPIQ_10Aug2026.csv"
+NPIQ_PATH = ROOT / "data" / "raw" / "adni" / "NPIQ.csv"
 STUDY_ENTRY_PATH = INTERIM / "study_entry_cohort_unimputed.csv"
 MISSING_POLICY_PATH = INTERIM / "adni_missing_code_policy.csv"
 

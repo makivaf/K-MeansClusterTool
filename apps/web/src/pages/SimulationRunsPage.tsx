@@ -1,14 +1,16 @@
 ﻿import { useEffect, useState } from "react";
 import { Check, Minus, Plus, Play, RefreshCw } from "lucide-react";
 import { useRef } from "react";
-import { Bar, BarChart, CartesianGrid, Cell, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
-import { SimulationRunStateSchema, type SimulationRunState } from "../../../../packages/shared/src/simulation";
+import { Bar, BarChart, CartesianGrid, Cell, Line, LineChart, ResponsiveContainer, Scatter, ScatterChart, Tooltip, XAxis, YAxis } from "recharts";
+import { simulationConfigurationKey, SimulationRunStateSchema, type SimulationRunState } from "../../../../packages/shared/src/simulation";
 import { useSimulationMetadata } from "../hooks/useSimulationMetadata";
 import { useSimulationCapabilities } from "../hooks/useSimulationCapabilities";
 import { API_BASE_URL } from "../config/api";
 import "./SimulationRunsPage.css";
 
 const format = (value: number) => value.toLocaleString("en-US", { maximumFractionDigits: 6 });
+const axisNumber = (value: number) => Number(value.toFixed(2)).toFixed(2);
+const displayCoordinate = (value: number) => value.toFixed(4);
 type Analysis = NonNullable<SimulationRunState["result"]>["analysis"];
 const percent = (value: number) => `${(100 * value).toFixed(2)}%`;
 
@@ -59,10 +61,23 @@ const NbClustChart = ({ enhanced }: { enhanced: Analysis["enhanced"] }) => {
           </div>
         </section>);
 };
+const palette = ["#087f8c", "#e49b35", "#7866b0", "#d76673", "#559a54", "#3675b5", "#a27850", "#aa57a1", "#718333", "#607785"];
+const CorrelationChart = ({ analysis }: { analysis: Analysis }) => analysis.correlation ? <div className="simulation-table-container"><table className="simulation-correlation" aria-label="Retained feature correlation matrix"><thead><tr><th>Feature</th>{analysis.enhanced.retainedVariables.map((name, i) => <th key={name} title={name}>{i + 1}</th>)}</tr></thead><tbody>{analysis.correlation.map((row, i) => <tr key={i}><th>{i + 1}. {analysis.enhanced.retainedVariables[i]}</th>{row.map((value, j) => <td key={j} title={`${analysis.enhanced.retainedVariables[i]} / ${analysis.enhanced.retainedVariables[j]}: ${value ?? "undefined (constant feature)"}`} style={{ background: value === null ? "#eee" : value >= 0 ? `rgba(8,127,140,${Math.abs(value) * .7})` : `rgba(228,155,53,${Math.abs(value) * .7})` }}>{value === null ? "—" : value.toFixed(2)}</td>)}</tr>)}</tbody></table><p className="simulation-compact-note">Pearson correlation of this sample's standardized retained features. Undefined constant-feature correlations appear as —.</p></div> : <p className="simulation-unavailable">Correlation unavailable for this historical run.</p>;
+const DecisionGraph = ({ enhanced }: { enhanced: Analysis["enhanced"] }) => enhanced.dpc.decisionGraph ? <div className="simulation-chart-plot" role="img" aria-label="DPC rho delta decision graph; selected centers highlighted"><ResponsiveContainer width="100%" height="100%"><ScatterChart><CartesianGrid strokeDasharray="3 3" /><XAxis type="number" dataKey="rho" name="rho" allowDecimals={false} /><YAxis type="number" dataKey="delta" name="delta" tickFormatter={axisNumber} width={65} /><Tooltip formatter={(value: number, name: string) => [name === "rho" ? format(value) : displayCoordinate(value), name]} cursor={{ strokeDasharray: "3 3" }} /><Scatter name="Participants" data={enhanced.dpc.decisionGraph.filter(point => !point.selected)} fill="#b7d9d5" isAnimationActive={false} /><Scatter name="DPC centers" data={enhanced.dpc.decisionGraph.filter(point => point.selected)} fill="#e49b35" shape="diamond" isAnimationActive={false} /></ScatterChart></ResponsiveContainer></div> : <p className="simulation-unavailable">Decision graph unavailable for this historical run.</p>;
+const ProjectionChart = ({ analysis, method }: { analysis: Analysis; method: "standard" | "enhanced" }) => {
+  const projection = analysis.projection;
+  if (!projection) return <p className="simulation-unavailable">Projection unavailable for this historical run.</p>;
+  const xs = projection.points.map(point => point.x), ys = projection.points.map(point => point.y);
+  const k = method === "standard" ? analysis.existing.selectedK : analysis.enhanced.selectedK;
+  const centers = method === "standard" ? projection.standardCentroids : projection.enhancedCentroids;
+  return <div className="simulation-chart-plot" role="img" aria-label={`${method} assignments on common PC1–PC2 coordinates; diamonds are projected cluster means`}><ResponsiveContainer width="100%" height="100%"><ScatterChart><CartesianGrid strokeDasharray="3 3" /><XAxis type="number" dataKey="x" name="PC1" minTickGap={24} tickFormatter={axisNumber} domain={[Math.min(...xs), Math.max(...xs)]} /><YAxis type="number" dataKey="y" name="PC2" tickFormatter={axisNumber} width={70} domain={[Math.min(...ys), Math.max(...ys)]} /><Tooltip formatter={(value: number, name: string) => [displayCoordinate(value), name]} />{Array.from({ length: k }, (_, cluster) => <Scatter key={cluster} name={`Cluster ${cluster}`} data={projection.points.filter(point => point[method] === cluster)} fill={palette[cluster]} fillOpacity={.55} isAnimationActive={false} />)}<Scatter name="Projected centroids" data={centers} fill="#142d38" shape="diamond" isAnimationActive={false} /></ScatterChart></ResponsiveContainer></div>;
+};
+
 const metricTitles = { silhouette: "Silhouette Coefficient", davies_bouldin: "Davies-Bouldin Index", calinski_harabasz: "Calinski-Harabasz Index" };
 
-export const SimulationResults = ({ result, manualK = 2 }: { result: NonNullable<SimulationRunState["result"]>; manualK?: number }) => {
+export const SimulationResults = ({ result }: { result: NonNullable<SimulationRunState["result"]> }) => {
   const { existing, enhanced } = result.analysis;
+  const exploratory = result.metadata.configuration?.manualK != null;
   const selectedRun = existing.runs.find(run => run.seed === 0) ?? existing.runs[0];
   const iterations = existing.runs.map(run => run.iterations);
   const control = enhanced.dpc.randomControl;
@@ -74,7 +89,7 @@ export const SimulationResults = ({ result, manualK = 2 }: { result: NonNullable
       <div className="simulation-two-column">
         <section className="simulation-chart"><span className="simulation-result-badge">Standard K-Means</span><h3>Original Feature Representation</h3><p className="simulation-compact-note">{enhanced.retainedVariables.length} standardized input variables</p>
           <div className="simulation-variable-list">{enhanced.retainedVariables.map(variable => <span key={variable}>{variable}</span>)}</div>
-          <p className="simulation-unavailable">Correlation heatmap unavailable for this run.</p>
+          <CorrelationChart analysis={result.analysis} />
         </section>
         <section className="simulation-chart"><span className="simulation-result-badge">Enhanced K-Means</span><h3>Principal Component Analysis</h3><p className="simulation-compact-note">{enhanced.retainedVariables.length} variables → {enhanced.pcaComponents} PCs · Cumulative variance = {percent(enhanced.cumulativeExplainedVariance)}</p><PcaChart enhanced={enhanced} /></section>
         <section className="simulation-chart"><h3>PCA Summary</h3><dl className="simulation-detail-list">
@@ -85,12 +100,12 @@ export const SimulationResults = ({ result, manualK = 2 }: { result: NonNullable
     </section>
     <section className="simulation-surface simulation-results-section">
       <div className="simulation-section-heading"><h2 className="simulation-section-title">Cluster Number Selection</h2><p>How each method determines the number of clusters (k).</p></div>
-      {manualK !== 2 && <p className="simulation-preview-note">Exploratory configuration: manual k = {manualK}. Results retain the run's selected k; this preview does not override clustering.</p>}
+      {exploratory && <p className="simulation-preview-note">Exploratory Standard manual k = {existing.selectedK}. The canonical study baseline uses Silhouette selection over k = 2–10; this sample's Silhouette choice is {existing.silhouetteSelectedK}. Enhanced remains automatic.</p>}
       <div className="simulation-two-column">
-        <section className="simulation-chart"><span className="simulation-result-badge">Standard K-Means</span><h3>Silhouette-Based Selection</h3><dl className="simulation-detail-list"><div><dt>Selection method</dt><dd>Silhouette Coefficient</dd></div><div><dt>Candidate k</dt><dd>2–10</dd></div><div><dt>Selected k</dt><dd>{existing.selectedK}</dd></div></dl></section>
+        <section className="simulation-chart"><span className="simulation-result-badge">Standard K-Means</span><h3>Standard Cluster Selection</h3><dl className="simulation-detail-list"><div><dt>Selection method</dt><dd>{exploratory ? "Exploratory manual k" : "Silhouette Coefficient"}</dd></div><div><dt>Candidate k</dt><dd>2–10</dd></div><div><dt>Selected k</dt><dd>{existing.selectedK}</dd></div></dl></section>
         <section className="simulation-chart simulation-enhanced"><span className="simulation-result-badge">Enhanced K-Means</span><h3>NbClust Multi-Index</h3><dl className="simulation-detail-list"><div><dt>Usable indices</dt><dd>{usableIndices}</dd></div><div><dt>Selected k</dt><dd>{enhanced.selectedK}</dd></div><div><dt>Votes for k = {enhanced.selectedK}</dt><dd>{support ?? "Unavailable"} / {usableIndices}</dd></div></dl></section>
-        <section className="simulation-chart"><h3>Silhouette by k</h3><p className="simulation-unavailable">Candidate-k silhouette scores are unavailable for this run.</p></section>
-        <NbClustChart enhanced={enhanced} />
+        <section className="simulation-chart"><h3>Silhouette by k</h3>{existing.silhouetteByK ? <div className="simulation-chart-plot"><ResponsiveContainer width="100%" height="100%"><LineChart data={existing.silhouetteByK}><CartesianGrid strokeDasharray="3 3" /><XAxis dataKey="k" /><YAxis tickFormatter={axisNumber} width={56} /><Tooltip /><Line dataKey="silhouette" stroke="var(--simulation-teal)" isAnimationActive={false} /></LineChart></ResponsiveContainer></div> : <p className="simulation-unavailable">Candidate-k scores unavailable for this historical run.</p>}</section>
+        <section className="simulation-chart-stack"><NbClustChart enhanced={enhanced} /><details><summary>NbClust index results</summary><div className="simulation-table-container"><table className="simulation-comparison-table"><thead><tr><th>Index</th><th>Status</th><th>Recommended k</th></tr></thead><tbody>{enhanced.nbclust.indices.map(row => <tr key={row.index}><th>{row.index}</th><td>{row.status}</td><td>{row.recommendedK ?? "Unavailable"}</td></tr>)}</tbody></table></div></details></section>
       </div>
     </section>
     <section className="simulation-surface simulation-results-section">
@@ -98,19 +113,20 @@ export const SimulationResults = ({ result, manualK = 2 }: { result: NonNullable
       <div className="simulation-two-column">
         <section className="simulation-chart"><span className="simulation-result-badge">Standard K-Means</span><h3>Random Initialization</h3>
           <dl className="simulation-detail-list"><div><dt>Random-start runs</dt><dd>{existing.runs.length}</dd></div><div><dt>Iteration range</dt><dd>{Math.min(...iterations)}–{Math.max(...iterations)}</dd></div><div><dt>Initialization</dt><dd>Stochastic</dd></div></dl>
-          <p className="simulation-agreement">Solution agreement with DPC initialization: {control ? `${control.matchingRuns} of ${control.totalRandomRuns} random starts` : "Unavailable"}</p>
+          <details><summary>Standard random-start variability (seeds 0–29)</summary><div className="simulation-table-container"><table className="simulation-comparison-table"><thead><tr><th>Seed</th><th>Iterations</th><th>Converged before limit</th><th>Cluster sizes</th><th>Silhouette</th><th>Davies-Bouldin</th><th>Calinski-Harabasz</th></tr></thead><tbody>{existing.runs.map(run => <tr key={run.seed}><th>{run.seed}</th><td>{run.iterations}</td><td>{run.convergedBeforeMaxIter ? "Yes" : "No"}</td><td>{run.clusterSizes.join(", ")}</td><td>{format(run.metrics.silhouette)}</td><td>{format(run.metrics.davies_bouldin)}</td><td>{format(run.metrics.calinski_harabasz)}</td></tr>)}</tbody></table></div></details>
+          <p className="simulation-agreement">PCA-space random-start agreement with DPC solution: {control ? `${control.matchingRuns} of ${control.totalRandomRuns} random starts` : "Unavailable"}</p>
           {control && <><div className="simulation-distribution-track" role="img" aria-label={`${control.matchingRuns} of ${control.totalRandomRuns} random starts matched the DPC solution`}><div className="simulation-distribution-bar" style={{ width: `${100 * control.matchingRuns / control.totalRandomRuns}%` }} /></div>
-          <h3>Random-Start Metrics</h3><div className="simulation-table-container"><table className="simulation-comparison-table"><thead><tr><th>Metric</th><th>Mean</th><th>SD</th></tr></thead><tbody>{result.comparison.map(row => <tr key={row.metric}><th>{metricTitles[row.metric]}</th><td>{format(control.randomMean[row.metric])}</td><td>{format(control.randomSd[row.metric])}</td></tr>)}</tbody></table></div></>}
+          <p className="simulation-compact-note">Controlled random starts use Enhanced's PCA representation and automatic k. Agreement compares metrics and cluster sizes, not participant-level partition identity.</p><h3>PCA Control Random-Start Metrics</h3><div className="simulation-table-container"><table className="simulation-comparison-table"><thead><tr><th>Metric</th><th>Mean</th><th>SD</th></tr></thead><tbody>{result.comparison.map(row => <tr key={row.metric}><th>{metricTitles[row.metric]}</th><td>{format(control.randomMean[row.metric])}</td><td>{format(control.randomSd[row.metric])}</td></tr>)}</tbody></table></div></>}
         </section>
         <section className="simulation-chart simulation-enhanced"><span className="simulation-result-badge">Enhanced K-Means</span><h3>DPC Initialization</h3><dl className="simulation-detail-list"><div><dt>Initialization</dt><dd>Deterministic</dd></div><div><dt>Selected centers</dt><dd>{enhanced.dpc.centroidCount}</dd></div><div><dt>Method</dt><dd>Density-Peak</dd></div><div><dt>Same input → same initialization</dt><dd>{enhanced.dpc.determinismPassed ? "Verified" : "Not verified"}</dd></div></dl>
-          <p className="simulation-unavailable">Full DPC decision graph unavailable for this run.</p><h3>Selected Centers</h3><div className="simulation-table-container"><table className="simulation-comparison-table"><thead><tr><th>Center</th><th>ρ</th><th>δ</th><th>γ = ρ × δ</th></tr></thead><tbody>{enhanced.dpc.centers.map((center, index) => <tr key={index}><th>{index + 1}</th><td>{format(center.rho)}</td><td>{format(center.delta)}</td><td>{format(center.gamma)}</td></tr>)}</tbody></table></div>
+          <DecisionGraph enhanced={enhanced} /><h3>Selected Centers</h3><div className="simulation-table-container"><table className="simulation-comparison-table simulation-dpc-centers"><thead><tr><th>Center</th><th>ρ</th><th>δ</th><th>γ = ρ × δ</th><th>PCA coordinates</th></tr></thead><tbody>{enhanced.dpc.centers.map((center, index) => <tr key={index}><th>{index + 1}</th><td>{format(center.rho)}</td><td>{displayCoordinate(center.delta)}</td><td>{displayCoordinate(center.gamma)}</td><td>{center.coordinates?.map(displayCoordinate).join(", ") ?? "Unavailable"}</td></tr>)}</tbody></table></div>
         </section>
       </div>
     </section>
     <section className="simulation-surface simulation-results-section">
       <div className="simulation-section-heading"><h2 className="simulation-section-title">Standard vs Enhanced Comparison</h2><p>Internal validation and cluster distributions for the actual run: n = {existing.participantCount.toLocaleString("en-US")}.</p></div>
-      <section className="simulation-chart"><h3>Scatter Plot Comparison (PCA Space)</h3><div className="simulation-two-column">{(["Standard K-Means", "Enhanced K-Means"] as const).map((name, index) => <div key={name}><h4>{name}</h4><p className="simulation-unavailable">Participant and centroid projections unavailable for this run.</p><p className="simulation-compact-note">Initialization: {index ? "DPC (Deterministic)" : "Random"} · {index ? enhanced.iterations : selectedRun.iterations} iterations · Converged: {(index ? enhanced.convergedBeforeMaxIter : selectedRun.convergedBeforeMaxIter) ? "Yes" : "No"}{!index && " · Seed 0"}</p></div>)}</div><p className="simulation-compact-note">PC1 and PC2 are used only for 2D visualization.</p></section>
-      <section className="simulation-chart"><h3>Internal Validation</h3><div className="simulation-table-container"><table className="simulation-comparison-table"><thead><tr><th>Metric</th><th>Standard K-Means</th><th>Enhanced K-Means</th><th>Relative Change</th></tr></thead><tbody>{result.comparison.map(row => <tr key={row.metric}><th>{metricTitles[row.metric]}<br /><span>{row.direction === "lower_is_better" ? "Lower is better" : "Higher is better"}</span></th><td className={row.favorableMethod === "existing" ? "simulation-favorable" : undefined}>{format(row.existing)}</td><td className={row.favorableMethod === "enhanced" ? "simulation-favorable" : undefined}>{format(row.enhanced)}</td><td>Unavailable</td></tr>)}</tbody></table></div><p className="simulation-compact-note">Relative change is not supplied with this run.</p></section>
+      <section className="simulation-chart"><h3>Scatter Plot Comparison (PCA Space)</h3><div className="simulation-two-column">{(["Standard K-Means", "Enhanced K-Means"] as const).map((name, index) => <div key={name}><h4>{name}</h4><ProjectionChart analysis={result.analysis} method={index ? "enhanced" : "standard"} /><p className="simulation-compact-note">Initialization: {index ? "DPC (Deterministic)" : "Random"} · {index ? enhanced.iterations : selectedRun.iterations} iterations · Converged: {(index ? enhanced.convergedBeforeMaxIter : selectedRun.convergedBeforeMaxIter) ? "Yes" : "No"}{!index && " · Seed 0"}</p></div>)}</div><p className="simulation-compact-note">PC1 and PC2 are used only for 2D visualization. Both plots share coordinates and axes; diamonds mark projected cluster means. Cluster numbers are method-specific.</p></section>
+      <section className="simulation-chart"><h3>{exploratory ? "Internal Validation (Exploratory Override)" : "Internal Validation"}</h3>{exploratory && <p className="simulation-preview-note">These relative changes compare an exploratory Standard k override with automatic Enhanced clustering. They are not the canonical enhancement comparison.</p>}<div className="simulation-table-container"><table className="simulation-comparison-table"><thead><tr><th>Metric</th><th>Standard K-Means</th><th>Enhanced K-Means</th><th>{exploratory ? "Relative Change (Exploratory)" : "Relative Change"}</th></tr></thead><tbody>{result.comparison.map(row => <tr key={row.metric}><th>{metricTitles[row.metric]}<br /><span>{row.direction === "lower_is_better" ? "Lower is better" : "Higher is better"}</span></th><td className={row.favorableMethod === "existing" ? "simulation-favorable" : undefined}>{format(row.existing)}</td><td className={row.favorableMethod === "enhanced" ? "simulation-favorable" : undefined}>{format(row.enhanced)}</td><td>{row.relativeImprovementPercent == null ? "Undefined (zero baseline) or unavailable" : `${format(row.relativeImprovementPercent)}%`}</td></tr>)}</tbody></table></div><p className="simulation-compact-note">Direction-aware relative metric change, not statistical significance. Standard metrics are the mean of 30 runs; the scatter and distribution show seed 0.</p></section>
       <section className="simulation-chart"><h3>Cluster Distribution</h3><div className="simulation-two-column"><ClusterDistribution title="Standard K-Means · Seed 0" sizes={selectedRun.clusterSizes} participants={existing.participantCount} /><ClusterDistribution title="Enhanced K-Means" sizes={enhanced.clusterSizes} participants={enhanced.participantCount} /></div></section>
     </section>
   </>;
@@ -119,8 +135,9 @@ export const SimulationResults = ({ result, manualK = 2 }: { result: NonNullable
 export const SimulationRunsPage = () => {
   const simulation = 1;
   const [sampleMode, setSampleMode] = useState<"full" | "custom">("full");
-  const [sampleCount, setSampleCount] = useState(1949);
+  const [sampleCount, setSampleCount] = useState(100);
   const [manualK, setManualK] = useState(2);
+  const [overrideK, setOverrideK] = useState(false);
   const { metadata, loading, error, retry } = useSimulationMetadata();
   const selected = metadata?.simulations.find((entry) => entry.simulationId === simulation);
   const { capabilities } = useSimulationCapabilities();
@@ -130,15 +147,26 @@ export const SimulationRunsPage = () => {
   const [stage, setStage] = useState<number | null>(null);
   const [hasCompleted, setHasCompleted] = useState(false);
   const postAllowedAt = useRef(0);
+  const configuration = { sampleMode, sampleCount: sampleMode === "full" ? 2437 : sampleCount, manualK: overrideK ? manualK : null };
+  const configurationKey = simulationConfigurationKey(configuration);
+  const [requestedKey, setRequestedKey] = useState<string | null>(null);
+  useEffect(() => {
+    setAttempt(0); setRunState(null); setStage(null); setRunError(null);
+  }, [configurationKey]);
   useEffect(() => {
     // Metadata (including a cached analysisStatus) never starts execution or
     // reveals results. Only the action button creates an attempt.
-    if (attempt === 0) return;
+    if (attempt === 0 || requestedKey !== configurationKey) return;
     const controller = new AbortController();
     let timer: ReturnType<typeof setTimeout>;
     const execute = async (method: "POST" | "GET", allowStart = false) => {
       try {
-        const response = await fetch(`${API_BASE_URL}/api/simulations/${simulation}/run`, { method, signal: controller.signal });
+        const query = new URLSearchParams({ sampleMode, sampleCount: String(configuration.sampleCount) });
+        if (configuration.manualK !== null) query.set("manualK", String(configuration.manualK));
+        const response = await fetch(`${API_BASE_URL}/api/simulations/${simulation}/run${method === "GET" ? `?${query}` : ""}`, {
+          method, signal: controller.signal,
+          ...(method === "POST" ? { headers: { "Content-Type": "application/json" }, body: JSON.stringify(configuration) } : {})
+        });
         if (controller.signal.aborted) return;
         if (response.status === 429) {
           const retryAfter = response.headers.get("Retry-After");
@@ -150,7 +178,7 @@ export const SimulationRunsPage = () => {
         }
         if (!response.ok) throw new Error(`Unable to ${method === "GET" ? "check simulation status" : "request simulation execution"} (HTTP ${response.status}). Retry checks status first.`);
         const state = SimulationRunStateSchema.parse(await response.json());
-        if (state.simulationId !== simulation) throw new Error();
+        if (state.simulationId !== simulation || state.configurationKey !== configurationKey) throw new Error();
         if (!controller.signal.aborted) {
           if (allowStart && (state.status === "sample_ready" || state.status === "failed")) {
             if (postAllowedAt.current > Date.now()) {
@@ -170,9 +198,9 @@ export const SimulationRunsPage = () => {
     // Only the initial status check may start work; polling never restarts it.
     void execute("GET", true);
     return () => { controller.abort(); clearTimeout(timer); };
-  }, [simulation, attempt]);
+  }, [simulation, attempt, configurationKey, requestedKey]);
 
-  const active = attempt > 0 && runState?.simulationId === simulation ? runState : null;
+  const active = attempt > 0 && requestedKey === configurationKey && runState?.configurationKey === configurationKey && runState?.simulationId === simulation ? runState : null;
   const interrupted = !!runError || active?.status === "failed";
   useEffect(() => {
     if (stage === null || stage === 4 || interrupted) return;
@@ -192,6 +220,7 @@ export const SimulationRunsPage = () => {
     if (running) return;
     setRunError(null);
     setRunState(null);
+    setRequestedKey(configurationKey);
     setStage(0);
     setAttempt(value => value + 1);
   };
@@ -206,13 +235,13 @@ export const SimulationRunsPage = () => {
       <fieldset disabled={running} className="simulation-config-fields">
         <section className="simulation-chart"><h3 className="simulation-eyebrow">Participant Configuration</h3><div className="simulation-participant-layout">
           <div className="simulation-available"><span>Available participants</span><strong>2,437</strong><small>ADNI study-entry participants</small></div>
-          <div className="simulation-sample-controls"><div className="simulation-sample-heading"><h4>Participant Sample Size</h4><div role="group" aria-label="Participant sample mode" className="simulation-mode-buttons"><button type="button" aria-pressed={sampleMode === "full"} className={`simulation-choice ${sampleMode === "full" ? "is-selected" : ""}`} onClick={() => setSampleMode("full")}>Full Dataset</button><button type="button" aria-pressed={sampleMode === "custom"} className={`simulation-choice ${sampleMode === "custom" ? "is-selected" : ""}`} onClick={() => setSampleMode("custom")}>Custom Sample</button></div></div>
-          {sampleMode === "custom" ? <><div className="simulation-slider-label"><label htmlFor="simulation-sample-count">Drag to select</label><output htmlFor="simulation-sample-count">{sampleCount.toLocaleString("en-US")}</output></div><input id="simulation-sample-count" type="range" min={100} max={2437} value={sampleCount} onChange={event => setSampleCount(Number(event.target.value))} /><div className="simulation-slider-label"><span>100</span><span>2,437</span></div><p>Preview: {sampleCount.toLocaleString("en-US")} of 2,437 participants.</p></> : <p>Full dataset preview: all <strong>2,437</strong> participants.</p>}
+          <div className="simulation-sample-controls"><div className="simulation-sample-heading"><h4>Participant Sample Size</h4><div role="group" aria-label="Participant sample mode" className="simulation-mode-buttons"><button type="button" aria-pressed={sampleMode === "full"} className={`simulation-choice ${sampleMode === "full" ? "is-selected" : ""}`} onClick={() => setSampleMode("full")}>Full Dataset</button><button type="button" aria-pressed={sampleMode === "custom"} className={`simulation-choice ${sampleMode === "custom" ? "is-selected" : ""}`} onClick={() => { if (sampleMode === "full") setSampleCount(100); setSampleMode("custom"); }}>Custom Sample</button></div></div>
+          {sampleMode === "custom" ? <><div className="simulation-slider-label"><label htmlFor="simulation-sample-count">Drag to select</label><output htmlFor="simulation-sample-count">{sampleCount.toLocaleString("en-US")}</output></div><input id="simulation-sample-count" type="range" min={100} max={2437} value={sampleCount} onChange={event => setSampleCount(Number(event.target.value))} /><div className="simulation-slider-label"><span>100</span><span>2,437</span></div><p>Selected: {sampleCount.toLocaleString("en-US")} of 2,437 participants.</p></> : <p>Full dataset: all <strong>2,437</strong> participants.</p>}
           </div></div>
-          <p className="simulation-preview-note">Participant controls are a configuration preview. Run Simulation uses the existing {selected ? selected.sampleSize.toLocaleString("en-US") : "—"}-participant sample; changing this preview does not change the run.</p>
+          <p className="simulation-compact-note">Deterministic sampling without replacement. Both methods receive exactly the same participants; rerunning the same configuration reuses its verified result.</p>
         </section>
         <div className="simulation-two-column">
-          <section className="simulation-chart"><h3 className="simulation-eyebrow">Standard K-Means</h3><p className="simulation-compact-note">Cluster selection</p><h4>Silhouette Coefficient</h4><p className="simulation-compact-note">Candidate k: 2–10 · Study baseline: k = 2</p><div className="simulation-manual-control"><label id="manual-k-label">Manual k (Exploratory)</label><div role="group" aria-labelledby="manual-k-label"><button type="button" aria-label="Decrease manual k" disabled={running || manualK <= 2} onClick={() => setManualK(value => value - 1)}><Minus size={14} /></button><output aria-live="polite">{manualK}</output><button type="button" aria-label="Increase manual k" disabled={running || manualK >= 10} onClick={() => setManualK(value => value + 1)}><Plus size={14} /></button></div><p className="simulation-compact-note">Manual k affects exploratory display/configuration only.</p></div></section>
+          <section className="simulation-chart"><h3 className="simulation-eyebrow">Standard K-Means</h3><p className="simulation-compact-note">Cluster selection</p><h4>Silhouette Coefficient</h4><p className="simulation-compact-note">Automatic: highest Silhouette over k = 2–10</p><div className="simulation-manual-control"><label><input type="checkbox" checked={overrideK} onChange={event => setOverrideK(event.target.checked)} /> Override k for exploration</label>{overrideK && <div className="simulation-manual-fields"><label id="manual-k-label">Manual k (Exploratory)</label><div role="group" aria-labelledby="manual-k-label"><button type="button" aria-label="Decrease manual k" disabled={running || manualK <= 2} onClick={() => setManualK(value => value - 1)}><Minus size={14} /></button><output aria-live="polite">{manualK}</output><button type="button" aria-label="Increase manual k" disabled={running || manualK >= 10} onClick={() => setManualK(value => value + 1)}><Plus size={14} /></button></div><p className="simulation-compact-note">Manual k applies to the Standard runtime only. Enhanced uses NbClust automatically.</p></div>}</div></section>
           <section className="simulation-chart"><h3 className="simulation-eyebrow">Enhanced K-Means</h3><p className="simulation-compact-note">Cluster selection</p><h4>NbClust</h4><p className="simulation-compact-note">Multi-index consensus</p><dl className="simulation-detail-list"><div><dt>Mode</dt><dd>Automatic</dd></div><div><dt>Candidate k</dt><dd>2–10</dd></div><div><dt>Initialization</dt><dd>DPC (Deterministic)</dd></div></dl></section>
         </div>
       </fieldset>
@@ -225,11 +254,11 @@ export const SimulationRunsPage = () => {
         <p role="status">{loading ? "Loading sample metadata…" : error ? "Sample metadata unavailable." :
           selected?.sampleStatus === "sample_ready" ? "Sample ready" : "Sample metadata unavailable."}</p>
         {error && <div className="mt-2" role="alert">{error} <button type="button" className="underline" onClick={retry}>Retry</button></div>}
-        {stage !== null && <div id="simulation-analysis-status" className="mt-2" role="status">{result ? <><p>Paired analysis complete</p><p>Both methods used the same participant sample.</p></> : runError ? (runError.includes("HTTP 429") ? "Simulation request throttled." : "Unable to confirm simulation status.") : active?.status === "failed" ? "Paired analysis did not complete." : progressStages[stage]}</div>}
+        {stage !== null && <div id="simulation-analysis-status" className="mt-2" role="status">{result ? <><p>Paired analysis complete</p><p>Both methods used the same participant sample.</p><p className="simulation-compact-note">Sampling seed: {result.metadata.seed}. Sample fingerprint: {result.metadata.sampleFingerprint}</p></> : runError ? (runError.includes("HTTP 429") ? "Simulation request throttled." : "Unable to confirm simulation status.") : active?.status === "failed" ? "Paired analysis did not complete." : progressStages[stage]}</div>}
         {(runError || active?.status === "failed") && <p role="alert">{runError ?? active?.message ?? "Simulation analysis failed."} <button type="button" className="underline" onClick={start}>Retry</button></p>}
       </div>
     </section>
     {stage !== null && <section className="simulation-surface simulation-results-section" aria-label="Simulation Progress"><div className="simulation-section-heading"><h2 className="simulation-section-title">Simulation Progress</h2><p>Both methods use the same participant sample.</p>{result && <span className="simulation-result-badge">Simulation completed successfully</span>}</div><SimulationProgress stage={stage} interrupted={interrupted} /></section>}
-    {result && <SimulationResults result={result} manualK={manualK} />}
+    {result && <SimulationResults result={result} />}
   </div>;
 };

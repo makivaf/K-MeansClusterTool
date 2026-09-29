@@ -1,5 +1,3 @@
-/** Resolve short export names to the original filenames required by the pipeline. */
+/** Canonical runtime filenames are short; retain legacy upload aliases for compatibility. */
 export const canonicalUploadFilename = (filename: string): string =>
-  /^(ADAS|CDR|FAQ|GDSCALE|MMSE|NEUROBAT|NPIQ)\.csv$/.test(filename)
-    ? `All_Subjects_${filename.slice(0, -4)}_10Aug2026.csv`
-    : filename;
+  filename.replace(/^All_Subjects_(ADAS|CDR|FAQ|GDSCALE|MMSE|NEUROBAT|NPIQ)_(?:10Aug2026|Aug102026)\.csv$/, "$1.csv");

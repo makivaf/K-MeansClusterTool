@@ -19,13 +19,13 @@ RAW = ROOT / "data" / "raw" / "adni"
 OUT = ROOT / "data" / "interim"
 
 FILES = {
-    "ADAS": "All_Subjects_ADAS_10Aug2026.csv",
-    "CDR": "All_Subjects_CDR_10Aug2026.csv",
-    "FAQ": "All_Subjects_FAQ_10Aug2026.csv",
-    "MMSE": "All_Subjects_MMSE_10Aug2026.csv",
-    "NEUROBAT": "All_Subjects_NEUROBAT_10Aug2026.csv",
-    "NPIQ": "All_Subjects_NPIQ_10Aug2026.csv",
-    "GDSCALE": "All_Subjects_GDSCALE_10Aug2026.csv",
+    "ADAS": "ADAS.csv",
+    "CDR": "CDR.csv",
+    "FAQ": "FAQ.csv",
+    "MMSE": "MMSE.csv",
+    "NEUROBAT": "NEUROBAT.csv",
+    "NPIQ": "NPIQ.csv",
+    "GDSCALE": "GDSCALE.csv",
 }
 
 URL_CLINICAL = "https://adni.loni.usc.edu/quick-start-guide-asset101625/clinical.html"

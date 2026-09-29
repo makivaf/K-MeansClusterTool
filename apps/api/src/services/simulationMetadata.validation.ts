@@ -97,9 +97,8 @@ for (const state of [
   { metadata: payload, loading: false, error: null },
   { metadata: null, loading: false, error: "Unable to load simulation sample metadata." }
 ]) {
-  let stateIndex = 0;
   const page = compile("../../../web/src/pages/SimulationRunsPage.tsx", {
-    react: { ...React, useState: (initial: unknown) => [stateIndex++ === 0 ? 3 : initial, () => {}], useEffect: () => {} },
+    react: { ...React, useState: (initial: unknown) => [initial, () => {}], useEffect: () => {} },
     "../hooks/useSimulationCapabilities": { useSimulationCapabilities: () => ({ capabilities: null }) },
     "../config/api": { API_BASE_URL: "http://local.test" },
     "../../../../packages/shared/src/simulation": contract,
@@ -109,10 +108,13 @@ for (const state of [
   assert.match(html, /disabled=""[^>]*class="simulation-run-button"/);
   assert.match(html, /Run Simulation/);
   assert.doesNotMatch(html, /simulation-analysis-status|simulation-stepper|Paired analysis complete/);
-  assert.equal((html.match(/class="simulation-choice /g) ?? []).length, 5);
-  assert.match(html, /aria-pressed="true" aria-label="Simulation 3"/);
-  assert.ok(!/Silhouette|Davies|Calinski|Cluster Distribution|Cumulative Explained|Iterations/.test(html));
-  if (state.metadata) { assert.match(html, /1,949/); assert.match(html, /80% stratified participant subsample/); assert.match(html, /Sample ready/); }
+  assert.equal((html.match(/class="simulation-choice /g) ?? []).length, 2);
+  assert.match(html, /Full Dataset/);
+  assert.match(html, /Custom Sample/);
+  assert.match(html, /Override k for exploration/);
+  assert.doesNotMatch(html, /Increase manual k/);
+  assert.ok(!/Davies|Calinski|Cluster Distribution|Cumulative Explained|Iterations|Feature Representation/.test(html));
+  if (state.metadata) { assert.match(html, /2,437/); assert.doesNotMatch(html, /configuration preview/); assert.match(html, /Sample ready/); }
   else { assert.ok(!html.includes("1,949")); assert.match(html, state.loading ? /Loading sample metadata/ : /Retry/); }
 }
 console.log("PASS aggregate metadata API, strict privacy contract, safe 503, unavailable execution disabled, hook loading/retry/abort, and Simulation Runs rendering.");

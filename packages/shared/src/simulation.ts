@@ -7,16 +7,29 @@ export const SimulationCapabilitiesSchema = z.object({
 }).strict();
 export type SimulationCapabilities = z.infer<typeof SimulationCapabilitiesSchema>;
 
+export const SimulationConfigurationSchema = z.object({
+  sampleMode: z.enum(["full", "custom"]),
+  sampleCount: z.number().int().min(100).max(2437),
+  manualK: z.number().int().min(2).max(10).nullable().default(null)
+}).strict().refine(value => value.sampleMode !== "full" || value.sampleCount === 2437,
+  "Full dataset requires all 2,437 participants.");
+export type SimulationConfiguration = z.infer<typeof SimulationConfigurationSchema>;
+export const simulationConfigurationKey = (value: SimulationConfiguration) =>
+  `${value.sampleMode}:${value.sampleCount}:${value.manualK ?? "auto"}`;
+
 export const simulationIds = [1, 2, 3, 4, 5] as const;
 export const SimulationMetadataSchema = z.object({
   simulationId: z.number().int().min(1).max(5),
   sampleSize: z.number().int().positive(),
-  samplingFraction: z.literal(0.8),
+  samplingFraction: z.number().positive().max(1),
   samplingMethod: z.literal("deterministic stratified random sampling by ENTRY_PHASE"),
   phaseSampleCounts: z.object({
     ADNI1: z.number().int().nonnegative(), ADNIGO: z.number().int().nonnegative(),
     ADNI2: z.number().int().nonnegative(), ADNI3: z.number().int().nonnegative()
   }).strict(),
+  seed: z.number().int().optional(),
+  sampleFingerprint: z.string().regex(/^[a-f0-9]{64}$/).optional(),
+  configuration: SimulationConfigurationSchema.optional(),
   sampleStatus: z.literal("sample_ready"),
   analysisStatus: z.enum(["analysis_unavailable", "sample_ready", "running", "complete", "failed"])
 }).strict().refine((value) => Object.values(value.phaseSampleCounts).reduce((sum, count) => sum + count, 0) === value.sampleSize,
@@ -35,13 +48,15 @@ export const SimulationDpcControlSchema = z.object({
   randomMean: SimulationMetricsSchema,
   randomSd: SimulationMetricsSchema.refine(value => Object.values(value).every(sd => sd >= 0))
 }).strict();
-const sizes = z.array(z.number().int().positive()).min(2).max(10).refine(values => values.reduce((a, b) => a + b, 0) === 1949);
+const sizes = z.array(z.number().int().positive()).min(2).max(10);
 const run = z.object({ seed: count, iterations: z.number().int().positive(), convergedBeforeMaxIter: z.boolean(), clusterSizes: sizes, metrics: SimulationMetricsSchema }).strict();
 export const SimulationAnalysisSchema = z.object({
-  existing: z.object({ participantCount: z.literal(1949), selectedK: z.number().int().min(2).max(10), initialization: z.literal("random"), metrics: SimulationMetricsSchema,
+  existing: z.object({ participantCount: z.number().int().min(100).max(2437), selectedK: z.number().int().min(2).max(10), initialization: z.literal("random"), metrics: SimulationMetricsSchema,
+    silhouetteSelectedK: z.number().int().min(2).max(10).optional(),
+    silhouetteByK: z.array(z.object({ k: z.number().int().min(2).max(10), silhouette: finite }).strict()).length(9).optional(),
     runs: z.array(run).length(30).refine(values => values.every((value, index) => value.seed === index))
-  }).strict().refine(value => value.runs.every(run => run.clusterSizes.length === value.selectedK)),
-  enhanced: z.object({ participantCount: z.literal(1949), selectedK: z.number().int().min(2).max(10), initialization: z.literal("DPC"),
+  }).strict().refine(value => value.runs.every(run => run.clusterSizes.length === value.selectedK && run.clusterSizes.reduce((a, b) => a + b, 0) === value.participantCount)),
+  enhanced: z.object({ participantCount: z.number().int().min(100).max(2437), selectedK: z.number().int().min(2).max(10), initialization: z.literal("DPC"),
     iterations: z.number().int().positive(), convergedBeforeMaxIter: z.boolean(), clusterSizes: sizes, metrics: SimulationMetricsSchema,
     retainedVariables: z.array(z.string()).length(13), excludedVariables: z.array(z.string()),
     pcaComponents: z.number().int().min(1).max(13), cumulativeExplainedVariance: finite.min(0.85).max(1.000000000001),
@@ -50,22 +65,55 @@ export const SimulationAnalysisSchema = z.object({
       indices: z.array(z.object({ index: z.string(), status: z.string(), recommendedK: count.nullable() }).strict()),
       tieOccurred: z.boolean(), reproducible: z.literal(true) }).strict(),
     dpc: z.object({ cutoffPercentile: finite, distanceCutoff: finite, centroidCount: count, dimensions: count, pairwiseDistanceCount: count,
-      determinismPassed: z.literal(true), centers: z.array(z.object({ rho: count, delta: finite, gamma: finite }).strict()),
+      determinismPassed: z.literal(true), centers: z.array(z.object({ rho: count, delta: finite, gamma: finite, coordinates: z.array(finite).optional() }).strict()),
+      decisionGraph: z.array(z.object({ rho: count, delta: finite, gamma: finite, selected: z.boolean() }).strict()).optional(),
       randomControl: SimulationDpcControlSchema.optional() }).strict()
-  }).strict().refine(value => value.clusterSizes.length === value.selectedK && value.dpc.centroidCount === value.selectedK && value.dpc.centers.length === value.selectedK && value.dpc.dimensions === value.pcaComponents)
-}).strict();
+  }).strict().refine(value => value.clusterSizes.reduce((a, b) => a + b, 0) === value.participantCount && value.clusterSizes.length === value.selectedK && value.dpc.centroidCount === value.selectedK && value.dpc.centers.length === value.selectedK && value.dpc.dimensions === value.pcaComponents),
+  correlation: z.array(z.array(finite.nullable()).length(13)).length(13).optional(),
+  projection: z.object({
+    standardSeed: z.literal(0),
+    points: z.array(z.object({ x: finite, y: finite, standard: count.max(9), enhanced: count.max(9) }).strict()),
+    standardCentroids: z.array(z.object({ x: finite, y: finite, cluster: count }).strict()),
+    enhancedCentroids: z.array(z.object({ x: finite, y: finite, cluster: count }).strict())
+  }).strict().optional()
+}).strict().superRefine((value, ctx) => {
+  const n = value.existing.participantCount;
+  const fail = () => ctx.addIssue({ code: z.ZodIssueCode.custom, message: "Paired output dimensions or assignments differ." });
+  if (value.enhanced.participantCount !== n) fail();
+  if (value.enhanced.dpc.decisionGraph && value.enhanced.dpc.decisionGraph.length !== n) fail();
+  if (value.enhanced.dpc.centers.some(center => center.coordinates && center.coordinates.length !== value.enhanced.pcaComponents)) fail();
+  if (value.existing.silhouetteByK && !value.existing.silhouetteByK.every((row, i) => row.k === i + 2)) fail();
+  const projection = value.projection;
+  if (projection) {
+    if (projection.points.length !== n) fail();
+    for (const [method, clusterSizes, k, centroids] of [
+      ["standard", value.existing.runs[0].clusterSizes, value.existing.selectedK, projection.standardCentroids],
+      ["enhanced", value.enhanced.clusterSizes, value.enhanced.selectedK, projection.enhancedCentroids]
+    ] as const) {
+      if (centroids.length !== k || projection.points.some(point => point[method] >= k)) fail();
+      clusterSizes.forEach((size, cluster) => { if (projection.points.filter(point => point[method] === cluster).length !== size) fail(); });
+    }
+  }
+});
 export type SimulationAnalysis = z.infer<typeof SimulationAnalysisSchema>;
 export const SimulationResultSchema = z.object({
   metadata: SimulationMetadataSchema, analysis: SimulationAnalysisSchema,
   comparison: z.array(z.object({ metric: z.enum(["silhouette", "davies_bouldin", "calinski_harabasz"]),
     direction: z.enum(["higher_is_better", "lower_is_better"]), existing: finite, enhanced: finite,
-    difference: finite, favorableMethod: z.enum(["existing", "enhanced", "equal"]) }).strict()).length(3),
+    difference: finite, relativeImprovementPercent: finite.nullable().optional(), favorableMethod: z.enum(["existing", "enhanced", "equal"]) }).strict()).length(3),
   enhancedFavorableMetrics: z.number().int().min(0).max(3), sameParticipantsVerified: z.literal(true)
-}).strict();
+}).strict().refine(value => value.metadata.sampleSize === value.analysis.existing.participantCount &&
+  (!value.metadata.configuration || (value.metadata.configuration.sampleCount === value.metadata.sampleSize &&
+    (value.metadata.configuration.manualK ?? value.analysis.existing.silhouetteSelectedK) === value.analysis.existing.selectedK &&
+    !!value.analysis.projection && !!value.analysis.correlation && !!value.analysis.existing.silhouetteByK &&
+    !!value.analysis.enhanced.dpc.decisionGraph && !!value.analysis.enhanced.dpc.randomControl &&
+    value.comparison.every(row => row.relativeImprovementPercent !== undefined))));
 export const SimulationRunStateSchema = z.object({
+  configurationKey: z.string().optional(),
   simulationId: z.number().int().min(1).max(5), status: z.enum(["sample_ready", "running", "complete", "failed"]),
   result: SimulationResultSchema.nullable(), message: z.string().nullable()
 }).strict().refine(value => (value.status === "complete") === (value.result !== null)
-  && (!value.result || value.result.metadata.simulationId === value.simulationId), "Completed results must match their simulation.");
+  && (!value.result || (value.result.metadata.simulationId === value.simulationId &&
+    value.configurationKey === (value.result.metadata.configuration ? simulationConfigurationKey(value.result.metadata.configuration) : undefined))), "Completed results must match their simulation and configuration.");
 export type SimulationRunState = z.infer<typeof SimulationRunStateSchema>;
 

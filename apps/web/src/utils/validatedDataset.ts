@@ -1,13 +1,13 @@
 import { UploadResponseSchema, type UploadResponse } from "../../../../packages/shared/src/schema";
 
 export const DATASETS = [
-  ["ADAS", "All_Subjects_ADAS_10Aug2026.csv"],
-  ["CDR", "All_Subjects_CDR_10Aug2026.csv"],
-  ["FAQ", "All_Subjects_FAQ_10Aug2026.csv"],
-  ["MMSE", "All_Subjects_MMSE_10Aug2026.csv"],
-  ["NEUROBAT", "All_Subjects_NEUROBAT_10Aug2026.csv"],
-  ["NPI-Q", "All_Subjects_NPIQ_10Aug2026.csv"],
-  ["GDS", "All_Subjects_GDSCALE_10Aug2026.csv"]
+  ["ADAS", "ADAS.csv"],
+  ["CDR", "CDR.csv"],
+  ["FAQ", "FAQ.csv"],
+  ["MMSE", "MMSE.csv"],
+  ["NEUROBAT", "NEUROBAT.csv"],
+  ["NPI-Q", "NPIQ.csv"],
+  ["GDS", "GDSCALE.csv"]
 ] as const;
 
 const DATASET_KEY = "ad-clustering.validated-dataset";

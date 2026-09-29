@@ -24,7 +24,7 @@ def main():
     request = json.loads((workspace / 'request.json').read_text())
     analysis = json.loads((workspace / 'result.json').read_text())['enhanced']
     ids = request['sampleParticipantIds']
-    if request.get('isolatedSimulation') is not True or len(ids) != 1949 or len(set(ids)) != 1949:
+    if request.get('isolatedSimulation') is not True or not 100 <= len(ids) <= 2437 or len(set(ids)) != len(ids):
         raise AssertionError('Invalid simulation sample')
     components, k = analysis['pcaComponents'], analysis['selectedK']
     with (workspace / 'data/interim/clustering_pca_scores.csv').open(newline='', encoding='utf-8-sig') as handle:
@@ -36,7 +36,7 @@ def main():
     if [row['RID'] for row in rows] != ids or analysis['participantCount'] != len(ids):
         raise AssertionError('Saved PCA membership differs from simulation')
     matrix = np.asarray([[float(row[key]) for key in features] for row in rows])
-    if matrix.shape != (1949, components) or not np.isfinite(matrix).all():
+    if matrix.shape != (len(ids), components) or not np.isfinite(matrix).all():
         raise AssertionError('Invalid saved PCA matrix')
     if k != analysis['dpc']['centroidCount'] or components != analysis['dpc']['dimensions']:
         raise AssertionError('DPC settings differ from saved PCA/k')

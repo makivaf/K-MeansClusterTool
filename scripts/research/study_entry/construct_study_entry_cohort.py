@@ -22,13 +22,13 @@ RAW_DIR = ROOT / "data" / "raw" / "adni"
 INTERIM_DIR = ROOT / "data" / "interim"
 
 FILES = {
-    "ADAS": "All_Subjects_ADAS_10Aug2026.csv",
-    "CDR": "All_Subjects_CDR_10Aug2026.csv",
-    "FAQ": "All_Subjects_FAQ_10Aug2026.csv",
-    "MMSE": "All_Subjects_MMSE_10Aug2026.csv",
-    "NEUROBAT": "All_Subjects_NEUROBAT_10Aug2026.csv",
-    "NPIQ": "All_Subjects_NPIQ_10Aug2026.csv",
-    "GDSCALE": "All_Subjects_GDSCALE_10Aug2026.csv",
+    "ADAS": "ADAS.csv",
+    "CDR": "CDR.csv",
+    "FAQ": "FAQ.csv",
+    "MMSE": "MMSE.csv",
+    "NEUROBAT": "NEUROBAT.csv",
+    "NPIQ": "NPIQ.csv",
+    "GDSCALE": "GDSCALE.csv",
 }
 
 BASELINE_CLASSES = {"literal_or_translated_baseline", "phase_specific_baseline"}

@@ -18,6 +18,34 @@ import { readCsvRecords } from "./artifactReaders";
 import { sha256 } from "./simulationCohort";
 
 const read = (file: string) => JSON.parse(fs.readFileSync(file, "utf8"));
+// Lightweight schema checks require no saved artifacts or control fits.
+for (const participantCount of [100, 101, 2436, 2437]) {
+  const metrics = { silhouette: 0.5, davies_bouldin: 1, calinski_harabasz: 10 };
+  const evaluation = { sampleFingerprint: "test-only", participantCount, pcaComponents: 2, selectedK: 2,
+    settings: { nInit: 1, maxIter: 300, tolerance: 1e-4, algorithm: "lloyd" },
+    randomMean: metrics, randomSd: metrics,
+    runs: Array.from({ length: 30 }, (_, seed) => ({ seed, metrics, clusterSizes: [1, participantCount - 1] })) };
+  assert.ok(DpcControlEvaluationSchema.safeParse(evaluation).success);
+  for (const invalidCount of [99, 2438, 100.5, NaN, Infinity]) {
+    assert.equal(DpcControlEvaluationSchema.safeParse({ ...evaluation, participantCount: invalidCount,
+      runs: evaluation.runs.map(run => ({ ...run, clusterSizes: [1, invalidCount - 1] })) }).success, false);
+  }
+  for (const invalid of [
+    { ...evaluation, participantCount: participantCount === 100 ? 101 : 100 },
+    { ...evaluation, runs: evaluation.runs.slice(1) },
+    { ...evaluation, runs: evaluation.runs.map(run => ({ ...run, seed: 0 })) },
+    { ...evaluation, runs: evaluation.runs.map(run => ({ ...run, clusterSizes: [1, participantCount] })) },
+    { ...evaluation, runs: evaluation.runs.map(run => ({ ...run, clusterSizes: [0, participantCount] })) },
+    { ...evaluation, selectedK: 3 },
+    { ...evaluation, settings: { ...evaluation.settings, maxIter: 301 } },
+    { ...evaluation, RID: "private" },
+    { ...evaluation, randomMean: { ...metrics, silhouette: NaN } }
+  ]) assert.equal(DpcControlEvaluationSchema.safeParse(invalid).success, false);
+}
+console.log("PASS dynamic DPC control contract: 100–2437, per-evaluation totals, seeds, k, settings, finite metrics and strict fields.");
+
+// Explicit contract-only mode leaves all saved-artifact integrity checks intact.
+if (!process.argv.includes("--contract-only")) {
 const cachePath = path.join(simulationRunRoot, "1.json");
 const state = SimulationRunStateSchema.parse(read(cachePath).state);
 assert.ok(state.result?.analysis.enhanced.dpc.randomControl, "Evaluate Simulation 1 explicitly before this test");
@@ -30,7 +58,7 @@ const extended = structuredClone(state.result.analysis);
 delete extended.enhanced.dpc.randomControl;
 assert.deepEqual(extended, original, "DPC, baseline and all original analysis fields stay identical");
 assert.deepEqual(proof.seeds, Array.from({ length: 30 }, (_, i) => i));
-assert.equal(proof.participantCount, 1949);
+assert.equal(proof.participantCount, original.enhanced.participantCount);
 assert.equal(proof.selectedK, original.enhanced.selectedK);
 assert.equal(proof.pcaComponents, original.enhanced.pcaComponents);
 assert.equal(proof.binding.analysisSha256, sha256(fs.readFileSync(path.join(workspace, "result.json"))));
@@ -51,14 +79,14 @@ const oldMatches = sop3.randomRuns.filter(run => metricKeys.every(key => Math.ab
 assert.equal(countDpcMatches(sop3), oldMatches, "Shared match helper preserves Study Findings output");
 
 // Contract rejects missing/duplicate seeds, wrong membership size, and leaked IDs.
-const evaluation = { sampleFingerprint: proof.binding.sampleFingerprint, participantCount: 1949,
+const evaluation = { sampleFingerprint: proof.binding.sampleFingerprint, participantCount: proof.participantCount,
   pcaComponents: proof.pcaComponents, selectedK: proof.selectedK, settings: proof.settings,
   randomMean: summary.randomMean, randomSd: summary.randomSd,
   runs: proof.seeds.map((seed: number) => ({ seed, clusterSizes: original.enhanced.clusterSizes, metrics: original.enhanced.metrics })) };
 assert.ok(DpcControlEvaluationSchema.safeParse(evaluation).success);
 assert.equal(DpcControlEvaluationSchema.safeParse({ ...evaluation, runs: evaluation.runs.slice(1) }).success, false);
 assert.equal(DpcControlEvaluationSchema.safeParse({ ...evaluation, runs: evaluation.runs.map((run: object) => ({ ...run, seed: 0 })) }).success, false);
-assert.equal(DpcControlEvaluationSchema.safeParse({ ...evaluation, participantCount: 2437 }).success, false);
+assert.equal(DpcControlEvaluationSchema.safeParse({ ...evaluation, participantCount: evaluation.participantCount === 2437 ? 100 : 2437 }).success, false);
 assert.equal(SimulationDpcControlSchema.safeParse({ ...summary, RID: "private" }).success, false);
 assert.equal(SimulationDpcControlSchema.safeParse({ ...summary, matchingRuns: 31 }).success, false);
 
@@ -85,3 +113,4 @@ try {
   }
 } finally { await new Promise<void>(resolve => server.close(() => resolve())); }
 console.log("PASS Simulation 1 cached controls, seeds 0–29, saved PCA membership/k/settings, unchanged DPC/baseline, canonical match parity, strict contracts, aggregate-only API, and Simulations 2–5 untouched.");
+}

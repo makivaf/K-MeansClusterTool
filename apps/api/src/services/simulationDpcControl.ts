@@ -17,14 +17,14 @@ const keys = ["silhouette", "davies_bouldin", "calinski_harabasz"] as const;
 const read = (file: string) => JSON.parse(fs.readFileSync(file, "utf8"));
 const hash = (file: string) => sha256(fs.readFileSync(file));
 export const DpcControlEvaluationSchema = z.object({
-  sampleFingerprint: z.string(), participantCount: z.literal(1949), pcaComponents: z.number().int(), selectedK: z.number().int(),
+  sampleFingerprint: z.string(), participantCount: z.number().int().min(100).max(2437), pcaComponents: z.number().int(), selectedK: z.number().int(),
   settings: z.object({ nInit: z.literal(1), maxIter: z.literal(300), tolerance: z.literal(1e-4), algorithm: z.literal("lloyd") }).strict(),
   runs: z.array(z.object({ seed: z.number().int(), metrics: SimulationMetricsSchema,
-    clusterSizes: z.array(z.number().int().positive()).min(2).max(10)
-      .refine(sizes => sizes.reduce((a, b) => a + b, 0) === 1949) }).strict()).length(30)
+    clusterSizes: z.array(z.number().int().positive()).min(2).max(10) }).strict()).length(30)
     .refine(runs => runs.every((run, index) => run.seed === index)),
   randomMean: SimulationMetricsSchema, randomSd: SimulationMetricsSchema
-}).strict().refine(value => value.runs.every(run => run.clusterSizes.length === value.selectedK));
+}).strict().refine(value => value.runs.every(run => run.clusterSizes.length === value.selectedK &&
+  run.clusterSizes.reduce((a, b) => a + b, 0) === value.participantCount));
 
 /** Explicit maintenance command only. GET/page loads never launch controls. */
 export async function evaluateSimulationDpcControl(id: number) {
@@ -67,6 +67,7 @@ export async function evaluateSimulationDpcControl(id: number) {
       timeout: 30 * 60 * 1000, maxBuffer: 1024 * 1024
     });
     const evaluation = DpcControlEvaluationSchema.parse(JSON.parse(stdout));
+    assert.equal(evaluation.participantCount, sample.sampleParticipantCount);
     assert.equal(evaluation.sampleFingerprint, sample.fingerprint);
     assert.equal(evaluation.pcaComponents, analysis.enhanced.pcaComponents);
     assert.equal(evaluation.selectedK, analysis.enhanced.selectedK);
