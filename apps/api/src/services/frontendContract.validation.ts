@@ -29,9 +29,22 @@ assert.ok(setup.includes('to="/study-findings"'));
 assert.ok(setup.includes("/api/upload") && !setup.includes("/api/research/runs"));
 assert.ok(setup.includes("onValidated(null)"));
 assert.ok(!/demo dataset|source.hash|privacy/i.test(setup));
-assert.ok(!/Scatter|DefenseScatter|SopRunSeriesChart/.test(study + simulations + read("components/charts/LongitudinalProgressionChart.tsx")));
-assert.ok(!/signedRelativeChangePercent|relativeMeanChangePercent/.test(study + simulations));
-assert.ok(!/useRunData|useStudyFindings|useSopEvaluation|2437|1950|Math.random|setTimeout/.test(simulations));
+const studySections = ["Method Comparison Overview", "SOP 1 — Feature Representation", "SOP 2 — Cluster Number Selection",
+  "SOP 3 — Initialization & Reproducibility", "Standard vs Enhanced Comparison", "Internal Validation",
+  "Final Enhanced Solution", "Final Cluster Distribution", "Final Cluster Profiles", "ADAS-Cog13 Longitudinal Progression", "Linear Mixed-Effects Model (LME)"];
+let previousSection = -1;
+for (const section of studySections) {
+  const position = study.indexOf(section);
+  assert.ok(position > previousSection, `Study section missing or out of order: ${section}`);
+  previousSection = position;
+}
+assert.ok(study.includes("defenseGeometry?.sop1.baseline") && study.includes("defenseGeometry?.sop3.dpc[0]"));
+assert.ok(study.includes("metric.signedRelativeChangePercent"));
+assert.ok(!/useRunData|useStudyFindings|useSopEvaluation|Math.random|simulationRunsMock|Longitudinal|mixedEffects/.test(simulations));
+assert.ok(!simulations.includes("Full Dataset"));
+assert.ok(simulations.includes('const sampleMode = "custom" as const'));
+assert.equal((simulations.match(/min=\{100\} max=\{2436\}/g) ?? []).length, 2);
+assert.ok(simulations.includes("Run Details") && simulations.includes("result.metadata.sampleFingerprint"));
 assert.ok(!/ANALYSIS_JOB_KEY|ad-clustering.analysis-job|\/api\/research\/runs/.test(simulations));
 const hook = read("hooks/useStudyFindings.ts");
 assert.ok(hook.includes("/api/research/runs") && hook.includes("completedAnalysisResult"));
@@ -42,7 +55,7 @@ const validated = { upload_ref: "test-upload", filenames: DATASETS.map(([, name]
 assert.equal(isDatasetReady(validated), true);
 assert.equal(isDatasetReady({ ...validated, filenames: validated.filenames.slice(1) }), false);
 assert.equal(isDatasetReady({ ...validated, filenames: Array(7).fill(validated.filenames[0]) }), false);
-console.log("PASS final routes, study/simulation separation, validation-only setup, and aggregate-only figures");
+console.log("PASS final routes, paired study section order, provenance-bound scatter bindings, custom-only simulations, and validation-only setup");
 
 const frozen = adaptUnifiedResult(path.join(repositoryRoot, "data/interim"), { runId: "validated-unified-study-run" });
 FrozenUnifiedStudyResultSchema.parse(frozen);

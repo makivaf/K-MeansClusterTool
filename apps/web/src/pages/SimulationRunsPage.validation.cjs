@@ -55,6 +55,7 @@ function find(node, predicate) {
 const hooks = new Hooks();
 const page = compile(path.join(__dirname, "SimulationRunsPage.tsx"), {
   react: hooks.react,
+  "react-router-dom": { Link: ({ to, ...props }) => React.createElement("a", { ...props, href: to }) },
   "../../../../packages/shared/src/simulation": contract,
   "../hooks/useSimulationMetadata": { useSimulationMetadata: () => ({ metadata: { simulations: saved.map(s => s.result.metadata) }, loading: false }) },
   "../hooks/useSimulationCapabilities": { useSimulationCapabilities: () => ({ capabilities: { executionAvailable: true } }) },
@@ -97,11 +98,11 @@ globalThis.fetch = async (url, options) => {
     assert.equal(find(hooks.output, node => node.props?.id === "simulation-analysis-status"), null);
     await hooks.settle();
     assert.equal(requests.length, 0, "Cached complete metadata must not start a run or fetch results");
-    find(hooks.output, node => node.type === "button" && node.props.children === "Custom Sample").props.onClick(); hooks.render();
+    assert.equal(find(hooks.output, node => node.type === "button" && node.props.children === "Full Dataset"), null);
     const initialSlider = find(hooks.output, node => node.props?.id === "simulation-sample-count");
     assert.equal(initialSlider.props.value, 100);
     assert.equal(initialSlider.props.min, 100);
-    assert.equal(initialSlider.props.max, 2437);
+    assert.equal(initialSlider.props.max, 2436);
     const override = find(hooks.output, node => node.type === "input" && node.props.type === "checkbox");
     assert.equal(override.props.checked, false);
     assert.equal(find(hooks.output, node => node.props?.["aria-label"] === "Increase manual k"), null);
@@ -155,6 +156,11 @@ globalThis.fetch = async (url, options) => {
     const status = find(hooks.output, node => node.props?.id === "simulation-analysis-status");
     assert.match(renderToStaticMarkup(status), /Paired analysis complete/);
     assert.match(renderToStaticMarkup(status), /Both methods used the same participant sample\./);
+    assert.doesNotMatch(renderToStaticMarkup(status), /Sample fingerprint/);
+    const runDetails = find(hooks.output, node => node.type === "details" &&
+      find(node, child => child.type === "summary" && child.props.children === "Run Details"));
+    assert.ok(runDetails && !runDetails.props.open, "Reproducibility metadata is collapsed by default");
+    assert.ok(renderToStaticMarkup(runDetails).includes(saved[0].result.metadata.sampleFingerprint));
     assert.equal((progressHtml().match(/simulation-step is-reached/g) || []).length, 5);
     const posts = requests.filter(r => r.options?.method === "POST");
     assert.equal(posts.length, 1);
@@ -167,7 +173,6 @@ globalThis.fetch = async (url, options) => {
     assert.equal((progressHtml().match(/simulation-step is-reached/g) || []).length, 0);
     assert.equal(requests.filter(r => r.options.method === "POST").length, 2, "An explicitly retried failed run may POST after GET");
     // Changing configuration hides results and never automatically launches work.
-    find(hooks.output, node => node.type === "button" && node.props.children === "Custom Sample").props.onClick(); hooks.render();
     find(hooks.output, node => node.props?.id === "simulation-sample-count").props.onChange({ target: { value: "500" } }); hooks.render();
     find(hooks.output, node => node.props?.["aria-label"] === "Increase manual k").props.onClick(); hooks.render();
     assert.match(renderToStaticMarkup(hooks.output), /Selected: 500 of 2,437 participants/);
@@ -230,6 +235,7 @@ globalThis.fetch = async (url, options) => {
       assert.match(html, /PC1 and PC2 are used only for 2D visualization/);
       assert.match(html, /Selected Centers/);
       assert.doesNotMatch(html, /Existing vs Enhanced|Simulation 1|SOP 1/);
+      assert.doesNotMatch(html, /Longitudinal|ADAS-Cog13|Mixed-Effects|LME/);
       for (const row of state.result.comparison) {
         const format = value => value.toLocaleString("en-US", { maximumFractionDigits: 6 });
         assert.ok(html.includes(format(row.existing)));
@@ -242,30 +248,31 @@ globalThis.fetch = async (url, options) => {
     assert.match(html, /not statistical significance/);
     assert.doesNotMatch(html, /2\?10|0\?29|sample\?s|Enhanced\?s|PC1\?PC2/);
     assert.match(html, /not the canonical enhancement comparison/);
-    const requestsBeforeFull = requests.length;
-    find(hooks.output, node => node.type === "button" && node.props.children === "Full Dataset").props.onClick(); hooks.render();
+    const requestsBeforeChange = requests.length;
+    const sampleInput = () => find(hooks.output, node => node.props?.id === "simulation-sample-number");
+    sampleInput().props.onChange({ target: { value: "2437" } }); hooks.render();
+    assert.equal(sampleInput().props.value, 2436, "Full-cohort input is clamped to a custom sample");
     assert.equal(result(), undefined, "Changing a completed configuration immediately hides its result");
     await hooks.settle();
-    assert.equal(requests.length, requestsBeforeFull, "Full Dataset selection does not automatically run");
+    assert.equal(requests.length, requestsBeforeChange, "Changing sample size does not run automatically");
     button().props.onClick(); hooks.render(); await hooks.settle();
-    assert.ok(requests.at(-1).url.endsWith("?sampleMode=full&sampleCount=2437&manualK=3"));
-    assert.equal(result(), undefined, "A cached custom sample cannot satisfy Full Dataset");
+    assert.ok(requests.at(-1).url.endsWith("?sampleMode=custom&sampleCount=2436&manualK=3"));
+    assert.equal(result(), undefined, "A cached 100-participant sample cannot satisfy a different size");
     find(hooks.output, node => node.type === "input" && node.props.type === "checkbox").props.onChange({ target: { checked: false } }); hooks.render();
     assert.equal(result(), undefined, "Disabling override hides the overridden result");
     await hooks.settle();
-    serverState = { simulationId: 1, configurationKey: "full:2437:auto", status: "sample_ready", result: null, message: null };
+    serverState = { simulationId: 1, configurationKey: "custom:2436:auto", status: "sample_ready", result: null, message: null };
     throttlePost = false;
-    Date.now = () => originalDateNow() + 120_000; // The earlier Retry-After window has elapsed.
+    Date.now = () => originalDateNow() + 120_000;
     button().props.onClick(); hooks.render(); await hooks.settle();
-    assert.ok(requests.at(-2).url.endsWith("?sampleMode=full&sampleCount=2437"));
-    assert.equal(JSON.parse(requests.at(-1).options.body).manualK, null);
+    assert.ok(requests.at(-2).url.endsWith("?sampleMode=custom&sampleCount=2436"));
+    assert.deepEqual(JSON.parse(requests.at(-1).options.body), { sampleMode: "custom", sampleCount: 2436, manualK: null });
     resolvePost({ ...serverState, status: "failed", message: "Test stops before analysis" }); await hooks.settle();
-    find(hooks.output, node => node.type === "button" && node.props.children === "Custom Sample").props.onClick(); hooks.render();
-    assert.equal(find(hooks.output, node => node.props?.id === "simulation-sample-count").props.value, 100);
-    find(hooks.output, node => node.props?.id === "simulation-sample-count").props.onChange({ target: { value: "500" } }); hooks.render();
-    find(hooks.output, node => node.type === "button" && node.props.children === "Full Dataset").props.onClick(); hooks.render();
-    find(hooks.output, node => node.type === "button" && node.props.children === "Custom Sample").props.onClick(); hooks.render();
-    assert.equal(find(hooks.output, node => node.props?.id === "simulation-sample-count").props.value, 100, "Switching back to Custom Sample resets the default");
+    for (const [input, expected] of [["99", 100], ["500", 500], ["500.8", 500], ["9999", 2436]]) {
+      sampleInput().props.onChange({ target: { value: input } }); hooks.render();
+      assert.equal(sampleInput().props.value, expected);
+    }
+    assert.ok(requests.every(r => r.options.method === "GET" ? r.url.includes("sampleMode=custom") : JSON.parse(r.options.body).sampleMode === "custom"));
     console.log("PASS initial visibility, GET-first recovery, configuration-bound requests, progress/completion, failure/retry, throttling, runtime configuration and stale response rejection, ordered results and preserved metrics for the real runtime run.");
   } finally { Date.now = originalDateNow; hooks.unmount(); globalThis.fetch = originalFetch; globalThis.setTimeout = originalSetTimeout; globalThis.clearTimeout = originalClearTimeout; }
 })().catch(error => { console.error(error); process.exitCode = 1; });
