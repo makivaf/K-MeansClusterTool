@@ -1,0 +1,31 @@
+Chapter 1 SOP 1: empirical feature-correlation evidence
+Exact input file: C:\Users\Lenovo\Documents\GitHub\finalkmeans\K-MeansClusterTool\data\interim\clustering_features_imputed.csv
+Repository-relative input: data/interim/clustering_features_imputed.csv
+Feature definitions: scripts/research/study_entry/preprocess_study_entry.py::RETAINED_FEATURES
+Participant count: 2437
+Feature count: 13
+Exact feature names (pipeline order): MMSE, ADAS13, LMI, LMD, TMT_A, TMT_B, CATEGORY_FLUENCY_ANIMALS, RAVLT_IMMEDIATE, RAVLT_DELAYED, RAVLT_FORGETTING, CDRSB, FAQ, GDS
+Correlation method: Pearson product-moment correlation (pandas.DataFrame.corr)
+Input treatment: existing median-imputed values; no further transformation or selection
+Missing/non-finite values: none; every pair uses all 2,437 participants
+Unique non-diagonal pairs: 78
+Sorting: descending absolute Pearson r; signed r preserved; stable feature-order tie break
+Five largest absolute correlations:
+  1. LMI / LMD: r=+0.89111866713801069; |r|=0.89111866713801069
+  2. CDRSB / FAQ: r=+0.83405166772667805; |r|=0.83405166772667805
+  3. RAVLT_IMMEDIATE / RAVLT_DELAYED: r=+0.82013333326166438; |r|=0.82013333326166438
+  4. ADAS13 / RAVLT_IMMEDIATE: r=-0.7719053083571632; |r|=0.7719053083571632
+  5. MMSE / ADAS13: r=-0.74346590862451722; |r|=0.74346590862451722
+Input SHA-256: d9d718ddbb968a9b6ccf37298b4a6e4b9aaf53a1fb2d32b85a69281d3f1daa35
+Python version: 3.13.7
+Python executable: C:\Users\Lenovo\AppData\Local\Programs\Python\Python313\python.exe
+pandas version: 3.0.1
+NumPy version: 2.4.2
+Plotting library: Matplotlib 3.10.8
+Worked example: automatically selected rank 1; independent math.fsum centered-sums formula
+Worked r: 0.89111866713801036
+Worked absolute difference from matrix: 3.3306690738754696e-16
+Worked verification: PASS (absolute tolerance=1e-12; relative tolerance=0)
+Heatmap: all 13 features in pipeline order; Pearson r annotations; fixed scale [-1, +1]; 300 DPI
+Interpretation: descriptive correlations only. No automatic redundancy conclusion or claim
+that PCA improved Silhouette, Davies-Bouldin, or Calinski-Harabasz scores is made.

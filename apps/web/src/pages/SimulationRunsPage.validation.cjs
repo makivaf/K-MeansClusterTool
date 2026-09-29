@@ -124,7 +124,7 @@ globalThis.fetch = async (url, options) => {
     }
     assert.deepEqual(result(), saved[0].result);
     assert.equal(button().props.disabled, false);
-    assert.match(renderToStaticMarkup(button()), /Rerun Simulation/);
+    assert.match(renderToStaticMarkup(button()), /Rerun/);
     assert.equal((progressHtml().match(/simulation-step is-reached/g) || []).length, 5);
     serverState = { simulationId: 1, configurationKey: key, status: "sample_ready", result: null, message: null };
     button().props.onClick(); hooks.render();

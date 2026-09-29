@@ -4,11 +4,12 @@ import {
   type SopEvaluation,
   type UnifiedResearchRun,
   type DefenseGeometry,
+  type StudyEvidence,
   type BaselineCandidateSweep
 } from "../../../../packages/shared/src/schema";
 import { API_BASE_URL } from "../config/api";
 
-import { hasSharedSopProvenance } from "../utils/sopProvenance";
+import { hasSharedSopProvenance, matchesFrozenSource } from "../utils/sopProvenance";
 export { hasSharedSopProvenance } from "../utils/sopProvenance";
 
 export const useSopEvaluation = (run: UnifiedResearchRun | null = null) => {
@@ -17,6 +18,7 @@ export const useSopEvaluation = (run: UnifiedResearchRun | null = null) => {
   const [error, setError] = useState<string | null>(null);
   const [baselineSweep, setBaselineSweep] = useState<BaselineCandidateSweep | null>(null);
   const [defenseGeometry, setDefenseGeometry] = useState<DefenseGeometry | null>(null);
+  const [studyEvidence, setStudyEvidence] = useState<StudyEvidence | null>(null);
 
   useEffect(() => {
     if (!enabled) return;
@@ -29,6 +31,8 @@ export const useSopEvaluation = (run: UnifiedResearchRun | null = null) => {
         setEvaluation(payload.evaluation);
         setBaselineSweep(payload.baselineSweep ?? null);
         setDefenseGeometry(payload.defenseGeometry ?? null);
+        setStudyEvidence(payload.studyEvidence ?? null);
+        setError(null);
       } catch (caught) {
         if (caught instanceof DOMException && caught.name === "AbortError") return;
         setError(caught instanceof Error ? caught.message : "Unable to load the aggregate SOP evaluation");
@@ -37,7 +41,7 @@ export const useSopEvaluation = (run: UnifiedResearchRun | null = null) => {
     return () => abortController.abort();
   }, [enabled]);
 
-  const matches = run !== null && evaluation !== null && hasSharedSopProvenance(run, evaluation);
+  const matches = run !== null && evaluation !== null && hasSharedSopProvenance(run, evaluation, studyEvidence);
   // Compare shared scientific inputs across runs, not the recovery's output
   // reports (e.g. enhanced_kmeans_run_summary.csv contains per-execution
   // floating-point reproducibility diagnostics). The API still validates ALL
@@ -55,12 +59,13 @@ export const useSopEvaluation = (run: UnifiedResearchRun | null = null) => {
   const geometryMatches = matches && defenseGeometry !== null && geometryInputSources.every((source) => {
     const frozenHash = defenseGeometry.provenance.sourceSha256[source];
     const runHash = run.provenance.inputSha256[source];
-    return Boolean(frozenHash) && (!runHash || runHash === frozenHash);
+    return Boolean(frozenHash) && (!runHash || matchesFrozenSource(source, runHash, frozenHash, studyEvidence));
   });
   return {
     evaluation: matches ? evaluation : null,
     baselineSweep: matches ? baselineSweep : null,
     defenseGeometry: geometryMatches ? defenseGeometry : null,
+    studyEvidence: matches ? studyEvidence : null,
     error: error ? "Frozen-study evaluation unavailable." : run && evaluation && !matches
       ? "Frozen-study evaluation unavailable: required shared provenance is missing or mismatched."
       : null

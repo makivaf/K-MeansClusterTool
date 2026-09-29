@@ -1372,7 +1372,35 @@ export const DefenseGeometrySchema = z.object({
 export type DefenseGeometry = z.infer<typeof DefenseGeometrySchema>;
 export type DefensePanel = z.infer<typeof DefensePanelSchema>;
 
-export const SopEvaluationResponseSchema = z.object({ evaluation: SopEvaluationSchema, baselineSweep: BaselineCandidateSweepSchema.nullable().optional(), defenseGeometry: DefenseGeometrySchema.nullable().optional() }).strict().superRefine((payload, context) => {
+export const StudyEvidenceSchema = z.object({
+  cohortN: z.literal(2437),
+  correlation: z.object({
+    features: z.array(z.string().min(1)).length(13),
+    matrix: z.array(z.array(z.number().finite().min(-1).max(1)).length(13)).length(13)
+  }).strict(),
+  ariBySeed: z.array(z.object({ seed: z.number().int(), adjustedRandIndex: z.number().finite().min(-1).max(1) }).strict()).length(30),
+  provenance: z.object({
+    // Same cohort bytes, changing only the seven approved source filename aliases.
+    canonicalCohortSha256: sha256Schema,
+    sourceSha256: z.record(sha256Schema),
+    aggregateCsvSha256: z.object({ correlation: sha256Schema, ariBySeed: sha256Schema }).strict()
+  }).strict()
+}).strict().superRefine((evidence, context) => {
+  const { features, matrix } = evidence.correlation;
+  if (new Set(features).size !== 13 || matrix.some((row, i) => row[i] !== 1 || row.some((value, j) => Math.abs(value - matrix[j][i]) > 1e-12)) ||
+    evidence.ariBySeed.some((row, i) => row.seed !== i)) {
+    context.addIssue({ code: z.ZodIssueCode.custom, message: "Invalid frozen correlation matrix or ordered ARI seeds." });
+  }
+});
+export type StudyEvidence = z.infer<typeof StudyEvidenceSchema>;
+
+export const SopEvaluationResponseSchema = z.object({ evaluation: SopEvaluationSchema, baselineSweep: BaselineCandidateSweepSchema.nullable().optional(), defenseGeometry: DefenseGeometrySchema.nullable().optional(), studyEvidence: StudyEvidenceSchema.optional() }).strict().superRefine((payload, context) => {
+  if (payload.studyEvidence) {
+    for (const [source, hash] of Object.entries(payload.studyEvidence.provenance.sourceSha256)) {
+      const expected = payload.evaluation.provenance.sourceSha256[source] ?? payload.defenseGeometry?.provenance.sourceSha256[source];
+      if (expected && expected !== hash) context.addIssue({ code: z.ZodIssueCode.custom, message: "Study evidence source linkage mismatch." });
+    }
+  }
   const geometry = payload.defenseGeometry;
   if (!geometry) return;
   const reject = (message: string) => context.addIssue({ code: z.ZodIssueCode.custom, path: ["defenseGeometry"], message });

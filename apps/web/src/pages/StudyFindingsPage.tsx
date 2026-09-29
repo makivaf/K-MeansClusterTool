@@ -1,5 +1,5 @@
 import { memo } from "react";
-import { PcaVarianceFigure, NbClustVotesFigure } from "../components/charts/FinalFindingsCharts";
+import { PcaVarianceFigure, NbClustVotesFigure, CorrelationHeatmap, SilhouetteByKFigure, AriBySeedFigure } from "../components/charts/FinalFindingsCharts";
 import { LongitudinalProgressionChart } from "../components/charts/LongitudinalProgressionChart";
 import { MetricComparisonTable, metricDefinitions, formatMetric } from "../components/MetricComparisonTable";
 import { Panel } from "../components/ui/Panel";
@@ -54,7 +54,7 @@ export const StudyFindingsPage = ({ analysis, dataset }: { analysis: AnalysisRun
 };
 
 const StudyResults = memo(function StudyResults({ run }: { run: UnifiedResearchRun }) {
-  const { evaluation, error: sopError } = useSopEvaluation(run);
+  const { evaluation, baselineSweep, studyEvidence, error: sopError } = useSopEvaluation(run);
   const existing = Object.fromEntries(run.baselineComparison.metrics.map((metric) => [metric.metric, metric.baselineValue]));
   const enhanced = Object.fromEntries(metricDefinitions.map(({ key, field }) => [key, run.enhancedClustering.metrics[field]]));
   const sop3 = evaluation?.sop3;
@@ -70,6 +70,9 @@ const StudyResults = memo(function StudyResults({ run }: { run: UnifiedResearchR
         <MetricComparisonTable existing={existing} enhanced={enhanced} />
         <p className="mt-3 text-xs text-muted">Existing: mean of {run.baselineComparison.baselineMethod.runCount} random-initialization runs. Enhanced: validated deterministic result.</p>
       </Panel>
+      <Panel title="Correlation Heatmap" variant="surface">
+        {studyEvidence ? <CorrelationHeatmap correlation={studyEvidence.correlation} /> : <p className="text-sm text-muted">{sopError ?? "Loading validated correlation matrix…"}</p>}
+      </Panel>
       <Panel title="PCA Retention" variant="surface">
         <dl className="mb-5 grid grid-cols-2 gap-5 sm:grid-cols-4">
           <Fact label="Input variables" value={run.preprocessing.retainedFeatures.length} />
@@ -79,6 +82,10 @@ const StudyResults = memo(function StudyResults({ run }: { run: UnifiedResearchR
         </dl>
         <PcaChart run={run} compact />
       </Panel>
+      <div className="grid gap-6 xl:grid-cols-2">
+      <Panel title="Silhouette by k" variant="surface">
+        {baselineSweep ? <SilhouetteByKFigure sweep={baselineSweep} /> : <p className="text-sm text-muted">{sopError ?? "Loading validated baseline sweep…"}</p>}
+      </Panel>
       <Panel title="NbClust Selection" variant="surface">
         <dl className="mb-5 grid grid-cols-2 gap-5">
           <Fact label="Selected k" value={run.kSelection.selectedK} />
@@ -86,6 +93,7 @@ const StudyResults = memo(function StudyResults({ run }: { run: UnifiedResearchR
         </dl>
         <VotesChart selection={run.kSelection} />
       </Panel>
+      </div>
       <Panel title="DPC Initialization & Reproducibility" variant="surface">
         {sop3 ? <>
           <div className="mb-5 flex flex-wrap items-center gap-x-5 gap-y-2">
@@ -102,6 +110,9 @@ const StudyResults = memo(function StudyResults({ run }: { run: UnifiedResearchR
           </table></div>
           <p className="mt-3 text-xs text-muted">Deterministic initialization · identical initialization and output across {sop3.dpcDeterminism.repeatedChecks} repeated checks.</p>
         </> : <p role={sopError ? "alert" : "status"} className="text-sm text-muted">{sopError ?? "Loading validated initialization comparison…"}</p>}
+      </Panel>
+      <Panel title="ARI by Random Seed" variant="surface">
+        {studyEvidence ? <AriBySeedFigure runs={studyEvidence.ariBySeed} /> : <p className="text-sm text-muted">{sopError ?? "Loading validated partition agreement…"}</p>}
       </Panel>
       <Panel title="Final Cluster Distribution" variant="surface">
         <dl className="grid gap-5 sm:grid-cols-2">

@@ -1,5 +1,5 @@
 import { Bar, BarChart, CartesianGrid, Cell, LabelList, Line, LineChart, ReferenceDot, ReferenceLine, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
-import type { UnifiedResearchRun } from "../../../../../packages/shared/src";
+import type { UnifiedResearchRun, BaselineCandidateSweep, StudyEvidence } from "../../../../../packages/shared/src";
 import { getMeasureLabel } from "../../utils/measureLabels";
 
 import { chartPalette } from "./chartPalette";
@@ -7,6 +7,51 @@ const teal = chartPalette.primary;
 const slate = chartPalette.neutral;
 const tick = { fontSize: 14, fill: chartPalette.text };
 const percent = (value: number) => `${(value * 100).toFixed(2)}%`;
+
+export const CorrelationHeatmap = ({ correlation }: { correlation: StudyEvidence["correlation"] }) => <figure>
+  <div className="overflow-x-auto" role="region" aria-label="Pre-PCA correlation heatmap" tabIndex={0}>
+    <table className="research-table min-w-[900px]">
+      <thead><tr><th>Variable</th>{correlation.features.map((feature, i) => <th key={feature} className="text-center" title={getMeasureLabel(feature)}>{i + 1}</th>)}</tr></thead>
+      <tbody>{correlation.matrix.map((row, i) => <tr key={correlation.features[i]}>
+        <th scope="row" className="whitespace-nowrap text-left">{i + 1}. {getMeasureLabel(correlation.features[i])}</th>
+        {row.map((value, j) => <td key={j} className="text-center tabular-nums" title={`${correlation.features[i]} / ${correlation.features[j]}: ${value.toFixed(6)}`}
+          style={{ backgroundColor: `color-mix(in srgb, ${value >= 0 ? teal : chartPalette.comparison} ${Math.abs(value) * 45}%, transparent)` }}>{value.toFixed(2)}</td>)}
+      </tr>)}</tbody>
+    </table>
+  </div>
+  <figcaption className="mt-3 text-xs text-muted">Pearson r (−1 to +1), 13 retained variables before PCA · n = 2,437. Correlated original features provide evidence of redundancy.</figcaption>
+</figure>;
+
+export const SilhouetteByKFigure = ({ sweep }: { sweep: BaselineCandidateSweep }) => {
+  const selected = [...sweep.candidates].sort((a, b) => b.silhouette - a.silhouette || a.k - b.k)[0];
+  return <figure>
+    <div className="h-64 w-full" role="img" aria-label={`Standard K-Means Silhouette by k, 2–10. Maximum at k=${selected.k}.`}>
+      <ResponsiveContainer><LineChart data={sweep.candidates} margin={{ top: 30, right: 20, bottom: 30, left: 5 }}>
+        <CartesianGrid vertical={false} stroke={chartPalette.grid} />
+        <XAxis dataKey="k" tick={tick} interval={0} label={{ value: "Candidate cluster count", position: "bottom", fontSize: 14 }} />
+        <YAxis tick={tick} tickFormatter={(value: number) => value.toFixed(2)} />
+        <Tooltip formatter={(value: number) => [value.toFixed(6), "Silhouette"]} labelFormatter={value => `k=${value}`} />
+        <Line dataKey="silhouette" stroke={teal} strokeWidth={2} isAnimationActive={false} />
+        <ReferenceDot x={selected.k} y={selected.silhouette} r={5} fill={teal} stroke={teal} />
+      </LineChart></ResponsiveContainer>
+    </div>
+    <figcaption className="mt-3 text-xs text-muted">Standard K-Means · 13 standardized variables · seed {sweep.seed}. Single-index maximum-Silhouette selection: k = {selected.k}.</figcaption>
+  </figure>;
+};
+
+export const AriBySeedFigure = ({ runs }: { runs: StudyEvidence["ariBySeed"] }) => <figure>
+  <div className="h-64 w-full" role="img" aria-label="ARI by random seed 0–29 against the deterministic DPC reference. ARI = 1 means exact partition agreement.">
+    <ResponsiveContainer><LineChart data={runs} margin={{ top: 30, right: 20, bottom: 30, left: 5 }}>
+      <CartesianGrid stroke={chartPalette.grid} />
+      <XAxis type="number" dataKey="seed" domain={[0, 29]} ticks={[0, 5, 10, 15, 20, 25, 29]} tick={tick} label={{ value: "Random seed", position: "bottom", fontSize: 14 }} />
+      <YAxis domain={[(minimum: number) => Math.max(-1, minimum - 0.001), 1]} tick={tick} tickFormatter={(value: number) => value.toFixed(3)} width={75} label={{ value: "ARI", angle: -90, position: "insideLeft", fontSize: 14 }} />
+      <Tooltip formatter={(value: number) => [value.toFixed(6), "ARI vs DPC"]} labelFormatter={value => `Seed ${value}`} />
+      <ReferenceLine y={1} stroke={slate} strokeDasharray="6 4" />
+      <Line dataKey="adjustedRandIndex" stroke={teal} strokeWidth={2} dot={{ r: 3 }} isAnimationActive={false} />
+    </LineChart></ResponsiveContainer>
+  </div>
+  <figcaption className="mt-3 text-xs text-muted">ARI = 1: exact partition agreement, independent of cluster labels. Expanded vertical axis shows small differences. ARI measures reproducibility, not internal cluster quality.</figcaption>
+</figure>;
 
 export const DpcSeedFigure = ({ run }: { run: UnifiedResearchRun }) => (
   <section className="existing-card">

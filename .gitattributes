@@ -1,0 +1,2 @@
+# Preserve exact bytes of the checksummed aggregate on every platform.
+apps/api/artifacts/study_evidence.json -text

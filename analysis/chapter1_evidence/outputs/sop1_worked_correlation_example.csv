@@ -1,0 +1,2 @@
+variable_x,variable_y,n,mean_x,mean_y,sum_centered_cross_products,sum_squared_deviations_x,sum_squared_deviations_y,denominator,pearson_r,matrix_pearson_r,absolute_difference,verification_absolute_tolerance,verification_passed
+LMI,LMD,2437,9.8641772671317192,7.7989331144850222,57473.446860894539,58402.042675420598,71225.477226097661,64495.839869992808,0.89111866713801036,0.89111866713801069,3.3306690738754696e-16,9.9999999999999998e-13,True

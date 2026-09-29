@@ -8,6 +8,7 @@ import { getRunById, listRuns } from "./services/runRepository";
 import { allowedBrowserOrigins } from "./httpSecurity";
 import { loadBaselineCandidateSweep, loadSopEvaluation } from "./services/sopEvaluationArtifact";
 import { loadDefenseGeometry } from "./services/defenseGeometryArtifact";
+import { loadStudyEvidence } from "./services/studyEvidenceArtifact";
 import { SimulationCapabilitiesSchema } from "../../../packages/shared/src/simulation";
 import { createSimulationMetadataRouter } from "./routes/simulations";
 import { simulationCapabilities } from "./services/simulationExecution";
@@ -77,7 +78,9 @@ app.get("/api/sop-evaluation", (_request, response, next) => {
       response.status(404).json({ error: "Aggregate SOP evaluation artifact not found" });
       return;
     }
-    response.json(SopEvaluationResponseSchema.parse({ evaluation, baselineSweep: loadBaselineCandidateSweep(evaluation), defenseGeometry: loadDefenseGeometry(evaluation) }));
+    const defenseGeometry = loadDefenseGeometry(evaluation);
+    response.json(SopEvaluationResponseSchema.parse({ evaluation, baselineSweep: loadBaselineCandidateSweep(evaluation), defenseGeometry,
+      studyEvidence: loadStudyEvidence(evaluation, defenseGeometry) }));
   } catch (error) {
     next(error);
   }

@@ -137,7 +137,8 @@ export function createSimulationExecutor(execute = executeSimulation, useCache =
   const get = (id: number, configuration?: SimulationConfiguration): SimulationRunState => {
     const key = keyFor(id, configuration);
     const sample = getSimulationSample(id, configuration);
-    if (states.has(key) && (!useCache || states.get(key)!.status !== "complete")) return states.get(key)!;
+    // A verified persisted completion supersedes stale in-memory running state.
+    if (states.has(key) && !useCache) return states.get(key)!;
     if (useCache) {
       try {
         const saved = JSON.parse(fs.readFileSync(cacheFilename(id, configuration), "utf8"));

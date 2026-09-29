@@ -27,12 +27,10 @@ assert.equal(selectBaselineCandidate(null, 4), null);
 const invalid = structuredClone(sweep);
 invalid.candidates[2].clusterSizes[0]++;
 assert.equal(BaselineCandidateSweepSchema.safeParse(invalid).success, false);
-for (const page of ["OverviewPage.tsx", "ClustersPage.tsx"]) {
-  const text = fs.readFileSync(path.join(root, "apps/web/src/pages", page), "utf8");
-  assert.ok(text.includes("<BaselineCandidateControl sweep={baselineSweep}"));
-  assert.ok(!text.includes("Frozen baseline metrics"));
-}
-console.log("PASS both manual-k consumers: same candidate lookup, all k=2–10 metrics/counts match source, invalid k rejected, no frozen fallback");
+const findings = fs.readFileSync(path.join(root, "apps/web/src/pages/StudyFindingsPage.tsx"), "utf8");
+assert.ok(findings.includes("<SilhouetteByKFigure sweep={baselineSweep}"));
+assert.ok(findings.indexOf('title="Silhouette by k"') < findings.indexOf('title="NbClust Selection"'));
+console.log("PASS frozen Study Findings sweep: all k=2–10 metrics/counts match source, invalid k rejected, Silhouette left of NbClust");
 const temp = fs.mkdtempSync(path.join(os.tmpdir(), "baseline-source-"));
 try {
   for (const source of Object.keys(sweep.sourceSha256)) fs.copyFileSync(path.join(root, source), path.join(temp, path.basename(source)));

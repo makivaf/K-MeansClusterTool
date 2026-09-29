@@ -1,0 +1,49 @@
+Chapter 1 SOP 2: existing baseline cluster-number selection
+Exact input file: C:\Users\Lenovo\Documents\GitHub\finalkmeans\K-MeansClusterTool\data\interim\clustering_features_standardized.csv
+Input SHA-256: 0267afadb86434c203321529cd039ef03b843e76ab56430d9e9d677fee232783
+n=2437
+p=13
+Features: MMSE, ADAS13, LMI, LMD, TMT_A, TMT_B, CATEGORY_FLUENCY_ANIMALS, RAVLT_IMMEDIATE, RAVLT_DELAYED, RAVLT_FORGETTING, CDRSB, FAQ, GDS
+Implementation: scripts/research/comparison/run_baseline_kmeans_comparison.py
+Reused functions: load_baseline_input(); select_baseline_k() calls fit_random_kmeans()
+Candidates: k=2,3,4,5,6,7,8,9,10
+random_state=0
+init="random"
+n_init=1
+max_iter=300
+tol=0.0001
+algorithm="lloyd"
+Distance: Euclidean in the existing standardized 13-feature space
+Selection: maximum Silhouette only; exact ties select smaller k; no seed averaging
+Davies-Bouldin and Calinski-Harabasz are exported for audit, not used for selection.
+All nine candidate Silhouette values:
+  k=2: 0.33173611492709726
+  k=3: 0.22567940067764303
+  k=4: 0.17357756345787867
+  k=5: 0.14698032047963142
+  k=6: 0.1469747089176171
+  k=7: 0.13764256848252976
+  k=8: 0.1364370679654951
+  k=9: 0.13815113899808035
+  k=10: 0.12820049768970135
+Selected k: 2
+Selected Silhouette: 0.33173611492709726
+Agreement with frozen thesis k=2: PASS
+Independent verification: direct coordinate-difference Euclidean distances for all rows;
+a(i) excludes self; b(i) is the minimum other-cluster mean distance;
+s(i)=(b(i)-a(i))/max(a(i),b(i)); S=math.fsum(s(i))/n.
+Singleton or zero-denominator observations receive s(i)=0.
+Worked example: first input observation (zero-based row 0, CSV line 2); no RID/PTID exported
+Independent overall Silhouette: 0.3317361149270972
+Absolute verification difference: 5.5511151231257827e-17
+Verification: PASS; absolute tolerance=1e-12; relative tolerance=0
+Python version: 3.13.7
+Python executable: C:\Users\Lenovo\AppData\Local\Programs\Python\Python313\python.exe
+scikit-learn version: 1.8.0
+NumPy version: 2.4.2
+pandas version: 3.0.1
+Matplotlib version: 3.10.8
+Interpretation: the existing baseline systematically selects k outside the K-Means fit
+using one internal validation criterion. This provides a methodological comparison
+with later NbClust multi-index voting; it does not establish clinical correctness,
+universal optimality, or that NbClust will select a better or different numerical k.

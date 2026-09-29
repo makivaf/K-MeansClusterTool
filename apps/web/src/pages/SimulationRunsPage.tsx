@@ -164,7 +164,7 @@ export const SimulationRunsPage = () => {
         const query = new URLSearchParams({ sampleMode, sampleCount: String(configuration.sampleCount) });
         if (configuration.manualK !== null) query.set("manualK", String(configuration.manualK));
         const response = await fetch(`${API_BASE_URL}/api/simulations/${simulation}/run${method === "GET" ? `?${query}` : ""}`, {
-          method, signal: controller.signal,
+          method, signal: controller.signal, cache: "no-store",
           ...(method === "POST" ? { headers: { "Content-Type": "application/json" }, body: JSON.stringify(configuration) } : {})
         });
         if (controller.signal.aborted) return;
@@ -247,7 +247,7 @@ export const SimulationRunsPage = () => {
       </fieldset>
       <div className="simulation-control-row">
         <button type="button" onClick={start} disabled={!selected || !capabilities?.executionAvailable || running} className="simulation-run-button" aria-describedby={stage !== null ? "simulation-analysis-status" : undefined}>
-          {hasCompleted ? <RefreshCw size={14} aria-hidden="true" /> : <Play size={14} fill="currentColor" aria-hidden="true" />}{running ? "Running..." : hasCompleted ? "Rerun Simulation" : "Run Simulation"}
+          {hasCompleted ? <RefreshCw size={14} aria-hidden="true" /> : <Play size={14} fill="currentColor" aria-hidden="true" />}{running ? "Running..." : hasCompleted ? "Rerun" : "Run Simulation"}
         </button>
       </div>
       <div className="mt-6 text-sm text-muted">

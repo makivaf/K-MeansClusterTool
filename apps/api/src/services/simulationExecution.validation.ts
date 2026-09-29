@@ -27,6 +27,22 @@ assert.equal(state.status, "complete", "Run once with --execute to create the re
 assert.ok(state.result);
 assert.deepEqual(frozenArtifactHashes(), before, "Frozen thesis artifacts must remain byte-identical");
 const sample = getSimulationSample(1, configuration);
+// Reproduce a pending in-memory attempt whose worker has persisted success.
+// Only move the cache briefly; never run or modify the analytical result.
+const cacheFile = fs.readdirSync(simulationRunRoot).map(name => path.join(simulationRunRoot, name)).find(file =>
+  path.basename(file).startsWith("runtime-v2-1-") && file.endsWith(".json") &&
+  JSON.parse(fs.readFileSync(file, "utf8")).state.configurationKey === state.configurationKey)!;
+assert.ok(cacheFile);
+const heldCache = `${cacheFile}.validation`;
+assert.ok(!fs.existsSync(heldCache));
+assert.equal(path.dirname(path.resolve(heldCache)), path.resolve(simulationRunRoot));
+const recovering = createSimulationExecutor(() => new Promise(() => {}));
+fs.renameSync(cacheFile, heldCache);
+try {
+  assert.equal(recovering.start(1, configuration).status, "running");
+  assert.equal(recovering.get(1, configuration).status, "running");
+} finally { fs.renameSync(heldCache, cacheFile); }
+assert.deepEqual(recovering.get(1, configuration), state, "Verified completion must supersede stale running state");
 assert.equal(sample.sampleParticipantCount, 100);
 assert.equal(state.result.metadata.sampleFingerprint, sample.fingerprint);
 assert.equal(state.result.analysis.existing.selectedK, 3);
