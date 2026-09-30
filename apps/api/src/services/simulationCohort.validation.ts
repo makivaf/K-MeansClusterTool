@@ -27,6 +27,10 @@ try {
   assert.equal(published.participants.length, 2437);
   assert.deepEqual(published.participants, rows);
   assert.deepEqual(published.provenance.phaseCounts, phaseCounts);
+  const mutable = loadSimulationCohort(destination);
+  mutable.participants[0].RID = "999999";
+  mutable.provenance.source.sha256 = "0".repeat(64);
+  assert.deepEqual(loadSimulationCohort(destination), published, "Caller mutations must not poison the verified cache");
   assert.equal(published.provenance.source.sha256, sha256(fs.readFileSync(path.join(source, cohortSourceFilename))));
   assert.ok(published.participants.every((row) => Object.keys(row).sort().join(",") === "ENTRY_PHASE,RID"));
   assert.deepEqual(publishSimulationCohort(source, { ...construction, constructionId: crypto.randomUUID() }, destination), published);

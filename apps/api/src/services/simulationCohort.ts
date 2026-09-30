@@ -45,11 +45,21 @@ export function validateSimulationRoster(value: unknown): SimulationCohortPartic
 }
 
 /** Internal only. No HTTP route exposes this participant-level artifact. */
+const verifiedRosters = new Map<string, { digest: string; participants: SimulationCohortParticipant[]; provenance: SimulationCohortProvenance }>();
 export function loadSimulationCohort(directory = simulationCohortRoot) {
-  const provenance = provenanceSchema.parse(JSON.parse(fs.readFileSync(path.join(directory, "provenance.json"), "utf8")));
+  const provenanceBytes = fs.readFileSync(path.join(directory, "provenance.json"));
   const bytes = fs.readFileSync(path.join(directory, "roster.json"));
+  // Read and hash current bytes even on a cache hit. Neither mtimes nor a
+  // previous successful validation can conceal replacement/tampering.
+  const digest = `${sha256(provenanceBytes)}:${sha256(bytes)}`;
+  const key = path.resolve(directory);
+  const cached = verifiedRosters.get(key);
+  if (cached?.digest === digest) return structuredClone({ participants: cached.participants, provenance: cached.provenance });
+  const provenance = provenanceSchema.parse(JSON.parse(provenanceBytes.toString("utf8")));
   if (sha256(bytes) !== provenance.rosterSha256) throw new Error("Simulation cohort integrity check failed.");
   const participants = validateSimulationRoster(JSON.parse(bytes.toString("utf8")));
+  if (verifiedRosters.size >= 8) verifiedRosters.clear();
+  verifiedRosters.set(key, structuredClone({ digest, participants, provenance }));
   return { participants, provenance };
 }
 

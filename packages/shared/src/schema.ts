@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { adjustedRandIndex } from "./adjustedRandIndex";
 
 export const AxisSchema = z.enum(["Axis A", "Axis B"]);
 export const ResultSourceSchema = z.enum(["development_fixture", "validated_research_output"]);
@@ -1373,12 +1374,18 @@ export type DefenseGeometry = z.infer<typeof DefenseGeometrySchema>;
 export type DefensePanel = z.infer<typeof DefensePanelSchema>;
 
 export const StudyEvidenceSchema = z.object({
+  // Explicit selected-center RID display; no additional participant attributes.
+  dpcCenters: z.array(z.object({ center: z.number().int().positive(), rid: z.string().regex(/^[1-9]\d*$/),
+    rho: z.number().int().nonnegative(), delta: z.number().finite(), gamma: z.number().finite() }).strict()).length(2).optional(),
+
   cohortN: z.literal(2437),
   correlation: z.object({
     features: z.array(z.string().min(1)).length(13),
     matrix: z.array(z.array(z.number().finite().min(-1).max(1)).length(13)).length(13)
   }).strict(),
   ariBySeed: z.array(z.object({ seed: z.number().int(), adjustedRandIndex: z.number().finite().min(-1).max(1) }).strict()).length(30),
+  dpcAriByRun: z.array(z.object({ seed: z.number().int(), adjustedRandIndex: z.number().finite().min(-1).max(1) }).strict()).length(3)
+    .refine(rows => rows.every((row, i) => row.seed === i + 1)).optional(),
   provenance: z.object({
     // Same cohort bytes, changing only the seven approved source filename aliases.
     canonicalCohortSha256: sha256Schema,
@@ -1402,6 +1409,11 @@ export const SopEvaluationResponseSchema = z.object({ evaluation: SopEvaluationS
     }
   }
   const geometry = payload.defenseGeometry;
+  const dpcAri = payload.studyEvidence?.dpcAriByRun;
+  if (dpcAri && (!geometry || dpcAri.some((row, i) => row.adjustedRandIndex !== adjustedRandIndex(
+    geometry.sop3.dpc[0].observations.map(point => point.cluster), geometry.sop3.dpc[i].observations.map(point => point.cluster))))) {
+    context.addIssue({ code: z.ZodIssueCode.custom, message: "DPC ARI series lacks matching verified partitions." });
+  }
   if (!geometry) return;
   const reject = (message: string) => context.addIssue({ code: z.ZodIssueCode.custom, path: ["defenseGeometry"], message });
   for (const [source, hash] of Object.entries(payload.evaluation.provenance.sourceSha256)) {

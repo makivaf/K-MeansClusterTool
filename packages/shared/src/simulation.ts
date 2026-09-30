@@ -49,10 +49,12 @@ export const SimulationDpcControlSchema = z.object({
   randomSd: SimulationMetricsSchema.refine(value => Object.values(value).every(sd => sd >= 0))
 }).strict();
 const sizes = z.array(z.number().int().positive()).min(2).max(10);
+const ariSeries = z.array(z.object({ seed: count, adjustedRandIndex: finite.min(-1).max(1) }).strict());
 const run = z.object({ seed: count, iterations: z.number().int().positive(), convergedBeforeMaxIter: z.boolean(), clusterSizes: sizes, metrics: SimulationMetricsSchema }).strict();
 export const SimulationAnalysisSchema = z.object({
   existing: z.object({ participantCount: z.number().int().min(100).max(2437), selectedK: z.number().int().min(2).max(10), initialization: z.literal("random"), metrics: SimulationMetricsSchema,
     silhouetteSelectedK: z.number().int().min(2).max(10).optional(),
+    ariBySeed: ariSeries.length(30).refine(rows => rows.every((row, i) => row.seed === i)).optional(),
     silhouetteByK: z.array(z.object({ k: z.number().int().min(2).max(10), silhouette: finite }).strict()).length(9).optional(),
     runs: z.array(run).length(30).refine(values => values.every((value, index) => value.seed === index))
   }).strict().refine(value => value.runs.every(run => run.clusterSizes.length === value.selectedK && run.clusterSizes.reduce((a, b) => a + b, 0) === value.participantCount)),
@@ -60,16 +62,21 @@ export const SimulationAnalysisSchema = z.object({
     iterations: z.number().int().positive(), convergedBeforeMaxIter: z.boolean(), clusterSizes: sizes, metrics: SimulationMetricsSchema,
     retainedVariables: z.array(z.string()).length(13), excludedVariables: z.array(z.string()),
     pcaComponents: z.number().int().min(1).max(13), cumulativeExplainedVariance: finite.min(0.85).max(1.000000000001),
-    pcaVariance: z.array(z.object({ component: count, explainedVarianceRatio: finite, cumulativeExplainedVariance: finite }).strict()).length(13),
+    pcaVariance: z.array(z.object({ component: count, eigenvalue: finite.nonnegative().optional(), explainedVarianceRatio: finite, cumulativeExplainedVariance: finite }).strict()).length(13),
     nbclust: z.object({ votes: z.array(z.object({ k: count, count }).strict()),
       indices: z.array(z.object({ index: z.string(), status: z.string(), recommendedK: count.nullable() }).strict()),
       tieOccurred: z.boolean(), reproducible: z.literal(true) }).strict(),
     dpc: z.object({ cutoffPercentile: finite, distanceCutoff: finite, centroidCount: count, dimensions: count, pairwiseDistanceCount: count,
-      determinismPassed: z.literal(true), centers: z.array(z.object({ rho: count, delta: finite, gamma: finite, coordinates: z.array(finite).optional() }).strict()),
+      ariByRun: ariSeries.length(3).refine(rows => rows.every((row, i) => row.seed === i + 1)).optional(),
+      determinismPassed: z.literal(true), centers: z.array(z.object({ rid: z.string().regex(/^[1-9]\d*$/).optional(), rho: count, delta: finite, gamma: finite, coordinates: z.array(finite).optional() }).strict()),
       decisionGraph: z.array(z.object({ rho: count, delta: finite, gamma: finite, selected: z.boolean() }).strict()).optional(),
       randomControl: SimulationDpcControlSchema.optional() }).strict()
   }).strict().refine(value => value.clusterSizes.reduce((a, b) => a + b, 0) === value.participantCount && value.clusterSizes.length === value.selectedK && value.dpc.centroidCount === value.selectedK && value.dpc.centers.length === value.selectedK && value.dpc.dimensions === value.pcaComponents),
   correlation: z.array(z.array(finite.nullable()).length(13)).length(13).optional(),
+  pcaContribution: z.object({ k: z.number().int().min(2).max(10), runCount: z.literal(30),
+    existing: SimulationMetricsSchema, enhanced: SimulationMetricsSchema,
+    relativeChange: z.object({ silhouette: finite.nullable(), davies_bouldin: finite.nullable(), calinski_harabasz: finite.nullable() }).strict()
+  }).strict().optional(),
   projection: z.object({
     standardSeed: z.literal(0),
     points: z.array(z.object({ x: finite, y: finite, standard: count.max(9), enhanced: count.max(9) }).strict()),
@@ -80,6 +87,16 @@ export const SimulationAnalysisSchema = z.object({
   const n = value.existing.participantCount;
   const fail = () => ctx.addIssue({ code: z.ZodIssueCode.custom, message: "Paired output dimensions or assignments differ." });
   if (value.enhanced.participantCount !== n) fail();
+  if (value.existing.ariBySeed && value.existing.ariBySeed[0].adjustedRandIndex !== 1) fail();
+  if (value.enhanced.dpc.ariByRun?.some(row => row.adjustedRandIndex !== 1)) fail();
+  if (value.pcaContribution && (value.pcaContribution.k !== value.existing.selectedK ||
+    Object.entries(value.existing.metrics).some(([metric, mean]) => value.pcaContribution!.existing[metric as keyof typeof value.existing.metrics] !== mean))) fail();
+  const eigenvalues = value.enhanced.pcaVariance.map(row => row.eigenvalue);
+  if (eigenvalues.some(value => value !== undefined)) {
+    const total = eigenvalues.reduce<number>((sum, value) => sum + (value ?? 0), 0);
+    if (eigenvalues.some(value => value === undefined) || total <= 0 ||
+      value.enhanced.pcaVariance.some(row => Math.abs(row.eigenvalue! / total - row.explainedVarianceRatio) > 1e-10)) fail();
+  }
   if (value.enhanced.dpc.decisionGraph && value.enhanced.dpc.decisionGraph.length !== n) fail();
   if (value.enhanced.dpc.centers.some(center => center.coordinates && center.coordinates.length !== value.enhanced.pcaComponents)) fail();
   if (value.existing.silhouetteByK && !value.existing.silhouetteByK.every((row, i) => row.k === i + 2)) fail();
@@ -109,6 +126,7 @@ export const SimulationResultSchema = z.object({
     !!value.analysis.enhanced.dpc.decisionGraph && !!value.analysis.enhanced.dpc.randomControl &&
     value.comparison.every(row => row.relativeImprovementPercent !== undefined))));
 export const SimulationRunStateSchema = z.object({
+  stage: z.number().int().min(0).max(3).optional(),
   configurationKey: z.string().optional(),
   simulationId: z.number().int().min(1).max(5), status: z.enum(["sample_ready", "running", "complete", "failed"]),
   result: SimulationResultSchema.nullable(), message: z.string().nullable()

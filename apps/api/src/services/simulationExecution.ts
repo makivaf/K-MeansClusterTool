@@ -12,6 +12,7 @@ import { loadSimulationCohort, simulationCohortRoot, sha256 } from "./simulation
 import { getSimulationMetadata } from "./simulationMetadata";
 import { buildResearchEnvironment, resolvePython } from "./researchPipelineOrchestrator";
 import { materializeCanonicalResearchSources, verifyCanonicalDpcSource } from "./researchSourceMaterializer";
+import { readCsvRecords } from "./artifactReaders";
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../../../..");
 export const simulationRunRoot = path.join(root, "apps/api/private/simulation-runs");
@@ -62,9 +63,11 @@ export function frozenArtifactHashes() {
   return hashes;
 }
 
-export async function executeSimulation(id: number, configuration?: SimulationConfiguration): Promise<SimulationRunState> {
+export async function executeSimulation(id: number, configuration?: SimulationConfiguration, onStage?: (stage: number) => void): Promise<SimulationRunState> {
   const sample = getSimulationSample(id, configuration);
   const source = verifiedSource();
+  const enriched = configuration ? await enrichSavedSimulation(id, configuration, sample.fingerprint, sha256(source), onStage) : null;
+  if (enriched) return mapSavedCenterRids(enriched, sample.fingerprint, sha256(source));
   const before = frozenArtifactHashes();
   const workspace = path.join(simulationRunRoot, `simulation-${id}-${crypto.randomUUID()}`);
   fs.mkdirSync(path.join(workspace, "data/interim"), { recursive: true });
@@ -74,12 +77,24 @@ export async function executeSimulation(id: number, configuration?: SimulationCo
   fs.writeFileSync(path.join(workspace, "request.json"), JSON.stringify({ isolatedSimulation: true,
     configuration, sampleParticipantIds: sample.sampleParticipantIds, phaseSampleCounts: sample.phaseSampleCounts }));
   fs.writeFileSync(path.join(workspace, "frozen-before.json"), JSON.stringify(before));
+  onStage?.(1);
   await new Promise<void>((resolve, reject) => {
     const log = fs.openSync(path.join(workspace, "execution.log"), "w");
     const child = spawn(resolvePython(), [path.join(workspace, "scripts/research/simulation/run_simulation.py")], {
-      cwd: workspace, env: { ...buildResearchEnvironment(), PYTHONDONTWRITEBYTECODE: "1" }, windowsHide: true, shell: false, stdio: ["ignore", log, log]
+      cwd: workspace, env: { ...buildResearchEnvironment(), PYTHONDONTWRITEBYTECODE: "1" }, windowsHide: true, shell: false, stdio: ["ignore", "pipe", log]
     });
-    fs.closeSync(log);
+    let pending = "";
+    child.stdout!.on("data", (bytes: Buffer) => {
+      fs.writeSync(log, bytes);
+      pending += bytes.toString("utf8");
+      const lines = pending.split(/\r?\n/); pending = lines.pop() ?? "";
+      for (const line of lines) {
+        if (line.trim() === "preprocessing_complete") onStage?.(2);
+        if (line.trim() === "evaluating_results") onStage?.(3);
+      }
+    });
+    child.once("close", () => fs.closeSync(log));
+
     const timer = setTimeout(() => { child.kill(); reject(new Error("Simulation execution timed out.")); }, 60 * 60 * 1000);
     child.once("error", () => { clearTimeout(timer); reject(new Error("Simulation environment unavailable.")); });
     child.once("exit", code => { clearTimeout(timer); code === 0 ? resolve() : reject(new Error("Simulation analysis failed.")); });
@@ -120,7 +135,7 @@ export async function executeSimulation(id: number, configuration?: SimulationCo
   const state = SimulationRunStateSchema.parse({ simulationId: id, configurationKey: configuration ? simulationConfigurationKey(configuration) : undefined, status: "complete", result, message: null });
   fs.writeFileSync(path.join(workspace, "public-result.json"), JSON.stringify(state, null, 2));
   // Private cache is bound to sample and source; never used as a full-study artifact.
-  const cache = { runtimeVersion: 2, fingerprint: sample.fingerprint, sourceHash: sha256(source), state };
+  const cache = { runtimeVersion: 3, fingerprint: sample.fingerprint, sourceHash: sha256(source), state };
   const cacheFile = cacheFilename(id, configuration);
   const temporary = `${cacheFile}.tmp`;
   fs.writeFileSync(temporary, JSON.stringify(cache));
@@ -130,6 +145,86 @@ export async function executeSimulation(id: number, configuration?: SimulationCo
 
 const cacheFilename = (id: number, configuration?: SimulationConfiguration) => path.join(simulationRunRoot,
   configuration ? `runtime-v2-${id}-${sha256(simulationConfigurationKey(configuration))}.json` : `${id}.json`);
+
+const hasCurrentEvidence = (state: SimulationRunState) => !!state.result?.analysis.existing.ariBySeed &&
+  !!state.result.analysis.enhanced.dpc.ariByRun && !!state.result.analysis.pcaContribution &&
+  state.result.analysis.enhanced.pcaVariance.every(row => row.eigenvalue !== undefined);
+
+/** Recover only selected-center RIDs from a matching private saved projection. */
+function mapSavedCenterRids(state: SimulationRunState, fingerprint: string, sourceHash: string) {
+  const centers = state.result?.analysis.enhanced.dpc.centers;
+  if (!centers || centers.every(center => center.rid)) return state;
+  for (const entry of fs.readdirSync(simulationRunRoot, { withFileTypes: true })) {
+    if (!entry.isDirectory() || !entry.name.startsWith(`simulation-${state.simulationId}-`)) continue;
+    const directory = path.join(simulationRunRoot, entry.name);
+    try {
+      const proof = JSON.parse(fs.readFileSync(path.join(directory, "membership-proof.json"), "utf8"));
+      if (!proof.identical || proof.selected !== fingerprint || proof.existing !== fingerprint || proof.enhanced !== fingerprint) continue;
+      if (sha256(fs.readFileSync(path.join(directory, "data/interim/study_entry_cohort_unimputed.csv"))) !== sourceHash) continue;
+      const rows = readCsvRecords(path.join(directory, "data/interim"), "clustering_pca_scores.csv");
+      if (sha256(JSON.stringify(rows.map(row => row.RID))) !== fingerprint) continue;
+      const matches = centers.map(center => rows.filter(row => center.coordinates?.every((coordinate, i) =>
+        Math.abs(Number(row[`PC${i + 1}`]) - coordinate) <= 1e-12)));
+      if (matches.some(rows => rows.length !== 1)) continue;
+      centers.forEach((center, i) => { center.rid = matches[i][0].RID; });
+      return SimulationRunStateSchema.parse(state);
+    } catch { /* A missing historical workspace cannot supply an invented RID. */ }
+  }
+  return state;
+}
+
+/** Upgrade an old private completion using its saved matrices/assignments.
+ * No PCA, NbClust, or Standard seed fits are repeated for evidence recovery. */
+async function enrichSavedSimulation(id: number, configuration: SimulationConfiguration, fingerprint: string, sourceHash: string, onStage?: (stage: number) => void): Promise<SimulationRunState | null> {
+  let saved: { fingerprint: string; sourceHash: string; state: SimulationRunState };
+  try {
+    saved = JSON.parse(fs.readFileSync(cacheFilename(id, configuration), "utf8"));
+    saved.state = SimulationRunStateSchema.parse(saved.state);
+  } catch { return null; }
+  if (saved.fingerprint !== fingerprint || saved.sourceHash !== sourceHash || saved.state.configurationKey !== simulationConfigurationKey(configuration)) return null;
+  if (hasCurrentEvidence(saved.state)) return saved.state;
+  const workspace = fs.readdirSync(simulationRunRoot, { withFileTypes: true }).filter(entry => entry.isDirectory() && entry.name.startsWith(`simulation-${id}-`))
+    .map(entry => path.join(simulationRunRoot, entry.name)).find(directory => {
+      try {
+        const state = SimulationRunStateSchema.parse(JSON.parse(fs.readFileSync(path.join(directory, "public-result.json"), "utf8")));
+        const proof = JSON.parse(fs.readFileSync(path.join(directory, "membership-proof.json"), "utf8"));
+        return JSON.stringify(state) === JSON.stringify(saved.state) && proof.identical === true &&
+          [proof.selected, proof.existing, proof.enhanced].every(hash => hash === fingerprint) &&
+          sha256(fs.readFileSync(path.join(directory, "data/interim/study_entry_cohort_unimputed.csv"))) === sourceHash;
+      } catch { return false; }
+    });
+  if (!workspace) return null;
+  const before = frozenArtifactHashes();
+  onStage?.(2);
+  await new Promise<void>((resolve, reject) => {
+    const log = fs.openSync(path.join(workspace, "evidence-execution.log"), "w");
+    const child = spawn(resolvePython(), [path.join(root, "scripts/research/simulation/evidence.py"), workspace], {
+      cwd: workspace, env: { ...buildResearchEnvironment(), PYTHONDONTWRITEBYTECODE: "1" }, windowsHide: true, shell: false, stdio: ["ignore", log, log]
+    });
+    fs.closeSync(log);
+    const timer = setTimeout(() => { child.kill(); reject(new Error("Evidence recovery timed out.")); }, 60 * 60 * 1000);
+    child.once("error", () => { clearTimeout(timer); reject(new Error("Evidence environment unavailable.")); });
+    child.once("exit", code => { clearTimeout(timer); code === 0 ? resolve() : reject(new Error("Evidence recovery failed.")); });
+  });
+  if (JSON.stringify(before) !== JSON.stringify(frozenArtifactHashes())) throw new Error("Protected study artifacts changed during evidence recovery.");
+  onStage?.(3);
+  const analysis = SimulationAnalysisSchema.parse(JSON.parse(fs.readFileSync(path.join(workspace, "evidence-result.json"), "utf8")));
+  // The original public adapter added the existing random-control summary.
+  analysis.enhanced.dpc.randomControl = saved.state.result!.analysis.enhanced.dpc.randomControl;
+  const originalAnalysis = structuredClone(analysis);
+  delete originalAnalysis.existing.ariBySeed;
+  delete originalAnalysis.enhanced.dpc.ariByRun;
+  delete originalAnalysis.pcaContribution;
+  originalAnalysis.enhanced.pcaVariance.forEach(row => { delete row.eigenvalue; });
+  if (JSON.stringify(originalAnalysis) !== JSON.stringify(saved.state.result!.analysis)) throw new Error("Evidence recovery changed existing analytical values.");
+  const state = SimulationRunStateSchema.parse({ ...saved.state, result: { ...saved.state.result, analysis } });
+  if (!hasCurrentEvidence(state)) throw new Error("Incomplete simulation evidence.");
+  fs.writeFileSync(path.join(workspace, "evidence-public-result.json"), JSON.stringify(state));
+  const destination = cacheFilename(id, configuration), temporary = `${destination}.tmp`;
+  fs.writeFileSync(temporary, JSON.stringify({ runtimeVersion: 3, fingerprint, sourceHash, state }));
+  fs.renameSync(temporary, destination);
+  return state;
+}
 
 export function createSimulationExecutor(execute = executeSimulation, useCache = true) {
   const states = new Map<string, SimulationRunState>();
@@ -142,10 +237,11 @@ export function createSimulationExecutor(execute = executeSimulation, useCache =
     if (useCache) {
       try {
         const saved = JSON.parse(fs.readFileSync(cacheFilename(id, configuration), "utf8"));
-        if (saved.fingerprint === sample.fingerprint && saved.sourceHash === loadSimulationCohort().provenance.source.sha256 && (!configuration || saved.runtimeVersion === 2)) {
+        if (saved.fingerprint === sample.fingerprint && saved.sourceHash === loadSimulationCohort().provenance.source.sha256 && (!configuration || saved.runtimeVersion === 3)) {
           const state = SimulationRunStateSchema.parse(saved.state);
-          if (state.simulationId === id && state.status === "complete" && state.configurationKey === (configuration ? simulationConfigurationKey(configuration) : undefined)) {
-            states.set(key, state); return state;
+          if (state.simulationId === id && state.status === "complete" && (!configuration || hasCurrentEvidence(state)) && state.configurationKey === (configuration ? simulationConfigurationKey(configuration) : undefined)) {
+            const mapped = mapSavedCenterRids(state, sample.fingerprint, saved.sourceHash);
+            states.set(key, mapped); return mapped;
           }
         }
       } catch { /* No valid completed run cached. */ }
@@ -156,9 +252,12 @@ export function createSimulationExecutor(execute = executeSimulation, useCache =
     const key = keyFor(id, configuration);
     const current = get(id, configuration);
     if (current.status === "running" || current.status === "complete") return current;
-    const running: SimulationRunState = { ...current, status: "running", result: null, message: null };
+    const running: SimulationRunState = { ...current, status: "running", stage: 0, result: null, message: null };
     states.set(key, running);
-    void Promise.resolve().then(() => execute(id, configuration)).then(state => {
+    void Promise.resolve().then(() => execute(id, configuration, stage => {
+      const current = states.get(key);
+      if (current?.status === "running") states.set(key, { ...current, stage });
+    })).then(state => {
       const parsed = SimulationRunStateSchema.parse(state);
       if (parsed.simulationId !== id || parsed.configurationKey !== running.configurationKey) throw new Error("Configuration mismatch");
       states.set(key, parsed);

@@ -7,6 +7,7 @@ from pathlib import Path
 import hashlib
 import json
 import sys
+from time import perf_counter
 
 ROOT = Path(__file__).resolve().parents[3]
 sys.path[:0] = [str(ROOT / 'scripts/research/study_entry'), str(ROOT / 'scripts/research/comparison')]
@@ -16,6 +17,7 @@ import run_baseline_kmeans_comparison as baseline
 import run_enhanced_kmeans as enhanced
 import dpc_initialize_clusters as dpc
 import run_dpc_initialization_comparison as sop3
+from evidence import attach_evidence
 
 
 def assert_membership(actual, expected):
@@ -32,6 +34,18 @@ def select_standard_k(configuration, silhouette_k):
 
 
 def main():
+    timings = {}
+    started = perf_counter()
+    previous = started
+
+    def checkpoint(name):
+        nonlocal previous
+        now = perf_counter()
+        timings[name] = now - previous
+        timings['total_seconds'] = now - started
+        (ROOT / 'timings.json').write_text(json.dumps(timings))
+        previous = now
+
     request = json.loads((ROOT / 'request.json').read_text())
     # Refuse execution from the repository or any workspace without this marker.
     if request.get('isolatedSimulation') is not True or (ROOT / '.git').exists():
@@ -62,6 +76,7 @@ def main():
     prep.validate_final_outputs(retained, imputed, standardized, scores, variance, components, expected_rows=len(ids))
     prep.write_outputs(retained, imputed, standardized, scores, variance, loadings, summary)
     print('preprocessing_complete', flush=True)
+    checkpoint('preprocessing_seconds')
 
     # Canonical file loader validates the baseline schema; Enhanced uses the
     # canonical PCA table directly so its component count is data-derived.
@@ -77,16 +92,21 @@ def main():
     if selection != nb.select_k_nbclust(matrix.tolist(), expected_shape=matrix.shape):
         raise AssertionError('NbClust reproducibility failed')
     print('nbclust_complete', flush=True)
+    checkpoint('nbclust_seconds')
     initializations = [dpc.dpc_init(matrix.tolist(), selection.selected_k, cutoff_percentile=dpc.STUDY_CUTOFF_PERCENTILE) for _ in range(dpc.DETERMINISM_RUNS)]
     dpc.validate_repeated_runs(initializations)
     initialization = initializations[0]
-    enhanced_runs = [enhanced.run_enhanced_kmeans(matrix, np.asarray(initialization.centroid_matrix), selection.selected_k, expected_shape=matrix.shape) for _ in range(enhanced.REPRODUCIBILITY_RUNS)]
+    assert len(initializations) == enhanced.REPRODUCIBILITY_RUNS
+    enhanced_runs = [enhanced.run_enhanced_kmeans(matrix, np.asarray(init.centroid_matrix), selection.selected_k, expected_shape=matrix.shape) for init in initializations]
     enhanced.validate_reproducibility(enhanced_runs)
     result = enhanced_runs[0]
     print('enhanced_complete', flush=True)
+    checkpoint('enhanced_seconds')
     silhouette_k, candidates = baseline.select_baseline_k(X, expected_shape=X.shape)
     k = select_standard_k(configuration, silhouette_k)
     runs = baseline.run_baseline_replications(X, k, expected_shape=X.shape)
+    checkpoint('standard_seconds')
+    print('evaluating_results', flush=True)
     # Reuse the canonical writer, including its summary and metric comparison.
     baseline.write_outputs(standardized.PTID.tolist(), baseline_ids, k, candidates, runs, {
         'silhouette_coefficient': result.silhouette,
@@ -115,7 +135,7 @@ def main():
                 'centroidCount': len(initialization.selected_indices), 'dimensions': initialization.dimensionality,
                 'pairwiseDistanceCount': initialization.pairwise_distance_count, 'determinismPassed': True,
                 'decisionGraph': [{'rho': initialization.rho[i], 'delta': initialization.delta[i], 'gamma': initialization.gamma[i], 'selected': i in initialization.selected_indices} for i in range(len(ids))],
-                'centers': [{'coordinates': list(initialization.centroid_matrix[position]), 'rho': initialization.rho[i], 'delta': initialization.delta[i], 'gamma': initialization.gamma[i]} for position, i in enumerate(initialization.selected_indices)]},
+                'centers': [{'rid': ids[i], 'coordinates': list(initialization.centroid_matrix[position]), 'rho': initialization.rho[i], 'delta': initialization.delta[i], 'gamma': initialization.gamma[i]} for position, i in enumerate(initialization.selected_indices)]},
     }}
     # One common projection; labels remain those fitted in each canonical space.
     xy = pca.transform(X)[:, :2]
@@ -131,21 +151,26 @@ def main():
         'standardCentroids': centroids(runs[0].labels, k),
         'enhancedCentroids': centroids(result.labels, selection.selected_k),
     }
+    control = None
     if configuration:
         # Existing SOP 3 fitter; same PCA, automatic k, and canonical parameters.
         controls = [sop3.fit_random_pca_kmeans(matrix, seed, seed + 1,
                     expected_shape=matrix.shape, selected_k=selection.selected_k) for seed in sop3.SEEDS]
         keys = tuple(metrics(result))
         summaries = {key: sop3._descriptive([getattr(run, key) for run in controls]) for key in keys}
-        (ROOT / 'random-control.json').write_text(json.dumps({
+        control = {
             'runs': [{'metrics': metrics(run), 'clusterSizes': list(run.cluster_sizes)} for run in controls],
             'randomMean': {key: summaries[key]['mean'] for key in keys},
             'randomSd': {key: summaries[key]['standard_deviation_ddof_1'] for key in keys}
-        }, allow_nan=False))
+        }
+        (ROOT / 'random-control.json').write_text(json.dumps(control, allow_nan=False))
+    attach_evidence(output, matrix, pca.explained_variance_, [run.labels for run in runs],
+                    [run.labels for run in enhanced_runs], control)
     (ROOT / 'result.json').write_text(json.dumps(output, allow_nan=False))
     digest = lambda values: hashlib.sha256(json.dumps(values, separators=(',', ':')).encode()).hexdigest()
     (ROOT / 'membership-proof.json').write_text(json.dumps({'sampleCount': len(ids), 'selected': digest(ids), 'existing': digest(baseline_ids), 'enhanced': digest(enhanced_ids), 'identical': baseline_ids == enhanced_ids == ids}))
     print('paired_complete', flush=True)
+    checkpoint('evidence_and_control_seconds')
 
 
 if __name__ == '__main__':
