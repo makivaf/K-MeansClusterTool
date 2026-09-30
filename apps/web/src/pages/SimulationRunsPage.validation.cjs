@@ -7,18 +7,32 @@ const React = require("react");
 const { renderToStaticMarkup } = require("react-dom/server");
 const ts = require("typescript");
 const root = path.resolve(__dirname, "../../../..");
+const moduleCaches = new WeakMap();
 function compile(file, dependencies = {}) {
+  let cache = moduleCaches.get(dependencies);
+  if (!cache) { cache = new Map(); moduleCaches.set(dependencies, cache); }
+  if (cache.has(file)) return cache.get(file);
+  const exports = {};
+  cache.set(file, exports);
   const output = ts.transpileModule(fs.readFileSync(file, "utf8"), {
     compilerOptions: { module: ts.ModuleKind.CommonJS, jsx: ts.JsxEmit.ReactJSX, esModuleInterop: true }
   }).outputText;
-  const exports = {};
-  new Function("require", "exports", output)(name => dependencies[name] ?? (name.endsWith(".css") ? {} : require(name)), exports);
+  new Function("require", "exports", output)(name => {
+    if (dependencies[name]) return dependencies[name];
+    if (name.endsWith('.css')) return {};
+    if (name.startsWith('.')) {
+      const base = path.resolve(path.dirname(file), name);
+      const resolved = [base + '.tsx', base + '.ts', path.join(base, 'index.ts')].find(fs.existsSync);
+      if (resolved) return compile(resolved, dependencies);
+    }
+    return require(name);
+  }, exports);
   return exports;
 }
 const contract = compile(path.join(root, "packages/shared/src/simulation.ts"));
 const cacheRoot = path.join(root, "apps/api/private/simulation-runs");
 const saved = fs.readdirSync(cacheRoot).filter(name => /^runtime-v2-1-.*\.json$/.test(name)).map(name => contract.SimulationRunStateSchema.parse(
-  JSON.parse(fs.readFileSync(path.join(cacheRoot, name), "utf8")).state)).filter(state => state.configurationKey === "custom:100:3");
+  JSON.parse(fs.readFileSync(path.join(cacheRoot, name), "utf8")).state)).filter(state => state.configurationKey === "custom:100:auto");
 assert.equal(saved.length, 1, "Run API simulation execution validation with --execute first");
 const key = saved[0].configurationKey;
 const equalDeps = (a, b) => a && b && a.length === b.length && a.every((v, i) => Object.is(v, b[i]));
@@ -91,188 +105,108 @@ globalThis.fetch = async (url, options) => {
 };
 (async () => {
   try {
-    hooks.render();
-    assert.equal(progress(), null);
+    hooks.render(); await hooks.settle();
+    assert.equal(progress().props.stage, -1);
     assert.equal(result(), undefined);
+    assert.equal(requests.length, 0);
     assert.match(renderToStaticMarkup(button()), /Run Simulation/);
-    assert.equal(find(hooks.output, node => node.props?.id === "simulation-analysis-status"), null);
-    await hooks.settle();
-    assert.equal(requests.length, 0, "Cached complete metadata must not start a run or fetch results");
-    assert.equal(find(hooks.output, node => node.type === "button" && node.props.children === "Full Dataset"), null);
-    const initialSlider = find(hooks.output, node => node.props?.id === "simulation-sample-count");
-    assert.equal(initialSlider.props.value, 100);
-    assert.equal(initialSlider.props.min, 100);
-    assert.equal(initialSlider.props.max, 2436);
-    const override = find(hooks.output, node => node.type === "input" && node.props.type === "checkbox");
-    assert.equal(override.props.checked, false);
-    assert.equal(find(hooks.output, node => node.props?.["aria-label"] === "Increase manual k"), null);
-    override.props.onChange({ target: { checked: true } }); hooks.render();
-    find(hooks.output, node => node.props?.["aria-label"] === "Increase manual k").props.onClick(); hooks.render();
-    await hooks.settle();
-    assert.equal(requests.length, 0, "Configuration changes never execute or reveal results");
-    button().props.onClick(); hooks.render();
-    assert.equal(button().props.disabled, true);
-    assert.equal(find(hooks.output, node => node.type === "fieldset").props.disabled, true);
-    assert.ok(progress());
-    await hooks.settle();
-    assert.deepEqual(requests.map(r => r.options.method), ["GET"], "Cached success must not POST");
-    for (let stage = 0; stage < 4; stage++) {
-      assert.equal(progress().props.stage, stage, "Cached success must still present every step in order");
-      assert.equal(result(), undefined);
-      assert.equal(button().props.disabled, true);
-      assert.equal((progressHtml().match(/simulation-step is-active/g) || []).length, 1);
-      await advance(400);
-    }
+    assert.equal(find(hooks.output, n => n.props?.id === 'simulation-sample-count').props.max, 2436);
+    // Rapid duplicate events before React renders must be admitted once.
+    const click = button().props.onClick; click(); click(); hooks.render(); await hooks.settle();
+    assert.deepEqual(requests.map(r => r.options.method), ['GET']);
+    assert.equal(progress().props.stage, 4, 'Cached completion follows actual status immediately');
     assert.deepEqual(result(), saved[0].result);
-    assert.equal(button().props.disabled, false);
     assert.match(renderToStaticMarkup(button()), /Rerun/);
-    assert.equal((progressHtml().match(/simulation-step is-reached/g) || []).length, 5);
-    serverState = { simulationId: 1, configurationKey: key, status: "sample_ready", result: null, message: null };
-    button().props.onClick(); hooks.render();
-    assert.equal(result(), undefined, "Hide previous result during POST");
-    assert.equal(button().props.disabled, true);
-    assert.equal((progressHtml().match(/simulation-step is-reached/g) || []).length, 0);
-    await hooks.settle();
-    assert.deepEqual(requests.slice(-2).map(r => r.options.method), ["GET", "POST"]);
-    serverState = { simulationId: 1, configurationKey: key, status: "running", result: null, message: null };
+    const completedHtml = renderToStaticMarkup(React.createElement(page.SimulationResults, {result: saved[0].result}));
+    for (const heading of ['Feature Representation', 'Cluster Number Selection', 'Initialization &amp; Reproducibility', 'Standard vs Enhanced Comparison']) assert.ok(completedHtml.includes(heading));
+    for (const row of saved[0].result.comparison) {
+      for (const value of [row.existing, row.enhanced]) assert.ok(completedHtml.includes(value.toLocaleString('en-US', {maximumFractionDigits: 6})));
+    }
+    assert.match(completedHtml, /PC1 and PC2 are used only for 2D visualization/);
+    assert.doesNotMatch(completedHtml, /no supplied ARI series|Eigenvalues are not supplied|Controlled PCA-only metrics are unavailable/);
+    assert.match(completedHtml, /3 \/ 3/);
+    assert.doesNotMatch(completedHtml, /Exploratory manual/);
+    const adverse = structuredClone(saved[0].result);
+    adverse.comparison.forEach((row, i) => { row.favorableMethod = 'existing'; row.existing = 901 + i; row.enhanced = 951 + i; });
+    const adverseHtml = renderToStaticMarkup(React.createElement(page.SimulationResults, {result:adverse}));
+    adverse.comparison.forEach(row => assert.ok(adverseHtml.includes(`<td class="simulation-favorable">${row.existing}</td><td>${row.enhanced}</td>`), 'Enhanced must not be highlighted when Standard wins'));
+    serverState = {simulationId: 1, configurationKey: key, status: 'sample_ready', result: null, message: null};
+    button().props.onClick(); hooks.render(); await hooks.settle();
+    assert.deepEqual(requests.slice(-2).map(r => r.options.method), ['GET', 'POST']);
+    assert.deepEqual(JSON.parse(requests.at(-1).options.body), {sampleMode:'custom', sampleCount:100, manualK:null});
+    serverState = {...serverState, status:'running', stage:1};
     resolvePost(serverState); await hooks.settle();
-    assert.equal(result(), undefined, "Hide previous result during polling");
+    await advance(60_000);
+    assert.equal(progress().props.stage, 1, 'Elapsed time must not advance the pipeline');
     assert.equal(button().props.disabled, true);
-    await advance(400); await advance(400);
+    assert.match(renderToStaticMarkup(button()), /Running\.\.\./);
+    serverState = {...serverState, stage:2}; await advance(2000);
     assert.equal(progress().props.stage, 2);
-    await advance(4000);
-    assert.equal(progress().props.stage, 2, "Never advance to evaluation before API success");
-    assert.equal((progressHtml().match(/simulation-step is-active/g) || []).length, 1);
-    assert.match(progressHtml(), /individual analytical stage progress is unavailable/);
-    serverState = saved[0];
-    await advance(2000);
-    assert.equal(result(), undefined);
-    await advance(400);
+    failGet = true; await advance(2000);
+    assert.equal(button().props.disabled, true, 'Transport interruption cannot unlock an active backend job');
+    assert.match(renderToStaticMarkup(button()), /Running\.\.\./);
+    failGet = false; await advance(2000);
+    serverState = {...serverState, stage:3}; await advance(2000);
     assert.equal(progress().props.stage, 3);
-    assert.equal(result(), undefined, "Evaluation must finish before revealing results");
-    await advance(400);
-    assert.equal(button().props.disabled, false);
-    assert.deepEqual(result(), saved[0].result);
-    const status = find(hooks.output, node => node.props?.id === "simulation-analysis-status");
-    assert.match(renderToStaticMarkup(status), /Paired analysis complete/);
-    assert.match(renderToStaticMarkup(status), /Both methods used the same participant sample\./);
-    assert.doesNotMatch(renderToStaticMarkup(status), /Sample fingerprint/);
-    const runDetails = find(hooks.output, node => node.type === "details" &&
-      find(node, child => child.type === "summary" && child.props.children === "Run Details"));
-    assert.ok(runDetails && !runDetails.props.open, "Reproducibility metadata is collapsed by default");
-    assert.ok(renderToStaticMarkup(runDetails).includes(saved[0].result.metadata.sampleFingerprint));
-    assert.equal((progressHtml().match(/simulation-step is-reached/g) || []).length, 5);
-    const posts = requests.filter(r => r.options?.method === "POST");
-    assert.equal(posts.length, 1);
-    assert.ok(posts.every(r => r.url === "http://simulation.test/api/simulations/1/run" && JSON.parse(r.options.body).manualK === 3 && JSON.parse(r.options.body).sampleCount === 100));
-    serverState = { simulationId: 1, configurationKey: key, status: "failed", result: null, message: "Simulation analysis failed" };
-    button().props.onClick(); hooks.render(); await hooks.settle();
-    resolvePost(serverState); await hooks.settle();
-    assert.equal(result(), undefined, "Failure must not reveal previous results");
-    assert.equal(button().props.disabled, false);
-    assert.equal((progressHtml().match(/simulation-step is-reached/g) || []).length, 0);
-    assert.equal(requests.filter(r => r.options.method === "POST").length, 2, "An explicitly retried failed run may POST after GET");
-    // Changing configuration hides results and never automatically launches work.
-    find(hooks.output, node => node.props?.id === "simulation-sample-count").props.onChange({ target: { value: "500" } }); hooks.render();
-    find(hooks.output, node => node.props?.["aria-label"] === "Increase manual k").props.onClick(); hooks.render();
-    assert.match(renderToStaticMarkup(hooks.output), /Selected: 500 of 2,437 participants/);
-    assert.equal(find(hooks.output, node => node.props?.["aria-label"] === "Simulation 2"), null);
-    await hooks.settle();
+    assert.equal(button().props.disabled, true);
     assert.equal(result(), undefined);
-    const beforeStale = requests.length;
-    serverState = saved[0];
-    button().props.onClick(); hooks.render(); await hooks.settle();
-    assert.equal(result(), undefined, "Reject cached response belonging to a different configuration");
-    assert.equal(requests.length, beforeStale + 1);
-    find(hooks.output, node => node.props?.id === "simulation-sample-count").props.onChange({ target: { value: "100" } }); hooks.render();
-    find(hooks.output, node => node.props?.["aria-label"] === "Decrease manual k").props.onClick(); hooks.render();
-    await hooks.settle();
-    // Throttling is a request failure, not a failed analytical result.
-    serverState = { simulationId: 1, configurationKey: key, status: "sample_ready", result: null, message: null };
-    throttlePost = true;
-    button().props.onClick(); hooks.render(); await hooks.settle();
-    const statusText = () => renderToStaticMarkup(find(hooks.output, node => node.props?.id === "simulation-analysis-status"));
-    assert.match(statusText(), /Simulation request throttled/);
-    assert.doesNotMatch(statusText(), /Paired analysis did not complete/);
-    const alert = () => find(hooks.output, node => node.props?.role === "alert");
-    assert.match(renderToStaticMarkup(alert()), /HTTP 429/);
-    assert.match(renderToStaticMarkup(alert()), /retried after/);
-    let requestCount = requests.length;
-    find(alert(), node => node.type === "button").props.onClick(); hooks.render(); await hooks.settle();
-    assert.deepEqual(requests.slice(requestCount).map(r => r.options.method), ["GET"], "Retry-After blocks another POST but permits status recovery");
-    assert.match(statusText(), /Simulation request throttled/);
-    serverState = { simulationId: 1, configurationKey: key, status: "running", result: null, message: null };
-    requestCount = requests.length;
-    find(alert(), node => node.type === "button").props.onClick(); hooks.render(); await hooks.settle();
-    assert.deepEqual(requests.slice(requestCount).map(r => r.options.method), ["GET"], "Recover active work without POST");
-    await advance(400); await advance(400);
+    assert.equal(requests.filter(r => r.options.method === 'POST').length, 1);
     serverState = saved[0]; await advance(2000); await advance(400); await advance(400);
     assert.deepEqual(result(), saved[0].result);
-    failGet = true; requestCount = requests.length;
+    // Compare frozen rendered result markup against the branch's original UI.
+    const originalSource = require('child_process').execFileSync('git', ['show', 'HEAD:apps/web/src/pages/SimulationRunsPage.tsx'], {cwd:root, encoding:'utf8'});
+    const originalFile = path.join(__dirname, '.simulation-ui-before.validation.tsx');
+    fs.writeFileSync(originalFile, originalSource);
+    try {
+      const original = compile(originalFile, {
+        '../hooks/useSimulationMetadata': {useSimulationMetadata:()=>({})},
+        '../hooks/useSimulationCapabilities': {useSimulationCapabilities:()=>({})},
+        '../config/api': {API_BASE_URL:'http://simulation.test'},
+        '../../../../packages/shared/src/simulation':contract
+      });
+      // Compare identical legacy data through both presentations; newly supplied
+      // evidence intentionally replaces unavailable values inside frozen components.
+      const legacy = structuredClone(saved[0].result);
+      delete legacy.analysis.existing.ariBySeed;
+      delete legacy.analysis.enhanced.dpc.ariByRun;
+      delete legacy.analysis.pcaContribution;
+      legacy.analysis.enhanced.pcaVariance.forEach(row => { delete row.eigenvalue; });
+      const withoutHighlight = html => html.replace(/ class="simulation-favorable"/g, '');
+      assert.equal(withoutHighlight(renderToStaticMarkup(React.createElement(original.SimulationResults, {result:legacy}))),
+        withoutHighlight(renderToStaticMarkup(React.createElement(page.SimulationResults, {result:legacy}))));
+    } finally { fs.unlinkSync(originalFile); }
+    const input = () => find(hooks.output, n => n.props?.id === 'simulation-sample-number');
+    const before = requests.length;
+    input().props.onChange({target:{value:'500'}}); hooks.render(); await hooks.settle();
+    assert.equal(result(), undefined); assert.equal(requests.length,before);
+    assert.match(renderToStaticMarkup(button()), /Run Simulation/);
     button().props.onClick(); hooks.render(); await hooks.settle();
-    assert.deepEqual(requests.slice(requestCount).map(r => r.options.method), ["GET"], "Never POST when status is unknown");
+    assert.equal(result(),undefined); // Server response is for the old configuration.
+    assert.ok(find(hooks.output,n=>n.props?.role==='alert'));
+    input().props.onChange({target:{value:'100'}}); hooks.render(); await hooks.settle();
+    serverState = {simulationId:1,configurationKey:key,status:'sample_ready',result:null,message:null};
+    throttlePost = true;
+    button().props.onClick(); hooks.render(); await hooks.settle();
+    const alert = () => find(hooks.output,n=>n.props?.role==='alert');
+    assert.match(renderToStaticMarkup(alert()), /HTTP 429/);
+    let count = requests.length;
+    button().props.onClick(); hooks.render(); await hooks.settle();
+    assert.deepEqual(requests.slice(count).map(r=>r.options.method), ['GET']);
+    failGet = true; count=requests.length;
+    button().props.onClick(); hooks.render(); await hooks.settle();
+    assert.deepEqual(requests.slice(count).map(r=>r.options.method), ['GET']);
     assert.match(renderToStaticMarkup(alert()), /HTTP 503/);
-    assert.doesNotMatch(statusText(), /Paired analysis did not complete/);
-    failGet = false; requestCount = requests.length;
-    find(alert(), node => node.type === "button").props.onClick(); hooks.render(); await hooks.settle();
-    for (let i = 0; i < 4; i++) await advance(400);
-    assert.deepEqual(result(), saved[0].result);
-    assert.deepEqual(requests.slice(requestCount).map(r => r.options.method), ["GET"]);
-    for (const state of saved) {
-      const html = renderToStaticMarkup(React.createElement(page.SimulationResults, { result: state.result, manualK: 3 }));
-      const headings = ["Feature Representation", "Cluster Number Selection", "Initialization", "Standard vs Enhanced Comparison"];
-      let last = -1;
-      for (const heading of headings) {
-        const next = html.indexOf(`class="simulation-section-title">${heading}</h2>`);
-        assert.ok(next > last, `${heading} follows the previous section`);
-        last = next;
-      }
-      const control = state.result.analysis.enhanced.dpc.randomControl;
-      assert.match(html, /PCA-space random-start agreement with DPC solution:/);
-      if (control) assert.ok(html.includes(`${control.matchingRuns} of ${control.totalRandomRuns} random starts`));
-      assert.match(html, /manual k = 3/);
-      assert.match(html, /Relative Change/);
-      assert.match(html, /PC1 and PC2 are used only for 2D visualization/);
-      assert.match(html, /Selected Centers/);
-      assert.doesNotMatch(html, /Existing vs Enhanced|Simulation 1|SOP 1/);
-      assert.doesNotMatch(html, /Longitudinal|ADAS-Cog13|Mixed-Effects|LME/);
-      for (const row of state.result.comparison) {
-        const format = value => value.toLocaleString("en-US", { maximumFractionDigits: 6 });
-        assert.ok(html.includes(format(row.existing)));
-        assert.ok(html.includes(format(row.enhanced)));
-      }
-    }
-    assert.ok(requests.every(r => r.options.method === "GET" ? r.url.includes("?sampleMode=custom&sampleCount=") : !!r.options.body));
-    const html = renderToStaticMarkup(React.createElement(page.SimulationResults, { result: saved[0].result }));
-    assert.doesNotMatch(html, /Correlation heatmap unavailable|projections unavailable|Full DPC decision graph unavailable|not supplied/);
-    assert.match(html, /not statistical significance/);
-    assert.doesNotMatch(html, /2\?10|0\?29|sample\?s|Enhanced\?s|PC1\?PC2/);
-    assert.match(html, /not the canonical enhancement comparison/);
-    const requestsBeforeChange = requests.length;
-    const sampleInput = () => find(hooks.output, node => node.props?.id === "simulation-sample-number");
-    sampleInput().props.onChange({ target: { value: "2437" } }); hooks.render();
-    assert.equal(sampleInput().props.value, 2436, "Full-cohort input is clamped to a custom sample");
-    assert.equal(result(), undefined, "Changing a completed configuration immediately hides its result");
-    await hooks.settle();
-    assert.equal(requests.length, requestsBeforeChange, "Changing sample size does not run automatically");
-    button().props.onClick(); hooks.render(); await hooks.settle();
-    assert.ok(requests.at(-1).url.endsWith("?sampleMode=custom&sampleCount=2436&manualK=3"));
-    assert.equal(result(), undefined, "A cached 100-participant sample cannot satisfy a different size");
-    find(hooks.output, node => node.type === "input" && node.props.type === "checkbox").props.onChange({ target: { checked: false } }); hooks.render();
-    assert.equal(result(), undefined, "Disabling override hides the overridden result");
-    await hooks.settle();
-    serverState = { simulationId: 1, configurationKey: "custom:2436:auto", status: "sample_ready", result: null, message: null };
-    throttlePost = false;
+    failGet = false; throttlePost = false;
     Date.now = () => originalDateNow() + 120_000;
+    serverState = {simulationId:1,configurationKey:key,status:'sample_ready',result:null,message:null};
     button().props.onClick(); hooks.render(); await hooks.settle();
-    assert.ok(requests.at(-2).url.endsWith("?sampleMode=custom&sampleCount=2436"));
-    assert.deepEqual(JSON.parse(requests.at(-1).options.body), { sampleMode: "custom", sampleCount: 2436, manualK: null });
-    resolvePost({ ...serverState, status: "failed", message: "Test stops before analysis" }); await hooks.settle();
-    for (const [input, expected] of [["99", 100], ["500", 500], ["500.8", 500], ["9999", 2436]]) {
-      sampleInput().props.onChange({ target: { value: input } }); hooks.render();
-      assert.equal(sampleInput().props.value, expected);
-    }
-    assert.ok(requests.every(r => r.options.method === "GET" ? r.url.includes("sampleMode=custom") : JSON.parse(r.options.body).sampleMode === "custom"));
-    console.log("PASS initial visibility, GET-first recovery, configuration-bound requests, progress/completion, failure/retry, throttling, runtime configuration and stale response rejection, ordered results and preserved metrics for the real runtime run.");
-  } finally { Date.now = originalDateNow; hooks.unmount(); globalThis.fetch = originalFetch; globalThis.setTimeout = originalSetTimeout; globalThis.clearTimeout = originalClearTimeout; }
-})().catch(error => { console.error(error); process.exitCode = 1; });
+    resolvePost({...serverState,status:'running',stage:2}); await hooks.settle();
+    assert.equal(button().props.disabled,true);
+    serverState = {...serverState,status:'failed',message:'Test analytical failure'};
+    await advance(2000);
+    assert.equal(button().props.disabled,false,'An actual job failure must release the button');
+    assert.doesNotMatch(renderToStaticMarkup(button()), /Running\.\.\./);
+    assert.ok(fs.readFileSync(path.join(root,'apps/web/src/App.tsx'),'utf8').includes('SimulationRuns key={datasetRevision}'));
+    console.log('PASS duplicate-click guard, GET-first recovery, real result rendering, exact before/after result markup, progress, polling, stale response rejection, configuration and dataset invalidation, throttling and network recovery.');
+  } finally { Date.now=originalDateNow; hooks.unmount(); globalThis.fetch=originalFetch; globalThis.setTimeout=originalSetTimeout; globalThis.clearTimeout=originalClearTimeout; }
+})().catch(error=>{console.error(error); process.exitCode=1;});

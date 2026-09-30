@@ -73,8 +73,11 @@ export const SimulationResults = ({ result }: { result: NonNullable<SimulationRu
         <PcaChart enhanced={enhanced} />
         <dl className="simulation-detail-list sop-summary"><div><dt>Input variables</dt><dd>{enhanced.retainedVariables.length}</dd></div><div><dt>Components retained</dt><dd>{enhanced.pcaComponents}</dd></div><div><dt>Cumulative variance</dt><dd>{percent(enhanced.cumulativeExplainedVariance)}</dd></div><div><dt>Variance threshold</dt><dd>≥ 85%</dd></div></dl>
       </MethodCard>}>
-        <VarianceSummary retained={enhanced.pcaComponents} rows={enhanced.pcaVariance.map(row => ({ component: row.component, cumulativeVariance: row.cumulativeExplainedVariance }))} />
-        <PcaContribution dimensions={enhanced.retainedVariables.length} components={enhanced.pcaComponents} note="Controlled PCA-only metrics are unavailable for this simulation. The overall method comparison below includes all enhancements." />
+        <VarianceSummary retained={enhanced.pcaComponents} rows={enhanced.pcaVariance.map(row => ({ component: row.component, eigenvalue: row.eigenvalue, cumulativeVariance: row.cumulativeExplainedVariance }))} />
+        <PcaContribution dimensions={enhanced.retainedVariables.length} components={enhanced.pcaComponents}
+          existing={result.analysis.pcaContribution?.existing} enhanced={result.analysis.pcaContribution?.enhanced}
+          relativeChange={result.analysis.pcaContribution ? Object.fromEntries(Object.entries(result.analysis.pcaContribution.relativeChange).filter(([, value]) => value !== null)) : undefined}
+          note={result.analysis.pcaContribution ? `Held constant: k = ${result.analysis.pcaContribution.k}, Lloyd algorithm, random initialization, ${result.analysis.pcaContribution.runCount} seeds, n = ${existing.participantCount.toLocaleString()}.` : "Controlled PCA-only metrics are unavailable for this simulation. The overall method comparison below includes all enhancements."} />
       </SopComparison>
     </section>
     <section className="simulation-surface simulation-results-section">
@@ -85,7 +88,7 @@ export const SimulationResults = ({ result }: { result: NonNullable<SimulationRu
     </section>
     <section className="simulation-surface simulation-results-section">
       <div className="simulation-section-heading"><h2 className="simulation-section-title">Initialization &amp; Reproducibility</h2></div>
-      <InitializationComparison simulation selectedCenters={enhanced.dpc.centroidCount}
+      <InitializationComparison simulation randomRuns={existing.ariBySeed} dpcRuns={enhanced.dpc.ariByRun} selectedCenters={enhanced.dpc.centroidCount}
         centerTable={<DpcCenterTable centers={enhanced.dpc.centers.map((center, index) => ({ ...center, center: index + 1 }))} />}
         decisionGraph={<>
           <DecisionGraph enhanced={enhanced} />
@@ -99,7 +102,7 @@ export const SimulationResults = ({ result }: { result: NonNullable<SimulationRu
     <section className="simulation-surface simulation-results-section">
       <div className="simulation-section-heading"><h2 className="simulation-section-title">Standard vs Enhanced Comparison</h2><p>Internal validation and cluster distributions for the actual run: n = {existing.participantCount.toLocaleString("en-US")}.</p></div>
       <section className="simulation-chart"><h3 className="card-title">Scatter Plot Comparison (PCA Space)</h3><div className="simulation-two-column">{(["Standard K-Means", "Enhanced K-Means"] as const).map((name, index) => <div key={name}><h4>{name}</h4><ProjectionChart analysis={result.analysis} method={index ? "enhanced" : "standard"} /><p className="simulation-compact-note">Initialization: {index ? "DPC (Deterministic)" : "Random"} · {index ? enhanced.iterations : selectedRun.iterations} iterations · Converged: {(index ? enhanced.convergedBeforeMaxIter : selectedRun.convergedBeforeMaxIter) ? "Yes" : "No"}{!index && " · Seed 0"}</p></div>)}</div><p className="simulation-compact-note">PC1 and PC2 are used only for 2D visualization. Both plots share coordinates and axes; diamonds mark projected cluster means. Cluster numbers are method-specific.</p></section>
-      <section className="simulation-chart"><h3 className="card-title">{exploratory ? "Internal Validation (Exploratory Override)" : "Internal Validation"}</h3>{exploratory && <p className="simulation-preview-note">These relative changes compare an exploratory Standard k override with automatic Enhanced clustering. They are not the canonical enhancement comparison.</p>}<div className="simulation-table-container"><table className="simulation-comparison-table"><thead><tr><th>Metric</th><th>Standard K-Means</th><th>Enhanced K-Means</th><th>{exploratory ? "Relative Change (Exploratory)" : "Relative Change"}</th></tr></thead><tbody>{result.comparison.map(row => <tr key={row.metric}><th>{metricTitles[row.metric]}<br /><span>{row.direction === "lower_is_better" ? "Lower is better" : "Higher is better"}</span></th><td className={row.favorableMethod === "existing" ? "simulation-favorable" : undefined}>{format(row.existing)}</td><td className="simulation-favorable">{format(row.enhanced)}</td><td>{row.relativeImprovementPercent == null ? "Undefined (zero baseline) or unavailable" : `${format(row.relativeImprovementPercent)}%`}</td></tr>)}</tbody></table></div><p className="simulation-compact-note">Direction-aware relative metric change, not statistical significance. Standard metrics are the mean of 30 runs; the scatter and distribution show seed 0.</p></section>
+      <section className="simulation-chart"><h3 className="card-title">{exploratory ? "Internal Validation (Exploratory Override)" : "Internal Validation"}</h3>{exploratory && <p className="simulation-preview-note">These relative changes compare an exploratory Standard k override with automatic Enhanced clustering. They are not the canonical enhancement comparison.</p>}<div className="simulation-table-container"><table className="simulation-comparison-table"><thead><tr><th>Metric</th><th>Standard K-Means</th><th>Enhanced K-Means</th><th>{exploratory ? "Relative Change (Exploratory)" : "Relative Change"}</th></tr></thead><tbody>{result.comparison.map(row => <tr key={row.metric}><th>{metricTitles[row.metric]}<br /><span>{row.direction === "lower_is_better" ? "Lower is better" : "Higher is better"}</span></th><td className={row.favorableMethod === "existing" ? "simulation-favorable" : undefined}>{format(row.existing)}</td><td className={row.favorableMethod === "enhanced" ? "simulation-favorable" : undefined}>{format(row.enhanced)}</td><td>{row.relativeImprovementPercent == null ? "Undefined (zero baseline) or unavailable" : `${format(row.relativeImprovementPercent)}%`}</td></tr>)}</tbody></table></div><p className="simulation-compact-note">Direction-aware relative metric change, not statistical significance. Standard metrics are the mean of 30 runs; the scatter and distribution show seed 0.</p></section>
       <section className="simulation-chart"><h3 className="card-title">Cluster Distribution</h3><div className="simulation-two-column"><ClusterDistribution title="Standard K-Means · Seed 0" sizes={selectedRun.clusterSizes} participants={existing.participantCount} /><ClusterDistribution title="Enhanced K-Means" sizes={enhanced.clusterSizes} participants={enhanced.participantCount} /></div></section>
     </section>
   </>;
@@ -118,12 +121,14 @@ export const SimulationRunsPage = () => {
   const [stage, setStage] = useState<number | null>(null);
   const [hasCompleted, setHasCompleted] = useState(false);
   const postAllowedAt = useRef(0);
+  const runLocked = useRef(false);
   const configuration = { sampleMode, sampleCount, manualK: null };
   const changeSampleCount = (value: string) => setSampleCount(Math.min(2436, Math.max(100, Math.trunc(Number(value)) || 100)));
   const configurationKey = simulationConfigurationKey(configuration);
   const [requestedKey, setRequestedKey] = useState<string | null>(null);
   useEffect(() => {
-    setAttempt(0); setRunState(null); setStage(null); setRunError(null);
+    runLocked.current = false;
+    setAttempt(0); setRunState(null); setStage(null); setRunError(null); setHasCompleted(false);
   }, [configurationKey]);
   useEffect(() => {
     // Metadata (including a cached analysisStatus) never starts execution or
@@ -131,6 +136,7 @@ export const SimulationRunsPage = () => {
     if (attempt === 0 || requestedKey !== configurationKey) return;
     const controller = new AbortController();
     let timer: ReturnType<typeof setTimeout>;
+    let backendRunning = false;
     const execute = async (method: "POST" | "GET", allowStart = false) => {
       try {
         const query = new URLSearchParams({ sampleMode, sampleCount: String(configuration.sampleCount) });
@@ -146,6 +152,7 @@ export const SimulationRunsPage = () => {
           const retryAt = seconds !== null ? Date.now() + seconds * 1000 : Date.parse(retryAfter ?? "");
           postAllowedAt.current = Number.isFinite(retryAt) ? retryAt : 0;
           setRunError(`Simulation request throttled (HTTP 429). Analysis has not been reported as failed.${postAllowedAt.current > Date.now() ? ` New execution requests can be retried after ${new Date(postAllowedAt.current).toLocaleTimeString()}.` : " Please wait before requesting execution again."} Retry checks the existing status first.`);
+          if (backendRunning) timer = setTimeout(() => void execute("GET"), 2000);
           return;
         }
         if (!response.ok) throw new Error(`Unable to ${method === "GET" ? "check simulation status" : "request simulation execution"} (HTTP ${response.status}). Retry checks status first.`);
@@ -161,10 +168,16 @@ export const SimulationRunsPage = () => {
             return;
           }
           setRunError(null);
+          backendRunning = state.status === "running";
           setRunState(state);
           if (state.status === "running" || state.status === "sample_ready") timer = setTimeout(() => void execute("GET"), 2000);
         }
-      } catch (caught) { if (!controller.signal.aborted) setRunError(caught instanceof Error && caught.message.startsWith("Unable to ") ? caught.message : "Unable to verify simulation status. Retry checks status before requesting execution."); }
+      } catch (caught) {
+        if (!controller.signal.aborted) {
+          setRunError(caught instanceof Error && caught.message.startsWith("Unable to ") ? caught.message : "Unable to verify simulation status. Retry checks status before requesting execution.");
+          if (backendRunning) timer = setTimeout(() => void execute("GET"), 2000);
+        }
+      }
     };
     // Recover completed/running work without consuming POST admission quota.
     // Only the initial status check may start work; polling never restarts it.
@@ -173,23 +186,20 @@ export const SimulationRunsPage = () => {
   }, [simulation, attempt, configurationKey, requestedKey]);
 
   const active = attempt > 0 && requestedKey === configurationKey && runState?.configurationKey === configurationKey && runState?.simulationId === simulation ? runState : null;
-  const interrupted = !!runError || active?.status === "failed";
+  const interrupted = (!!runError && active?.status !== "running") || active?.status === "failed";
   useEffect(() => {
-    if (stage === null || stage === 4 || interrupted) return;
-    // These short transitions present the frontend workflow, not backend
-    // telemetry. Hold at Running Algorithms until the API confirms success,
-    // including when POST immediately returns a cached completed result.
-    if (stage >= 2 && active?.status !== "complete") return;
-    const timer = setTimeout(() => {
-      setStage(stage + 1);
-      if (stage === 3) setHasCompleted(true);
-    }, 400);
-    return () => clearTimeout(timer);
-  }, [stage, active?.status, interrupted]);
-  const running = stage !== null && stage < 4 && !interrupted;
+    if ((interrupted && active?.status !== "running") || stage === 4) runLocked.current = false;
+  }, [interrupted, stage, active?.status]);
+  useEffect(() => {
+    if (!active) return;
+    if (active.status === "complete") { setStage(4); setHasCompleted(true); }
+    else if (active.status === "running") setStage(active.stage ?? 2);
+  }, [active?.status, active?.stage]);
+  const running = active?.status === "running" || (stage !== null && stage < 4 && !interrupted);
   const result = stage === 4 && !interrupted && active?.status === "complete" ? active.result : null;
   const start = () => {
-    if (running) return;
+    if (running || runLocked.current) return;
+    runLocked.current = true;
     setRunError(null);
     setRunState(null);
     setRequestedKey(configurationKey);

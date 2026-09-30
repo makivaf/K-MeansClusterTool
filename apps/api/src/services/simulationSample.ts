@@ -28,7 +28,8 @@ const hash = (value: unknown): string => createHash("sha256").update(JSON.string
 // Numeric ordering without converting potentially large identifiers to floating point.
 const compareRid = (left: string, right: string): number => left.length - right.length || (left < right ? -1 : left > right ? 1 : 0);
 
-/** No side effects, shared random state, cached roster, or public participant output. */
+const samples = new Map<string, SimulationSample>();
+/** No shared random state or public participant output; cached values are copied. */
 export function getSimulationSample(simulationId: number, configuration?: SimulationConfiguration): SimulationSample {
   if (!Number.isInteger(simulationId) || !Object.hasOwn(simulationSeeds, simulationId)) {
     throw new RangeError("Simulation ID must be an integer from 1 to 5.");
@@ -36,7 +37,10 @@ export function getSimulationSample(simulationId: number, configuration?: Simula
   if (configuration) SimulationConfigurationSchema.parse(configuration);
   const id = simulationId as SimulationId;
   const seed = simulationSeeds[id];
-  const { participants } = loadSimulationCohort();
+  const { participants, provenance } = loadSimulationCohort();
+  const cacheKey = `${provenance.rosterSha256}:${provenance.source.sha256}:${id}:${configuration?.sampleCount ?? "legacy"}`;
+  const cached = samples.get(cacheKey);
+  if (cached) return structuredClone(cached);
   const phaseSourceCounts = {} as Record<EntryPhase, number>;
   const phaseSampleCounts = {} as Record<EntryPhase, number>;
   const sampleParticipantIds: string[] = [];
@@ -63,11 +67,14 @@ export function getSimulationSample(simulationId: number, configuration?: Simula
     sampleParticipantIds.push(...ranked.slice(0, count).map(({ RID }) => RID));
   }
   sampleParticipantIds.sort(compareRid);
-  return {
+  const sample: SimulationSample = {
     simulationId: id, seed, samplingFraction: target === undefined ? samplingFraction : target / participants.length, samplingMethod,
     sourceParticipantCount: participants.length, sampleParticipantCount: sampleParticipantIds.length,
     phaseSourceCounts, phaseSampleCounts, sampleParticipantIds,
     // Fingerprint identifies membership: UTF-8 compact JSON of the sorted string RID array, no newline.
     fingerprint: hash(sampleParticipantIds)
   };
+  if (samples.size >= 64) samples.clear();
+  samples.set(cacheKey, structuredClone(sample));
+  return sample;
 }

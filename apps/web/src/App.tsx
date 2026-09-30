@@ -16,9 +16,11 @@ export default function App() {
   }, [pathname]);
   // Validation belongs to this running app; navigation preserves it, reloads do not.
   const [dataset, setDataset] = useState<UploadResponse | null>(null);
+  const [datasetRevision, setDatasetRevision] = useState(0);
   const analysis = useStudyFindings(dataset);
   const onValidated = (value: UploadResponse | null) => {
     analysis.reset();
+    setDatasetRevision(revision => revision + 1);
     setDataset(value);
   };
   return <AppShell>
@@ -26,7 +28,7 @@ export default function App() {
       <div hidden={pathname !== "/dataset-setup"}><DatasetSetup onValidated={onValidated} dataset={dataset} /></div>
       {/* Keep the visited simulation mounted, as with Dataset Setup, so route
           changes preserve configuration, results, and in-flight polling. */}
-      {(simulationVisited || pathname === "/simulation-runs") && <div hidden={pathname !== "/simulation-runs"}><SimulationRuns /></div>}
+      {(simulationVisited || pathname === "/simulation-runs") && <div hidden={pathname !== "/simulation-runs"}><SimulationRuns key={datasetRevision} /></div>}
       <Routes>
         <Route path="/" element={<Navigate to="/dataset-setup" replace />} />
         <Route path="/dataset-setup" element={null} />

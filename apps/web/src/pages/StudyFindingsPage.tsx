@@ -131,10 +131,12 @@ const StudyResults = memo(function StudyResults({ run }: { run: UnifiedResearchR
         </MethodCard>} />
       </Panel>}
       {activeTab === "sop3" && <Panel title="Initialization & Reproducibility" variant="surface">
-        <InitializationComparison randomRuns={studyEvidence?.ariBySeed}
+        <InitializationComparison randomRuns={studyEvidence?.ariBySeed} dpcRuns={defenseGeometry ? studyEvidence?.dpcAriByRun : undefined}
           randomUnavailable={sopError ?? "Loading validated initialization comparison..."}
           selectedCenters={run.initialization.selectedCentroids.length}
-          centerTable={<DpcCenterTable centers={run.initialization.selectedCentroids.map(center => ({ ...center, center: center.rank }))} />}
+          centerTable={<DpcCenterTable centers={run.initialization.selectedCentroids.map(center => ({ ...center, center: center.rank,
+            rid: defenseGeometry ? studyEvidence?.dpcCenters?.find(row => row.center === center.rank && row.rho === center.rho &&
+              Math.abs(row.delta - center.delta) < 1e-9 && Math.abs(row.gamma - center.gamma) < 1e-9)?.rid : undefined }))} />}
           decisionGraph={<p className="mt-4 text-sm text-muted">The full density-distance decision graph is not supplied by the study result. Selected-center statistics are shown above.</p>} />
       </Panel>}
       {activeTab === "final" && <>
