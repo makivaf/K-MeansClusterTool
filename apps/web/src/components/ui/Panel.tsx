@@ -32,7 +32,7 @@ const bodyStyles = {
 export const Panel = ({ title, children, action, className = "", variant = "legacy" }: PanelProps) => (
   <section className={`research-panel ${panelStyles[variant]} ${className}`}>
     <div className={`research-panel-heading flex items-center justify-between ${headerStyles[variant]}`}>
-      <h2 className={variant === "result" ? "text-lg font-semibold tracking-tight text-teal-900" : "text-base font-semibold tracking-tight text-ink"}>{title}</h2>
+      <h2 className={`section-title ${variant === "result" ? "text-lg font-semibold tracking-tight text-teal-900" : "text-base font-semibold tracking-tight text-ink"}`}>{title}</h2>
       {action}
     </div>
     <div className={`research-panel-body ${bodyStyles[variant]}`}>{children}</div>

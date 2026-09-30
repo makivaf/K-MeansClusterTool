@@ -3,16 +3,28 @@
 .study-method-card dl > div { min-width: 0; overflow-wrap: anywhere; }
 .study-method-card.is-enhanced { border-color: var(--research-selected-border); background: #fbfefe; }
 .study-findings .study-overview { min-width: 540px; }
-.study-findings .study-overview :is(th, td) { width: 33.333%; text-align: left; }
+.study-findings .study-overview :is(th, td) { width: 33.333%; text-align: left; border-bottom: 0; }
+.study-findings .study-overview tr { border-bottom: 1px solid var(--research-border); }
 .study-findings .study-overview tr > :last-child { color: var(--research-primary); font-weight: 500; }
 .study-findings .study-correlation-table { min-width: 350px; table-layout: fixed; }
 .study-findings .study-correlation-table :is(th, td) { height: 22px; padding: 2px; text-align: center; font-size: 10px; }
 .study-findings .study-correlation-table th:first-child { width: 28px; }
 .study-correlation-key { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 4px 12px; margin-top: 12px; font-size: 11px; color: var(--research-muted); }
 .study-correlation-key > li { min-width: 0; overflow-wrap: anywhere; }
+.study-sop-tabs { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); overflow: hidden; border: 1px solid var(--research-border); border-radius: 10px; background: white; }
+.study-sop-tabs button { min-width: 0; padding: 16px; text-align: left; border-bottom: 2px solid transparent; }
+.study-sop-tabs button + button { border-left: 1px solid var(--research-border); }
+.study-sop-tabs button span { display: block; margin-bottom: 6px; font-size: 10px; text-transform: uppercase; letter-spacing: .06em; color: var(--research-muted); }
+.study-sop-tabs button strong { display: block; font-size: 13px; font-weight: 600; }
+.study-sop-tabs button[aria-selected="true"] { color: var(--research-primary); background: #eef8f7; border-bottom-color: var(--research-primary); }
+.study-sop-tabs button:focus-visible { outline: 2px solid var(--research-primary); outline-offset: -3px; }
+.study-tab-content { min-width: 0; }
 @media (max-width: 1100px) {
   .study-method-grid { grid-template-columns: 1fr; }
 }
 @media (max-width: 767px) {
   .study-method-card { padding: 16px; }
+  .study-sop-tabs { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .study-sop-tabs button:nth-child(3) { border-left: 0; }
+  .study-sop-tabs button:nth-child(n+3) { border-top: 1px solid var(--research-border); }
 }

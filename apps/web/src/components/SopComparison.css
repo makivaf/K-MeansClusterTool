@@ -1,0 +1,64 @@
+.sop-method-card { display: flex; flex-direction: column; min-width: 0; }
+.sop-method-card > .research-badge { width: fit-content; align-self: flex-start; }
+.sop-method-card > dl:last-child { margin-top: auto; padding-top: 20px; }
+.sop-support-card { min-width: 0; margin-top: 20px; padding: 20px; border: 1px solid var(--research-border); border-radius: 10px; }
+.sop-variable-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 16px; }
+.sop-variable-chips li { padding: 3px 7px; border: 1px solid var(--research-border); border-radius: 4px; font-size: 10px; color: var(--research-muted); }
+.sop-method-card .study-correlation-table { min-width: 350px; table-layout: fixed; }
+.sop-method-card .study-correlation-table :is(th, td) { height: 22px; padding: 2px; text-align: center; font-size: 10px; }
+.sop-method-card .study-correlation-table th:first-child { width: 28px; }
+.sop-table { width: 100%; min-width: 360px; }
+.sop-support-card .research-table thead { background: transparent; border-top: 0; text-transform: none; letter-spacing: normal; font-size: 12px; }
+.sop-support-card .research-table th { font-weight: 400; }
+.sop-table :is(th, td):not(:first-child) { text-align: right; }
+.sop-selected-row { background: var(--research-selected-bg, #eef8f7); color: var(--research-primary); }
+.sop3-headline { font-size: 30px; line-height: 1.2; font-weight: 600; font-variant-numeric: tabular-nums; }
+.sop3-description { margin-top: 6px; margin-bottom: 20px; }
+.sop3-chart-title { margin-top: auto; }
+.sop3-chart { height: 240px; min-width: 0; margin-top: 12px; }
+.sop3-chart-unavailable { display: flex; align-items: center; justify-content: center; height: 100%; padding: 16px; text-align: center; }
+.sop3-note { margin-top: 16px; }
+.sop-evidence { margin-top: 24px; padding-top: 20px; border-top: 1px solid var(--research-border); }
+.sop-evidence > details { margin-top: 16px; }
+.sop-evidence table.dpc-center-table { min-width: 480px; table-layout: fixed; border-collapse: collapse; font-size: 13px; }
+.sop-evidence table.dpc-center-table thead { background: transparent; border-top: 0; text-transform: none; letter-spacing: normal; color: var(--research-muted); font-size: 11px; }
+.sop-evidence table.dpc-center-table :is(th, td) { padding: 10px 12px; border-bottom: 1px solid var(--research-border); text-align: right; vertical-align: middle; font-variant-numeric: tabular-nums; }
+.sop-evidence table.dpc-center-table th { font-weight: 400; }
+.sop-evidence table.dpc-center-table :is(th, td):first-child { text-align: center; }
+.sop-evidence table.dpc-center-table :is(th, td):nth-child(2) { overflow-wrap: anywhere; }
+.sop-evidence table.dpc-center-table tbody tr:first-child { background: var(--research-selected-bg, #eef8f7); }
+.sop-evidence .dpc-center-star { color: var(--research-primary); margin-right: 6px; }
+.sop-evidence .dpc-center-gamma { color: var(--research-primary); font-weight: 600; }
+.sop-evidence summary { cursor: pointer; padding: 10px 12px; color: var(--research-primary); background: var(--research-selected-bg, #eef8f7); border: 1px solid var(--research-selected-border); border-radius: 6px; }
+.sop-summary { margin-top: 20px; }
+.sop-summary > div { display: flex; justify-content: space-between; gap: 12px; padding: 8px 0; border-bottom: 1px solid var(--research-border); font-size: 12px; }
+.sop-summary dt { color: var(--research-muted); }
+.sop-summary dd { color: var(--research-primary); font-weight: 600; }
+.sop-cluster { margin-top: 20px; }
+.sop-distribution-values { display: flex; justify-content: space-between; gap: 12px; font-size: 13px; }
+.sop-distribution-values small { display: block; margin-top: 4px; color: var(--research-muted); font-size: 12px; }
+.sop-distribution-track { height: 8px; margin-top: 10px; overflow: hidden; border-radius: 4px; background: #edf1f3; }
+.sop-distribution-track > div { height: 100%; background: var(--research-primary); }
+.sop-distribution-track > .is-light { opacity: .5; }
+@media (max-width: 767px) { .sop-support-card { padding: 16px; } }
+
+/* SOP 1/2 share the simulation figure presentation on both pages. */
+.sop-figures { --simulation-teal: var(--research-primary); --simulation-muted: var(--research-muted); font-size: 14px; }
+.sop-figures .simulation-two-column { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px; }
+.sop-figures .simulation-chart { min-width: 0; border: 1px solid #e8eff1; border-radius: 10px; padding: 24px; }
+.sop-figures .simulation-enhanced { background: #fbfefe; border-color: var(--research-selected-border); }
+.sop-figures .simulation-chart h3 { margin-bottom: 12px; }
+.sop-figures .simulation-chart-plot { height: 280px; min-width: 0; margin-block: 12px; }
+.sop-figures .simulation-chart .recharts-wrapper text { font-size: 12px; fill: var(--simulation-muted); }
+.sop-figures .simulation-chart .recharts-reference-line text { fill: #e58a00; }
+.sop-figures .simulation-compact-note { font-size: 12px; color: var(--simulation-muted); line-height: 1.6; }
+.sop-figures .simulation-detail-list { margin-top: 16px; }
+.sop-figures .simulation-detail-list.sop-summary { margin-top: auto; }
+.sop-figures .simulation-detail-list > div { display: flex; justify-content: space-between; gap: 16px; padding: 10px 0; border-bottom: 1px solid var(--research-border); font-size: 13px; }
+.sop-figures .simulation-detail-list dt { color: var(--simulation-muted); }
+.sop-figures .simulation-detail-list dd { min-width: 0; text-align: right; font-weight: 500; overflow-wrap: anywhere; }
+@media (max-width: 900px) { .sop-figures .simulation-two-column { grid-template-columns: 1fr; } }
+@media (max-width: 767px) {
+  .sop-figures .simulation-chart { padding: 16px; }
+  .sop-figures .simulation-chart-plot { height: 260px; }
+}

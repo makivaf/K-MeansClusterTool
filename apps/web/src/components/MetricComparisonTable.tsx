@@ -6,12 +6,14 @@ export const metricDefinitions = [
 export type MetricKey = typeof metricDefinitions[number]["key"];
 export const formatMetric = (value: number | undefined) => value === undefined ? "—" : value.toFixed(6);
 
-export const MetricComparisonTable = ({ existing = {}, enhanced = {}, relativeChange }: {
+export const MetricComparisonTable = ({ existing = {}, enhanced = {}, relativeChange, existingLabel = "Standard K-Means", enhancedLabel = "Enhanced K-Means" }: {
   existing?: Partial<Record<MetricKey, number>>;
   enhanced?: Partial<Record<MetricKey, number>>;
   relativeChange?: Partial<Record<MetricKey, number>>;
+  existingLabel?: string;
+  enhancedLabel?: string;
 }) => <div className="overflow-x-auto"><table className="research-table">
-  <thead><tr><th>Metric</th><th className="text-right">Existing</th><th className="text-right">Enhanced</th>{relativeChange && <th className="text-right">Relative Change</th>}</tr></thead>
+  <thead><tr><th>Metric</th><th className="text-right">{existingLabel}</th><th className="text-right">{enhancedLabel}</th>{relativeChange && <th className="text-right">Relative Change</th>}</tr></thead>
   <tbody>{metricDefinitions.map(({ key, label, direction }) => <tr key={key}>
     <td><span className="font-medium">{label}</span><span className="mt-1 block text-xs text-muted">{direction} is better</span></td>
     <td className="text-right tabular-nums">{formatMetric(existing[key])}</td>

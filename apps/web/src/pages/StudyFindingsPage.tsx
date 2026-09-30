@@ -1,5 +1,8 @@
-import { memo, type ReactNode } from "react";
-import { PcaVarianceFigure, NbClustVotesFigure, CorrelationHeatmap, SilhouetteByKFigure, AriBySeedFigure } from "../components/charts/FinalFindingsCharts";
+import { PcaChart, NbClustChart, SilhouetteChart } from "../components/SopFigures";
+import { DpcCenterTable } from "../components/DpcCenterTable";
+import { InitializationComparison } from "../components/InitializationComparison";
+import { memo, useState } from "react";
+import { CorrelationHeatmap } from "../components/charts/FinalFindingsCharts";
 import { LongitudinalProgressionChart } from "../components/charts/LongitudinalProgressionChart";
 import { MetricComparisonTable, metricDefinitions } from "../components/MetricComparisonTable";
 import { Panel } from "../components/ui/Panel";
@@ -13,19 +16,11 @@ import { useSopEvaluation } from "../hooks/useSopEvaluation";
 import { DefenseScatter } from "../components/charts/DefenseScatter";
 import "./StudyFindingsPage.css";
 import { PageHeading } from "./PageHeading";
+import { MethodCard, SopComparison, VariableChips, VarianceSummary, PcaContribution, ClusterDistribution } from "../components/SopComparison";
 import { getMeasureLabel } from "../utils/measureLabels";
 
 // Loading initialization evidence should not rerender the retained charts.
-const PcaChart = memo(PcaVarianceFigure);
-const VotesChart = memo(NbClustVotesFigure);
 const ProgressionChart = memo(LongitudinalProgressionChart);
-
-const MethodCard = ({ title, enhanced = false, children }: { title: string; enhanced?: boolean; children: ReactNode }) =>
-  <section className={`study-method-card ${enhanced ? "is-enhanced" : ""}`}>
-    <span className={`research-badge ${enhanced ? "is-valid" : ""}`}>{enhanced ? "Enhanced K-Means" : "Existing K-Means"}</span>
-    <h3 className="mb-3 mt-3 text-base font-semibold">{title}</h3>
-    {children}
-  </section>;
 
 const Fact = ({ label, value }: { label: string; value: string | number }) => <div>
   <dt className="text-xs text-muted">{label}</dt><dd className="mt-1 text-2xl font-semibold tabular-nums">{value}</dd>
@@ -63,10 +58,10 @@ export const StudyFindingsPage = ({ analysis, dataset }: { analysis: AnalysisRun
 
 const StudyResults = memo(function StudyResults({ run }: { run: UnifiedResearchRun }) {
   const { evaluation, baselineSweep, studyEvidence, defenseGeometry, error: sopError } = useSopEvaluation(run);
+  const [activeTab, setActiveTab] = useState("sop1");
+  const ablation = evaluation?.sop1.ablation;
   const existing = Object.fromEntries(run.baselineComparison.metrics.map((metric) => [metric.metric, metric.baselineValue]));
   const enhanced = Object.fromEntries(metricDefinitions.map(({ key, field }) => [key, run.enhancedClustering.metrics[field]]));
-  const sop3 = evaluation?.sop3;
-  const matches = studyEvidence?.ariBySeed.filter(row => row.adjustedRandIndex === 1).length;
   const baseline = run.baselineComparison.baselineMethod;
   const relativeChange = Object.fromEntries(run.baselineComparison.metrics.map(metric => [metric.metric, metric.signedRelativeChangePercent]));
   const candidateRange = `${run.kSelection.candidateK[0]}–${run.kSelection.candidateK.at(-1)}`;
@@ -80,7 +75,7 @@ const StudyResults = memo(function StudyResults({ run }: { run: UnifiedResearchR
     <div className="space-y-6">
       <Panel title="Method Comparison Overview" variant="surface">
         <div className="overflow-x-auto"><table className="research-table study-overview">
-          <thead><tr><th scope="col">Methodology</th><th scope="col">Existing K-Means</th><th scope="col">Enhanced K-Means</th></tr></thead>
+          <thead><tr><th scope="col">Methodology</th><th scope="col">Standard K-Means</th><th scope="col">Enhanced K-Means</th></tr></thead>
           <tbody>
             <tr><th scope="row">Feature representation</th><td>{run.preprocessing.retainedFeatures.length} standardized retained variables</td><td>PCA · {run.pca.components} PCs · {variance}</td></tr>
             <tr><th scope="row">Cluster-number selection</th><td>Maximum Silhouette, k = {candidateRange}</td><td>NbClust multi-index voting</td></tr>
@@ -89,93 +84,86 @@ const StudyResults = memo(function StudyResults({ run }: { run: UnifiedResearchR
           </tbody>
         </table></div>
       </Panel>
-      <Panel title="SOP 1 — Feature Representation" variant="surface">
-        <div className="study-method-grid">
-          <MethodCard title="Original Feature Representation">
-            <p className="mb-4 text-xs text-muted">{run.preprocessing.retainedFeatures.length} retained standardized variables · pre-PCA correlation</p>
-            {studyEvidence ? <CorrelationHeatmap correlation={studyEvidence.correlation} compact /> : <p className="text-sm text-muted">{sopError ?? "Loading validated correlation matrix…"}</p>}
-          </MethodCard>
-          <MethodCard title="Principal Component Analysis" enhanced>
-            <p className="mb-4 text-xs text-muted">{run.preprocessing.retainedFeatures.length} variables → {run.pca.components} PCs · {variance} cumulative explained variance</p>
-            <PcaChart run={run} compact />
-            <dl className="mt-5 grid gap-4 border-t border-line pt-4 sm:grid-cols-3">
-              <Fact label="PCs retained" value={run.pca.components} />
-              <Fact label="Cumulative variance" value={variance} />
-              <Fact label="Threshold" value="85%" />
-            </dl>
-          </MethodCard>
-        </div>
-      </Panel>
-      <Panel title="SOP 2 — Cluster Number Selection" variant="surface">
-        <div className="study-method-grid">
-          <MethodCard title="Silhouette by k">
-            <dl className="mb-5 grid grid-cols-2 gap-5">
-              <Fact label="Selected k" value={baseline.selectedK} />
-              <Fact label="Candidate range" value={candidateRange} />
-            </dl>
-            {baselineSweep ? <SilhouetteByKFigure sweep={baselineSweep} /> : <p className="text-sm text-muted">{sopError ?? "Loading validated baseline sweep…"}</p>}
-          </MethodCard>
-          <MethodCard title="NbClust Selection" enhanced>
-            <dl className="mb-5 grid grid-cols-2 gap-5">
-              <Fact label="Selected k" value={run.kSelection.selectedK} />
-              <Fact label="Supporting / usable indices" value={`${run.kSelection.votesForSelectedK} / ${run.kSelection.usableVotes}`} />
-            </dl>
-            <VotesChart selection={run.kSelection} />
-          </MethodCard>
-        </div>
-      </Panel>
-      <Panel title="SOP 3 — Initialization & Reproducibility" variant="surface">
-        <div className="study-method-grid">
-          <MethodCard title="Random Initialization">
-            {sop3 && studyEvidence ? <>
-              <div className="mb-4 flex flex-wrap items-baseline gap-3">
-                <strong className="text-3xl font-semibold tabular-nums text-teal-800">{matches} / {sop3.settings.randomSeeds.length}</strong>
-                <span className="text-sm">random starts match the DPC-equivalent partition</span>
-              </div>
-              <p className="mb-4 text-xs text-muted">Seed-dependent · controlled comparison on {sop3.settings.representation}, k = {sop3.settings.k}.</p>
-              <h4 className="text-sm font-semibold">ARI by Random Seed</h4>
-              <AriBySeedFigure runs={studyEvidence.ariBySeed} />
-            </> : <p role={sopError ? "alert" : "status"} className="text-sm text-muted">{sopError ?? "Loading validated initialization comparison…"}</p>}
-          </MethodCard>
-          <MethodCard title="DPC Initialization" enhanced>
-            <dl className="mb-5 grid grid-cols-2 gap-5">
-              <Fact label="Initialization" value={run.initialization.deterministic ? "Deterministic" : "Unavailable"} />
-              <Fact label="Selected centers" value={run.initialization.selectedCentroids.length} />
-            </dl>
-            <h4 className="mb-3 text-sm font-semibold">Density-Peak Selected Centers</h4>
-            <div className="overflow-x-auto"><table className="research-table">
-              <thead><tr><th scope="col">Center</th><th scope="col">ρ</th><th scope="col">δ</th><th scope="col">γ = ρ × δ</th></tr></thead>
-              <tbody>{run.initialization.selectedCentroids.map(center => <tr key={center.rank}>
-                <th scope="row">{center.rank}</th><td className="tabular-nums">{center.rho}</td>
-                <td className="tabular-nums">{center.delta.toFixed(4)}</td><td className="tabular-nums">{center.gamma.toFixed(4)}</td>
-              </tr>)}</tbody>
-            </table></div>
-            <p className="mt-4 text-xs text-muted">Same frozen input → same initialization · {run.initialization.reproducibilityPassed ? "verified" : "unavailable"} across {run.initialization.reproducibilityRuns} repeated checks.</p>
-          </MethodCard>
-        </div>
-      </Panel>
+      <div className="study-sop-tabs" role="tablist" aria-label="Study findings sections">
+        {[
+          ["sop1", "SOP 1", "Feature Representation"],
+          ["sop2", "SOP 2", "Cluster Number Selection"],
+          ["sop3", "SOP 3", "Initialization & Reproducibility"],
+          ["final", "Final Results", "Final Enhanced Clustering Results"]
+        ].map(([id, label, title], index, tabs) => <button key={id} id={`study-tab-${id}`} type="button" role="tab"
+          aria-selected={activeTab === id} aria-controls={`study-panel-${id}`} tabIndex={activeTab === id ? 0 : -1}
+          onClick={() => setActiveTab(id)} onKeyDown={event => {
+            const next = event.key === "ArrowRight" ? (index + 1) % tabs.length : event.key === "ArrowLeft" ? (index + tabs.length - 1) % tabs.length : event.key === "Home" ? 0 : event.key === "End" ? tabs.length - 1 : null;
+            if (next !== null) { event.preventDefault(); setActiveTab(tabs[next][0]); document.getElementById(`study-tab-${tabs[next][0]}`)?.focus(); }
+          }}><span>{label}</span><strong>{title}</strong></button>)}
+      </div>
+      <div id={`study-panel-${activeTab}`} role="tabpanel" aria-labelledby={`study-tab-${activeTab}`} tabIndex={0} className="study-tab-content space-y-6">
+      {activeTab === "sop1" && <Panel title="SOP 1 · Feature Representation" variant="surface">
+        <p className="section-subtitle mb-4">How each method represents the input feature space before clustering.</p>
+        <SopComparison simulation figures standard={<MethodCard simulation title="Original Feature Representation">
+          <p className="simulation-compact-note">{run.preprocessing.retainedFeatures.length} standardized input variables</p>
+          {studyEvidence ? <CorrelationHeatmap correlation={studyEvidence.correlation} compact showKey={false} /> : <p className="text-sm text-muted">{sopError ?? "Loading validated correlation matrix…"}</p>}
+          <VariableChips variables={run.preprocessing.retainedFeatures} />
+        </MethodCard>} enhanced={<MethodCard simulation title="Principal Component Analysis" enhanced>
+          <p className="simulation-compact-note">{run.preprocessing.retainedFeatures.length} variables → {run.pca.components} PCs · Cumulative variance = {variance}</p>
+          <PcaChart enhanced={{ pcaComponents: run.pca.components, cumulativeExplainedVariance: run.pca.cumulativeExplainedVariance, pcaVariance: run.pca.scree.map(row => ({ component: row.component, cumulativeExplainedVariance: row.cumulativeVariance })) }} />
+          <dl className="simulation-detail-list sop-summary"><div><dt>Input variables</dt><dd>{run.preprocessing.retainedFeatures.length}</dd></div><div><dt>Components retained</dt><dd>{run.pca.components}</dd></div><div><dt>Cumulative variance</dt><dd>{variance}</dd></div><div><dt>Variance threshold</dt><dd>≥ 85%</dd></div></dl>
+        </MethodCard>}>
+          <VarianceSummary rows={run.pca.scree} retained={run.pca.components} />
+          <PcaContribution dimensions={run.preprocessing.retainedFeatures.length} components={run.pca.components}
+            existing={ablation ? Object.fromEntries(metricDefinitions.map(({ key }) => [key, ablation.conditions[0].metrics[key].mean])) : undefined}
+            enhanced={ablation ? Object.fromEntries(metricDefinitions.map(({ key }) => [key, ablation.conditions[1].metrics[key].mean])) : undefined}
+            relativeChange={ablation ? Object.fromEntries(metricDefinitions.map(({ key }) => [key, ablation.metricChanges[key].relativeMeanChangePercent])) : undefined}
+            note={ablation ? `Held constant: k = ${ablation.settings.k}, Lloyd algorithm, random initialization, ${ablation.settings.seeds.length} seeds, n = ${ablation.settings.cohortN.toLocaleString()}.` : sopError ?? "Loading validated PCA contribution…"} />
+        </SopComparison>
+      </Panel>}
+      {activeTab === "sop2" && <Panel title="SOP 2 · Cluster Number Selection" variant="surface">
+        <p className="section-subtitle mb-4">How each method determines the number of clusters (k).</p>
+        <SopComparison simulation figures standard={<MethodCard simulation title="Silhouette-Based Selection">
+          <p className="simulation-compact-note">Single-index criterion · k with highest average Silhouette selected</p>
+          <dl className="simulation-detail-list"><div><dt>Selection method</dt><dd>Silhouette Coefficient</dd></div><div><dt>Candidate k</dt><dd>{candidateRange}</dd></div><div><dt>Selected k</dt><dd>{baseline.selectedK}</dd></div></dl><h3 className="card-title">Silhouette by k</h3>
+          {baselineSweep ? <SilhouetteChart candidates={baselineSweep.candidates} /> : <p className="text-sm text-muted">{sopError ?? "Loading validated baseline sweep…"}</p>}
+        </MethodCard>} enhanced={<MethodCard simulation title="NbClust Multi-Index Selection" enhanced>
+          <p className="simulation-compact-note">Usable indices evaluated · highest vote count determines k</p>
+          <dl className="simulation-detail-list"><div><dt>Usable indices</dt><dd>{run.kSelection.usableVotes}</dd></div><div><dt>Selected k</dt><dd>{run.kSelection.selectedK}</dd></div><div><dt>Votes for k = {run.kSelection.selectedK}</dt><dd>{run.kSelection.votesForSelectedK} / {run.kSelection.usableVotes}</dd></div></dl>
+          <NbClustChart selectedK={run.kSelection.selectedK} votes={run.kSelection.candidateK.map(k => ({ k, count: run.kSelection.voteDistribution.find(row => row.k === k)?.votes }))} usableIndices={run.kSelection.usableVotes} supportingIndices={run.kSelection.votesForSelectedK} />
+          {run.kSelection.candidateK.some(k => !run.kSelection.voteDistribution.some(row => row.k === k)) && <p className="simulation-compact-note">Missing vote counts are unavailable, not zero.</p>}
+        </MethodCard>} />
+      </Panel>}
+      {activeTab === "sop3" && <Panel title="Initialization & Reproducibility" variant="surface">
+        <InitializationComparison randomRuns={studyEvidence?.ariBySeed}
+          randomUnavailable={sopError ?? "Loading validated initialization comparison..."}
+          selectedCenters={run.initialization.selectedCentroids.length}
+          centerTable={<DpcCenterTable centers={run.initialization.selectedCentroids.map(center => ({ ...center, center: center.rank }))} />}
+          decisionGraph={<p className="mt-4 text-sm text-muted">The full density-distance decision graph is not supplied by the study result. Selected-center statistics are shown above.</p>} />
+      </Panel>}
+      {activeTab === "final" && <>
       <Panel title="Standard vs Enhanced Comparison" variant="surface">
+        <h3 className="card-title mb-4">Scatter Plot Comparison (PCA Space)</h3>
         <div className="study-method-grid">
-          <MethodCard title="Standard / Existing K-Means">
-            <DefenseScatter panel={defenseGeometry?.sop1.baseline ?? null} label="Existing K-Means" />
+          <MethodCard title="Standard K-Means">
+            <DefenseScatter panel={defenseGeometry?.sop1.baseline ?? null} label="Standard K-Means" />
           </MethodCard>
           <MethodCard title="Enhanced K-Means" enhanced>
             <DefenseScatter panel={defenseGeometry?.sop3.dpc[0] ?? null} label="Enhanced K-Means" />
           </MethodCard>
         </div>
-        <p className="mt-4 text-xs text-muted">PC1 and PC2 are visualization only. Both plots use the same axes; cluster labels are method-specific. Existing plot: seed {defenseGeometry?.sop1.seed ?? "—"}.</p>
+        <p className="mt-4 text-xs text-muted">PC1 and PC2 are visualization only. Both plots use the same axes; cluster labels are method-specific. Standard plot: seed {defenseGeometry?.sop1.seed ?? "—"}.</p>
         <section className="mt-6 border-t border-line pt-5" aria-label="Internal Validation">
-          <h3 className="mb-4 text-base font-semibold">Internal Validation</h3>
+          <h3 className="card-title mb-4">Internal Validation</h3>
           <MetricComparisonTable existing={existing} enhanced={enhanced} relativeChange={relativeChange} />
-          <p className="mt-3 text-xs text-muted">Existing: mean of {baseline.runCount} random-initialization runs. Enhanced: validated deterministic result. Relative metric change, not statistical significance.</p>
+          <p className="mt-3 text-xs text-muted">Standard: mean of {baseline.runCount} random-initialization runs. Enhanced: validated deterministic result. Relative metric change, not statistical significance.</p>
         </section>
       </Panel>
-      <div className="border-t border-line px-1 pt-6"><h2 className="text-[22px] font-semibold tracking-tight">Final Enhanced Solution</h2></div>
-      <Panel title="Final Cluster Distribution" variant="surface">
-        <dl className="grid gap-5 sm:grid-cols-2">
-          {[...run.enhancedClustering.clusterSizes].sort((a, b) => a.clusterId - b.clusterId).map((cluster) =>
-            <Fact key={cluster.clusterId} label={`Cluster ${cluster.clusterId} · ${cluster.clusterId === 0 ? "lower" : "higher"} impairment`} value={cluster.nMembers.toLocaleString()} />)}
-        </dl>
+
+      <Panel title="Cluster Distribution" variant="surface">
+        <div className="study-method-grid">
+          {defenseGeometry ? <ClusterDistribution title={`Standard K-Means - Seed ${defenseGeometry.sop1.seed}`} participants={run.cohort.parentN}
+            sizes={[0, 1].map(cluster => defenseGeometry.sop1.baseline.observations.filter(point => point.cluster === cluster).length)} />
+            : <p className="text-sm text-muted">{sopError ?? "Loading validated Standard cluster distribution..."}</p>}
+          <ClusterDistribution title="Enhanced K-Means" participants={run.cohort.parentN}
+            sizes={[...run.enhancedClustering.clusterSizes].sort((a, b) => a.clusterId - b.clusterId).map(cluster => cluster.nMembers)} />
+        </div>
       </Panel>
       <Panel title="Final Cluster Profiles" variant="surface">
         <div className="overflow-x-auto" role="region" aria-label="Final cluster profile table" tabIndex={0}>
@@ -210,6 +198,8 @@ const StudyResults = memo(function StudyResults({ run }: { run: UnifiedResearchR
             <td>{result.pValue < 0.001 ? "<0.001" : result.pValue.toFixed(3)}</td></tr></tbody>
         </table></div>
       </Panel>
+      </>}
+      </div>
     </div>
     <ResearchPageNavigation currentPath="/study-findings" />
   </div>;

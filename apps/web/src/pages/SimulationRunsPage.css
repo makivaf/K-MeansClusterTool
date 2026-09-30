@@ -15,8 +15,6 @@
 .simulation-page .bg-teal-600 { background: var(--simulation-teal); }
 .simulation-page .border-line { border-color: var(--research-border); }
 .simulation-heading { padding: 0 6px; }
-.simulation-heading h1 { font-size: 30px; line-height: 1.25; font-weight: 600; letter-spacing: -0.025em; }
-.simulation-eyebrow { margin-bottom: 8px; color: var(--simulation-muted); font-size: 11px; font-weight: 600; letter-spacing: 0.18em; text-transform: uppercase; }
 .simulation-surface { min-width: 0; border: 1px solid var(--research-border); border-radius: 12px; background: #fff; }
 .simulation-controls,
 .simulation-comparison { padding: 24px; }
@@ -42,7 +40,6 @@
   background: var(--simulation-teal);
 }
 .simulation-section-heading { display: flex; flex-direction: column; gap: 4px; margin-bottom: 16px; }
-.simulation-section-title { font-size: 22px; font-weight: 600; letter-spacing: -0.02em; }
 .simulation-table-container { width: 100%; }
 .simulation-comparison-table { width: 100%; table-layout: fixed; text-align: left; font-size: 14px; font-variant-numeric: tabular-nums; }
 .simulation-comparison-table thead { color: var(--simulation-muted); font-size: 12px; }
@@ -204,9 +201,8 @@
 }
 
 /* Simulation configuration and ordered result sections share the existing cards. */
-.simulation-heading > p:last-child { max-width: 780px; margin-top: 10px; color: var(--simulation-muted); line-height: 1.6; }
+.simulation-heading > p:last-child { max-width: 780px; }
 .simulation-results-section { padding: 24px; }
-.simulation-section-heading > p { color: var(--simulation-muted); line-height: 1.6; }
 .simulation-section-heading .simulation-result-badge { align-self: flex-start; margin-top: 8px; }
 .simulation-two-column > * { min-width: 0; }
 .simulation-chart-stack { display: flex; flex-direction: column; gap: 12px; }
@@ -214,8 +210,7 @@
 .simulation-two-column { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px; }
 .simulation-config-fields { min-width: 0; border: 0; padding: 0; margin: 0; }
 .simulation-config-fields > * + * { margin-top: 20px; }
-.simulation-page .simulation-chart h3 { margin-bottom: 12px; font-size: 15px; font-weight: 600; }
-.simulation-page .simulation-chart h3.simulation-eyebrow { font-size: 12px; letter-spacing: .06em; }
+.simulation-page .simulation-chart h3 { margin-bottom: 12px; }
 .simulation-chart h4 { font-size: 14px; font-weight: 600; line-height: 1.5; }
 .simulation-chart details { margin-top: 16px; }
 .simulation-chart-stack > details { margin-top: 0; }
@@ -238,7 +233,9 @@
 .simulation-slider-label { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin: 8px 0; color: var(--simulation-muted); font-size: 12px; }
 .simulation-slider-label output { padding: 6px 12px; border: 1px solid var(--research-border); border-radius: 4px; color: var(--research-ink); font-size: 14px; background: var(--research-canvas); }
 .simulation-sample-controls input[type=range] { width: 100%; accent-color: var(--simulation-teal); }
-.simulation-sample-number { width: 88px; margin-left: auto; border: 1px solid var(--research-control-border); border-radius: 4px; padding: 4px 8px; background: var(--research-canvas); text-align: right; font-size: 14px; font-weight: 600; }
+.simulation-sample-input { display: inline-flex; align-items: center; flex-shrink: 0; margin-left: auto; border: 1px solid var(--research-control-border); border-radius: 4px; padding-right: 8px; background: var(--research-canvas); }
+.simulation-sample-input > span { color: var(--simulation-muted); font-size: 14px; white-space: nowrap; }
+.simulation-sample-number { width: 88px; border: 0; border-radius: 4px; padding: 4px 8px; background: transparent; color: var(--research-ink); text-align: right; font-size: 14px; font-weight: 600; }
 .simulation-preview-note { margin-top: 18px; padding: 12px 16px; border-radius: 6px; background: #fff8e6; color: #785614; font-size: 12px; line-height: 1.6; }
 .simulation-results-section > .simulation-preview-note { margin-bottom: 20px; }
 .simulation-manual-control { margin-top: 16px; border-top: 1px solid var(--research-border); padding-top: 16px; }
@@ -284,7 +281,6 @@
   .simulation-available { border-right: 0; border-bottom: 1px solid var(--research-border); padding: 0 0 16px; }
   .simulation-available small { max-width: none; }
   .simulation-results-section { padding: 16px; }
-  .simulation-section-title { font-size: 21px; }
   .simulation-run-button { width: 100%; }
   .simulation-results-section .simulation-comparison-table { min-width: 400px; }
 }
