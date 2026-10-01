@@ -5,6 +5,7 @@ import { memo, useState } from "react";
 import { CorrelationHeatmap } from "../components/charts/FinalFindingsCharts";
 import { LongitudinalProgressionChart } from "../components/charts/LongitudinalProgressionChart";
 import { MetricComparisonTable, metricDefinitions } from "../components/MetricComparisonTable";
+import { InternalValidationCalculationDetails } from "../components/InternalValidationCalculationDetails";
 import { Panel } from "../components/ui/Panel";
 import { ResearchPageNavigation } from "../components/layout/ResearchPageNavigation";
 import { CheckCircle2, Database, Loader2, Play } from "lucide-react";
@@ -111,6 +112,8 @@ const StudyResults = memo(function StudyResults({ run }: { run: UnifiedResearchR
         </MethodCard>}>
           <VarianceSummary rows={run.pca.scree} retained={run.pca.components} />
           <PcaContribution dimensions={run.preprocessing.retainedFeatures.length} components={run.pca.components}
+            n={ablation?.settings.cohortN ?? run.cohort.parentN} k={ablation?.settings.k}
+            calculationSilhouettes={{ existing: existing.silhouette, enhanced: run.enhancedClustering.metrics.silhouette }}
             existing={ablation ? Object.fromEntries(metricDefinitions.map(({ key }) => [key, ablation.conditions[0].metrics[key].mean])) : undefined}
             enhanced={ablation ? Object.fromEntries(metricDefinitions.map(({ key }) => [key, ablation.conditions[1].metrics[key].mean])) : undefined}
             relativeChange={ablation ? Object.fromEntries(metricDefinitions.map(({ key }) => [key, ablation.metricChanges[key].relativeMeanChangePercent])) : undefined}
@@ -155,6 +158,8 @@ const StudyResults = memo(function StudyResults({ run }: { run: UnifiedResearchR
           <h3 className="card-title mb-4">Internal Validation</h3>
           <MetricComparisonTable existing={existing} enhanced={enhanced} relativeChange={relativeChange} />
           <p className="mt-3 text-xs text-muted">Standard: mean of {baseline.runCount} random-initialization runs. Enhanced: validated deterministic result. Relative metric change, not statistical significance.</p>
+          <InternalValidationCalculationDetails enhanced={{ n: run.cohort.parentN, k: run.kSelection.selectedK,
+            metrics: enhanced, calinskiHarabasz: { ssw: run.enhancedClustering.inertia } }} />
         </section>
       </Panel>
 

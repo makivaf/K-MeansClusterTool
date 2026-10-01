@@ -1,0 +1,12 @@
+.internal-calculation-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; margin-top: 12px; }
+.internal-calculation-card { display: flex; flex-direction: column; min-width: 0; padding: 14px; border: 1px solid var(--research-border); border-radius: 7px; }
+.internal-calculation-card h5 { font-size: 13px; font-weight: 600; }
+.internal-calculation-fields { flex: 1; margin-top: 12px; }
+.internal-calculation-fields p { margin-bottom: 10px; font-size: 11px; }
+.internal-calculation-card dl > div { display: flex; justify-content: space-between; gap: 12px; padding: 3px 0; font-size: 12px; }
+.internal-calculation-fields dt, .internal-calculation-card small { color: var(--research-muted); }
+.internal-calculation-card dd { text-align: right; font-variant-numeric: tabular-nums; }
+.internal-calculation-total { margin-top: 3px; padding-top: 8px; border-top: 1px solid var(--research-border); font-weight: 600; }
+.internal-calculation-total dd { color: var(--research-primary); }
+.internal-calculation-card small { display: block; margin-top: 3px; font-size: 11px; }
+@media (max-width: 900px) { .internal-calculation-grid { grid-template-columns: 1fr; } }

@@ -2,6 +2,29 @@
 .sop-method-card > .research-badge { width: fit-content; align-self: flex-start; }
 .sop-method-card > dl:last-child { margin-top: auto; padding-top: 20px; }
 .sop-support-card { min-width: 0; margin-top: 20px; padding: 20px; border: 1px solid var(--research-border); border-radius: 10px; }
+.pca-calculation-details { margin-top: 16px; border-top: 1px solid var(--research-border); }
+.pca-calculation-details > summary { display: flex; align-items: center; gap: 6px; width: fit-content; padding-top: 10px; list-style: none; cursor: pointer; color: var(--research-primary); font-size: 12px; font-weight: 500; }
+.pca-calculation-details > summary::-webkit-details-marker { display: none; }
+.pca-calculation-details[open] > summary svg { transform: rotate(180deg); }
+.pca-calculation-content { margin-top: 16px; }
+.pca-calculation-content h4 { font-size: 14px; font-weight: 600; }
+.pca-representation-toggle { display: flex; width: fit-content; margin-top: 10px; overflow: hidden; border: 1px solid var(--research-border); border-radius: 6px; }
+.pca-representation-toggle button { padding: 7px 12px; font-size: 12px; }
+.pca-representation-toggle button + button { border-left: 1px solid var(--research-border); }
+.pca-representation-toggle button[aria-pressed="true"] { background: var(--research-primary); color: white; font-weight: 600; }
+.pca-representation-toggle button:focus-visible { outline: 2px solid var(--research-primary); outline-offset: -3px; }
+.pca-calculation-metadata { display: flex; flex-wrap: wrap; gap: 6px 24px; margin-top: 12px; padding: 8px 10px; border: 1px solid var(--research-border); border-radius: 6px; background: #f7f9fa; font-size: 12px; color: var(--research-muted); }
+.pca-calculation-metadata strong { color: var(--research-ink); font-weight: 600; }
+.pca-silhouette-card { margin-top: 12px; padding: 12px 14px; border: 1px solid var(--research-border); border-radius: 7px; }
+.pca-silhouette-card h5 { font-size: 13px; font-weight: 600; }
+.pca-silhouette-card > p { margin: 10px 0; font-size: 11px; }
+.pca-silhouette-card dl > div { display: flex; justify-content: space-between; gap: 16px; padding: 3px 0; font-size: 12px; }
+.pca-silhouette-card dt, .pca-silhouette-card small { color: var(--research-muted); }
+.pca-silhouette-card dd { text-align: right; font-variant-numeric: tabular-nums; }
+.pca-silhouette-card dl > .pca-silhouette-overall { margin-top: 3px; padding-top: 10px; border-top: 1px solid var(--research-border); font-weight: 600; }
+.pca-silhouette-overall dt { color: inherit; }
+.pca-silhouette-overall dd { color: var(--research-primary); }
+.pca-silhouette-card small { display: block; margin-top: 3px; font-size: 11px; }
 .sop-variable-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 16px; }
 .sop-variable-chips li { padding: 3px 7px; border: 1px solid var(--research-border); border-radius: 4px; font-size: 10px; color: var(--research-muted); }
 .sop-method-card .study-correlation-table { min-width: 350px; table-layout: fixed; }
