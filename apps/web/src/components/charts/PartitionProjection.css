@@ -1,0 +1,3 @@
+.partition-projection { height: 280px; min-width: 0; margin-block: 12px; }
+.partition-projection .recharts-wrapper text { font-size: 12px; }
+@media (max-width: 767px) { .partition-projection { height: 260px; } }

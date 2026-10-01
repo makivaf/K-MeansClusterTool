@@ -1,4 +1,7 @@
 import { z } from "zod";
+import { CalculationSetSchema } from "./calculationEvidence";
+
+export const simulationParticipantLimit = 2437;
 
 export const SimulationCapabilitiesSchema = z.object({
   executionAvailable: z.boolean(),
@@ -9,7 +12,7 @@ export type SimulationCapabilities = z.infer<typeof SimulationCapabilitiesSchema
 
 export const SimulationConfigurationSchema = z.object({
   sampleMode: z.enum(["full", "custom"]),
-  sampleCount: z.number().int().min(100).max(2437),
+  sampleCount: z.number().int().min(100).max(simulationParticipantLimit),
   manualK: z.number().int().min(2).max(10).nullable().default(null)
 }).strict().refine(value => value.sampleMode !== "full" || value.sampleCount === 2437,
   "Full dataset requires all 2,437 participants.");
@@ -35,6 +38,7 @@ export const SimulationMetadataSchema = z.object({
 }).strict().refine((value) => Object.values(value.phaseSampleCounts).reduce((sum, count) => sum + count, 0) === value.sampleSize,
   "Phase counts must sum to the sample size.");
 export const SimulationMetadataResponseSchema = z.object({
+  availableParticipantCount: z.number().int().min(100).max(simulationParticipantLimit).optional(),
   simulations: z.array(SimulationMetadataSchema).length(5)
     .refine((values) => new Set(values.map((value) => value.simulationId)).size === 5, "Each simulation must appear once.")
 }).strict();
@@ -52,6 +56,7 @@ const sizes = z.array(z.number().int().positive()).min(2).max(10);
 const ariSeries = z.array(z.object({ seed: count, adjustedRandIndex: finite.min(-1).max(1) }).strict());
 const run = z.object({ seed: count, iterations: z.number().int().positive(), convergedBeforeMaxIter: z.boolean(), clusterSizes: sizes, metrics: SimulationMetricsSchema }).strict();
 export const SimulationAnalysisSchema = z.object({
+  calculations: CalculationSetSchema.optional(),
   existing: z.object({ participantCount: z.number().int().min(100).max(2437), selectedK: z.number().int().min(2).max(10), initialization: z.literal("random"), metrics: SimulationMetricsSchema,
     silhouetteSelectedK: z.number().int().min(2).max(10).optional(),
     ariBySeed: ariSeries.length(30).refine(rows => rows.every((row, i) => row.seed === i)).optional(),
@@ -87,6 +92,15 @@ export const SimulationAnalysisSchema = z.object({
   const n = value.existing.participantCount;
   const fail = () => ctx.addIssue({ code: z.ZodIssueCode.custom, message: "Paired output dimensions or assignments differ." });
   if (value.enhanced.participantCount !== n) fail();
+  if (value.calculations) {
+    const { standard, enhanced, pca } = value.calculations;
+    if (standard.n !== n || enhanced.n !== n || standard.k !== value.existing.selectedK || enhanced.k !== value.enhanced.selectedK ||
+      standard.seed !== value.projection?.standardSeed || (pca && (pca.n !== n || pca.k !== value.pcaContribution?.k))) fail();
+    const run = value.existing.runs.find(run => run.seed === standard.seed);
+    for (const [calculation, expected] of [[standard, run?.metrics], [enhanced, value.enhanced.metrics]] as const) {
+      if (!expected || Object.entries(calculation.metrics).some(([key, score]) => Math.abs(score - expected[key as keyof typeof expected]) > 1e-9 * Math.max(1, Math.abs(score)))) fail();
+    }
+  }
   if (value.existing.ariBySeed && value.existing.ariBySeed[0].adjustedRandIndex !== 1) fail();
   if (value.enhanced.dpc.ariByRun?.some(row => row.adjustedRandIndex !== 1)) fail();
   if (value.pcaContribution && (value.pcaContribution.k !== value.existing.selectedK ||

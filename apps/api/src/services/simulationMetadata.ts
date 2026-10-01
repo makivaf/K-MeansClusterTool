@@ -2,6 +2,7 @@ import { simulationIds, SimulationMetadataResponseSchema } from "../../../../pac
 import { getSimulationSample } from "./simulationSample";
 
 export const getSimulationMetadata = () => SimulationMetadataResponseSchema.parse({
+  availableParticipantCount: getSimulationSample(1).sourceParticipantCount,
   simulations: simulationIds.map((id) => {
     const sample = getSimulationSample(id);
     // Explicit allowlist: never spread the internal sample into a public response.

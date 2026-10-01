@@ -1,0 +1,14 @@
+/* Same disclosure layout wherever this evidence component is rendered. */
+.nbclust-index-details { margin-top: 16px; }
+.nbclust-index-details > summary { cursor: pointer; line-height: 1.5; }
+.nbclust-index-details[open] > summary { margin-bottom: 12px; }
+.nbclust-index-details .simulation-table-container { overflow-x: auto; width: 100%; }
+.nbclust-index-details table.simulation-comparison-table { width: 100%; table-layout: auto; font-size: 13px; text-align: left; font-variant-numeric: tabular-nums; }
+.nbclust-index-details table.simulation-comparison-table :is(th, td) { border-bottom: 1px solid var(--research-border); padding: 12px 8px; }
+.nbclust-index-details table.simulation-comparison-table th { width: auto; line-height: 1.5; }
+.nbclust-index-details table.simulation-comparison-table thead { color: var(--research-muted); font-size: 12px; }
+.nbclust-index-details table.simulation-comparison-table thead th { font-weight: 400; }
+.nbclust-index-details table.simulation-comparison-table tbody th { font-weight: 500; }
+.nbclust-index-details table.simulation-comparison-table :is(th, td):not(:first-child) { text-align: right; }
+.nbclust-index-details table.simulation-comparison-table td { white-space: nowrap; }
+@media (max-width: 767px) { .nbclust-index-details table.simulation-comparison-table { min-width: 400px; } }

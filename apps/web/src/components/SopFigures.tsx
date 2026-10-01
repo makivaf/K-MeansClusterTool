@@ -1,3 +1,4 @@
+import "./SopFigures.css";
 import { Bar, BarChart, CartesianGrid, Cell, Line, LineChart, ReferenceLine, ReferenceDot, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 const percent = (value: number) => `${(100 * value).toFixed(2)}%`;
 const axisNumber = (value: number) => Number(value.toFixed(2)).toFixed(2);
@@ -22,3 +23,7 @@ export const NbClustChart = ({ selectedK, votes, usableIndices, supportingIndice
         </div>);
 };
 export const SilhouetteChart = ({ candidates }: { candidates: { k: number; silhouette: number }[] }) => <div className="simulation-chart-plot" role="img" aria-label="Silhouette by candidate k"><ResponsiveContainer width="100%" height="100%"><LineChart data={candidates}><CartesianGrid strokeDasharray="3 3" /><XAxis dataKey="k" /><YAxis tickFormatter={axisNumber} width={56} /><Tooltip /><Line dataKey="silhouette" stroke="var(--simulation-teal)" isAnimationActive={false} /></LineChart></ResponsiveContainer></div>;
+
+export const NbClustIndexDetails = ({ indices }: {
+  indices: readonly { index: string; status: string; recommendedK?: number | null }[];
+}) => (<details className="nbclust-index-details"><summary>NbClust index results</summary><div className="simulation-table-container"><table className="simulation-comparison-table"><thead><tr><th>Index</th><th>Status</th><th>Recommended k</th></tr></thead><tbody>{indices.map(row => <tr key={row.index}><th>{row.index}</th><td>{row.status}</td><td>{row.recommendedK ?? "Unavailable"}</td></tr>)}</tbody></table></div></details>);

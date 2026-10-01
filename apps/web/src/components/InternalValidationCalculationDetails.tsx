@@ -3,14 +3,14 @@ import { ChevronDown } from "lucide-react";
 import { formatMetric, type MetricKey } from "./MetricComparisonTable";
 import "./SopComparison.css";
 import "./InternalValidationCalculationDetails.css";
+import type { CalculationEvidence } from "../../../../packages/shared/src/calculationEvidence";
 
 type MethodDetails = {
   n: number;
   k: number;
   metrics: Partial<Record<MetricKey, number>>;
-  exampleParticipant?: { rid?: string | number; a?: number; b?: number; s?: number };
-  daviesBouldin?: { sigma0?: number; sigma1?: number; centroidDistance?: number };
-  calinskiHarabasz?: { ssb?: number; ssw?: number };
+  calculation?: CalculationEvidence;
+  runCount?: number;
 };
 const intermediate = (value?: number) => value === undefined ? "—" : value.toLocaleString("en-US", {
   minimumFractionDigits: 3, maximumFractionDigits: 3
@@ -30,6 +30,7 @@ export const InternalValidationCalculationDetails = ({ standard, enhanced, forma
 }) => {
   const [selected, setSelected] = useState<"standard" | "enhanced">("standard");
   const method = standard && selected === "standard" ? standard : enhanced;
+  const calculation = method.calculation;
   return <details className="pca-calculation-details internal-validation-calculations">
     <summary>View Calculation Details <ChevronDown size={14} aria-hidden="true" /></summary>
     <div className="pca-calculation-content">
@@ -44,31 +45,34 @@ export const InternalValidationCalculationDetails = ({ standard, enhanced, forma
         <span>Participants (N): <strong>{method.n.toLocaleString("en-US")}</strong></span>
         <span>Clusters (K): <strong>{method.k}</strong></span>
       </div>
+      {method.runCount && <p className="text-xs text-muted mt-3">Overall metrics are means of {method.runCount} runs.{calculation && ` Intermediate calculations describe stored seed ${calculation.seed}; they do not reproduce the aggregate means.`}</p>}
+      {calculation && <p className="text-xs text-muted mt-3">Representation: {calculation.representation}.{method.k > 2 && " DBI fields below describe cluster pair 0 and 1; the overall index uses all clusters."}</p>}
+      {!calculation && <p className="text-xs text-muted mt-3">Participant-level calculation unavailable for this cached run.</p>}
       <div className="internal-calculation-grid">
         <MetricCard title="Silhouette Coefficient" totalLabel="Overall Silhouette"
           value={formatValue(method.metrics.silhouette)} direction="Higher">
-          <p>Example Participant Calculation</p>
+          {calculation && <><p>Example Participant Calculation{calculation.seed !== undefined ? ` - Seed ${calculation.seed}` : ""}</p>
           <dl>
-            <Row label="RID" value={method.exampleParticipant?.rid ?? "—"} />
-            <Row label="a(i)" value={intermediate(method.exampleParticipant?.a)} />
-            <Row label="b(i)" value={intermediate(method.exampleParticipant?.b)} />
-            <Row label="s(i)" value={intermediate(method.exampleParticipant?.s)} />
-          </dl>
+            <Row label="RID" value={calculation?.exampleParticipant?.rid ?? "—"} />
+            <Row label="a(i)" value={intermediate(calculation?.exampleParticipant?.a)} />
+            <Row label="b(i)" value={intermediate(calculation?.exampleParticipant?.b)} />
+            <Row label="s(i)" value={intermediate(calculation?.exampleParticipant?.s)} />
+          </dl></>}
         </MetricCard>
         <MetricCard title="Davies-Bouldin Index" value={formatValue(method.metrics.davies_bouldin)} direction="Lower">
-          <dl>
-            <Row label="σ0" value={intermediate(method.daviesBouldin?.sigma0)} />
-            <Row label="σ1" value={intermediate(method.daviesBouldin?.sigma1)} />
-            <Row label="d(c0,c1)" value={intermediate(method.daviesBouldin?.centroidDistance)} />
-          </dl>
+          {calculation && <dl>
+            <Row label="σ0" value={intermediate(calculation?.daviesBouldin?.sigma0)} />
+            <Row label="σ1" value={intermediate(calculation?.daviesBouldin?.sigma1)} />
+            <Row label="d(c0,c1)" value={intermediate(calculation?.daviesBouldin?.centroidDistance)} />
+          </dl>}
         </MetricCard>
         <MetricCard title="Calinski-Harabasz Index" value={formatValue(method.metrics.calinski_harabasz)} direction="Higher">
-          <dl>
-            <Row label="SSB" value={intermediate(method.calinskiHarabasz?.ssb)} />
-            <Row label="SSW" value={intermediate(method.calinskiHarabasz?.ssw)} />
+          {calculation && <dl>
+            <Row label="SSB" value={intermediate(calculation?.calinskiHarabasz?.ssb)} />
+            <Row label="SSW" value={intermediate(calculation?.calinskiHarabasz?.ssw)} />
             <Row label="N" value={method.n.toLocaleString("en-US")} />
             <Row label="K" value={method.k} />
-          </dl>
+          </dl>}
         </MetricCard>
       </div>
     </div>

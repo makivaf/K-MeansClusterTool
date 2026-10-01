@@ -1,12 +1,14 @@
 import { useState } from "react";
 import { ChevronDown } from "lucide-react";
 import { formatMetric } from "./MetricComparisonTable";
+import type { CalculationEvidence } from "../../../../packages/shared/src/calculationEvidence";
 
 type Representation = {
   label: string;
   description: string;
   silhouette?: number;
-  exampleParticipant?: { rid?: string | number; a?: number; b?: number; s?: number };
+  calculation?: CalculationEvidence;
+  runCount?: number;
 };
 
 export const PcaCalculationDetails = ({ n, k, representations }: {
@@ -14,7 +16,7 @@ export const PcaCalculationDetails = ({ n, k, representations }: {
 }) => {
   const [selected, setSelected] = useState(1);
   const representation = representations[selected];
-  const example = representation.exampleParticipant;
+  const example = representation.calculation?.exampleParticipant;
   return <details className="pca-calculation-details">
     <summary>View Calculation Details <ChevronDown size={14} aria-hidden="true" /></summary>
     <div className="pca-calculation-content">
@@ -30,12 +32,15 @@ export const PcaCalculationDetails = ({ n, k, representations }: {
       </div>
       <section className="pca-silhouette-card">
         <h5>Silhouette Coefficient</h5>
-        <p>Example Participant Calculation</p>
+        <p>{example ? `Example Participant Calculation · Seed ${representation.calculation?.seed}` : "Participant-level calculation unavailable for this cached run."}</p>
+        {representation.runCount && <p>Overall Silhouette is the mean of {representation.runCount} runs{example ? "; the participant example describes one stored run." : "."}</p>}
         <dl>
+          {example && <>
           <div><dt>RID</dt><dd>{example?.rid ?? "Unavailable"}</dd></div>
           <div><dt>a(i)</dt><dd>{example?.a?.toFixed(3) ?? "Unavailable"}</dd></div>
           <div><dt>b(i)</dt><dd>{example?.b?.toFixed(3) ?? "Unavailable"}</dd></div>
           <div><dt>s(i)</dt><dd>{example?.s?.toFixed(3) ?? "Unavailable"}</dd></div>
+          </>}
           <div className="pca-silhouette-overall"><dt>Overall Silhouette</dt><dd>{formatMetric(representation.silhouette)}</dd></div>
         </dl>
         <small>Higher is better</small>

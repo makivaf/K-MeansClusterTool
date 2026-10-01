@@ -5,6 +5,7 @@ import { fileURLToPath } from "node:url";
 import { StudyEvidenceSchema, type SopEvaluation, type DefenseGeometry } from "../../../../packages/shared/src/schema";
 import { adjustedRandIndex } from "../../../../packages/shared/src/adjustedRandIndex";
 import { readCsvRecords } from "./artifactReaders";
+import { studyCalculations } from "./calculationEvidence";
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../../../..");
 const digest = (bytes: Buffer | string) => crypto.createHash("sha256").update(bytes).digest("hex");
@@ -47,7 +48,7 @@ export function loadStudyEvidence(evaluation: SopEvaluation, geometry: DefenseGe
     dpcCenters = readCsvRecords(sourceDirectory, centersFile).map(row => ({ center: Number(row.centroid_order), rid: row.RID,
       rho: Number(row.rho), delta: Number(row.delta), gamma: Number(row.gamma) }));
   }
-  return StudyEvidenceSchema.parse({ ...evidence, dpcCenters, dpcAriByRun: reference && geometry
+  return StudyEvidenceSchema.parse({ ...evidence, calculations: studyCalculations(sourceDirectory, geometry), dpcCenters, dpcAriByRun: reference && geometry
     ? geometry.sop3.dpc.map(panel => ({ seed: panel.checkNumber,
       adjustedRandIndex: adjustedRandIndex(reference, panel.observations.map(point => point.cluster)) })) : undefined });
 }
