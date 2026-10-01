@@ -1,3 +1,4 @@
+import { formatContinuous, formatPercent, formatInteger } from "../utils/numberFormatting";
 import { PcaChart, NbClustChart, NbClustIndexDetails, SilhouetteChart } from "../components/SopFigures";
 import { DpcCenterTable } from "../components/DpcCenterTable";
 import { InitializationComparison } from "../components/InitializationComparison";
@@ -80,13 +81,13 @@ const StudyResults = memo(function StudyResults({ run }: { run: UnifiedResearchR
   const baseline = run.baselineComparison.baselineMethod;
   const relativeChange = Object.fromEntries(run.baselineComparison.metrics.map(metric => [metric.metric, metric.signedRelativeChangePercent]));
   const candidateRange = `${run.kSelection.candidateK[0]}–${run.kSelection.candidateK.at(-1)}`;
-  const variance = `${(run.pca.cumulativeExplainedVariance * 100).toFixed(2)}%`;
+  const variance = formatPercent(run.pca.cumulativeExplainedVariance * 100);
   const profiles = new Map(run.clusterProfiles.profiles.map((profile) => [profile.clusterId, profile]));
   const model = run.longitudinal.mixedEffects;
   const result = model.primaryResult;
 
   return <div className="research-page study-findings">
-    <PageHeading title="Study Findings" description={`Validated full-cohort analysis · n = ${run.cohort.parentN.toLocaleString()}`} />
+    <PageHeading title="Study Findings" description={`Validated full-cohort analysis · n = ${formatInteger(run.cohort.parentN)}`} />
     <div className="space-y-6">
       <Panel title="Method Comparison Overview" variant="surface">
         <div className="overflow-x-auto"><table className="research-table study-overview">
@@ -122,7 +123,7 @@ const StudyResults = memo(function StudyResults({ run }: { run: UnifiedResearchR
         </MethodCard>} enhanced={<MethodCard simulation title="Principal Component Analysis" enhanced>
           <p className="simulation-compact-note">{run.preprocessing.retainedFeatures.length} variables → {run.pca.components} PCs · Cumulative variance = {variance}</p>
           <PcaChart enhanced={{ pcaComponents: run.pca.components, cumulativeExplainedVariance: run.pca.cumulativeExplainedVariance, pcaVariance: run.pca.scree.map(row => ({ component: row.component, cumulativeExplainedVariance: row.cumulativeVariance })) }} />
-          <dl className="simulation-detail-list sop-summary"><div><dt>Input variables</dt><dd>{run.preprocessing.retainedFeatures.length}</dd></div><div><dt>Components retained</dt><dd>{run.pca.components}</dd></div><div><dt>Cumulative variance</dt><dd>{variance}</dd></div><div><dt>Variance threshold</dt><dd>≥ 85%</dd></div></dl>
+          <dl className="simulation-detail-list sop-summary"><div><dt>Input variables</dt><dd>{run.preprocessing.retainedFeatures.length}</dd></div><div><dt>Components retained</dt><dd>{run.pca.components}</dd></div><div><dt>Cumulative variance</dt><dd>{variance}</dd></div><div><dt>Variance threshold</dt><dd>≥ 85.00%</dd></div></dl>
         </MethodCard>}>
           <VarianceSummary rows={run.pca.scree} retained={run.pca.components} />
           <PcaContribution dimensions={run.preprocessing.retainedFeatures.length} components={run.pca.components}
@@ -132,7 +133,7 @@ const StudyResults = memo(function StudyResults({ run }: { run: UnifiedResearchR
             existing={ablation ? Object.fromEntries(metricDefinitions.map(({ key }) => [key, ablation.conditions[0].metrics[key].mean])) : undefined}
             enhanced={ablation ? Object.fromEntries(metricDefinitions.map(({ key }) => [key, ablation.conditions[1].metrics[key].mean])) : undefined}
             relativeChange={ablation ? Object.fromEntries(metricDefinitions.map(({ key }) => [key, ablation.metricChanges[key].relativeMeanChangePercent])) : undefined}
-            note={ablation ? `Held constant: k = ${ablation.settings.k}, Lloyd algorithm, random initialization, ${ablation.settings.seeds.length} seeds, n = ${ablation.settings.cohortN.toLocaleString()}.` : sopError ?? "Loading validated PCA contribution…"} />
+            note={ablation ? `Held constant: k = ${ablation.settings.k}, Lloyd algorithm, random initialization, ${ablation.settings.seeds.length} seeds, n = ${formatInteger(ablation.settings.cohortN)}.` : sopError ?? "Loading validated PCA contribution…"} />
         </SopComparison>
       </Panel>}
       {activeTab === "sop2" && <Panel title="SOP 2 · Cluster Number Selection" variant="surface">
@@ -195,9 +196,9 @@ const StudyResults = memo(function StudyResults({ run }: { run: UnifiedResearchR
             <thead><tr><th scope="col">Measure</th><th scope="col" className="text-right">Cluster 0 mean</th><th scope="col" className="text-right">Cluster 1 mean</th><th scope="col" className="text-right">SMD (1 − 0)</th></tr></thead>
             <tbody>{run.clusterProfiles.smdRanking.map((row) => <tr key={row.variable}>
               <th scope="row" className="text-left">{getMeasureLabel(row.variable)}</th>
-              <td className="text-right tabular-nums">{profiles.get(0)?.variableMeans[row.variable]?.toFixed(5) ?? "—"}</td>
-              <td className="text-right tabular-nums">{profiles.get(1)?.variableMeans[row.variable]?.toFixed(5) ?? "—"}</td>
-              <td className="text-right tabular-nums">{row.standardizedMeanDifferenceCluster1Minus0.toFixed(5)}</td>
+              <td className="text-right tabular-nums">{formatContinuous(profiles.get(0)?.variableMeans[row.variable])}</td>
+              <td className="text-right tabular-nums">{formatContinuous(profiles.get(1)?.variableMeans[row.variable])}</td>
+              <td className="text-right tabular-nums">{formatContinuous(row.standardizedMeanDifferenceCluster1Minus0)}</td>
             </tr>)}</tbody>
           </table>
         </div>
@@ -209,16 +210,16 @@ const StudyResults = memo(function StudyResults({ run }: { run: UnifiedResearchR
         <p className="mt-2 text-xs text-muted">Observed means by elapsed-year bin; bars describe available observations, not fitted model predictions.</p>
       </Panel>
       <Panel title="Linear Mixed-Effects Model (LME)" variant="surface">
-        <p className="mb-4 text-xs text-muted">{model.participantCount.toLocaleString()} eligible participants · {model.observationCount.toLocaleString()} observations · {model.estimationMethod}</p>
+        <p className="mb-4 text-xs text-muted">{formatInteger(model.participantCount)} eligible participants · {formatInteger(model.observationCount)} observations · {model.estimationMethod}</p>
         <dl className="grid gap-5 sm:grid-cols-2">
           {model.estimatedAnnualChangeByOriginalCluster.map((entry) =>
-            <Fact key={entry.clusterId} label={`Cluster ${entry.clusterId} · ${entry.clusterId === 0 ? "lower" : "higher"} impairment · ADAS-Cog13 points/year`} value={entry.estimate.toFixed(6)} />)}
+            <Fact key={entry.clusterId} label={`Cluster ${entry.clusterId} · ${entry.clusterId === 0 ? "lower" : "higher"} impairment · ADAS-Cog13 points/year`} value={formatContinuous(entry.estimate)} />)}
         </dl>
         <div className="mt-5 overflow-x-auto" role="region" aria-label="LME results table" tabIndex={0}><table className="research-table min-w-[560px]">
           <thead><tr><th>Time × Cluster</th><th>Estimate</th><th>95% CI</th><th>p-value</th></tr></thead>
-          <tbody><tr><td>Difference in annual change (Cluster 1 − Cluster 0)</td><td className="tabular-nums">{result.estimate.toFixed(6)}</td>
-            <td className="whitespace-nowrap tabular-nums">{result.confidenceInterval95.lower.toFixed(6)} to {result.confidenceInterval95.upper.toFixed(6)}</td>
-            <td>{result.pValue < 0.001 ? "<0.001" : result.pValue.toFixed(3)}</td></tr></tbody>
+          <tbody><tr><td>Difference in annual change (Cluster 1 − Cluster 0)</td><td className="tabular-nums">{formatContinuous(result.estimate)}</td>
+            <td className="whitespace-nowrap tabular-nums">{formatContinuous(result.confidenceInterval95.lower)} to {formatContinuous(result.confidenceInterval95.upper)}</td>
+            <td>{result.pValue < 0.001 ? "<0.001000" : formatContinuous(result.pValue)}</td></tr></tbody>
         </table></div>
       </Panel>
       </>}

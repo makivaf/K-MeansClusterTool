@@ -204,13 +204,13 @@ async function validateStudyEvidence() {
     assert.ok(final.includes('Overall metrics are means of '+persisted.baselineComparison.baselineMethod.runCount+' runs'));
     assert.ok(!sop1.includes('Participant-level calculation unavailable for this cached run.'));
     const calculation = ready.studyEvidence.calculations;
-    assert.ok(sop1.includes(calculation.pca.exampleParticipant.a.toFixed(3)));
+    assert.ok(sop1.includes(calculation.pca.exampleParticipant.a.toLocaleString('en-US',{minimumFractionDigits:6,maximumFractionDigits:6})));
     assert.ok(sop1.includes('Seed '+calculation.pca.seed));
     assert.ok(sop1.includes('mean of '+evaluation.sop1.ablation.conditions[1].runCount+' runs'));
     const {formatMetric} = compile(path.join(root,'apps/web/src/components/MetricComparisonTable.tsx'));
     assert.ok(sop1.includes('<dt>Overall Silhouette</dt><dd>'+formatMetric(evaluation.sop1.ablation.conditions[1].metrics.silhouette.mean)+'</dd>'));
     assert.ok(final.includes('stored seed '+calculation.standard.seed));
-    assert.ok(final.includes(calculation.standard.calinskiHarabasz.ssb.toLocaleString('en-US',{minimumFractionDigits:3,maximumFractionDigits:3})));
+    assert.ok(final.includes(calculation.standard.calinskiHarabasz.ssb.toLocaleString('en-US',{minimumFractionDigits:6,maximumFractionDigits:6})));
     assert.ok(!final.includes('Participant-level calculation unavailable for this cached run.'));
     const sharedCss = fs.readFileSync(path.join(root,'apps/web/src/components/SopFigures.css'),'utf8');
     assert.ok(sharedCss.includes('.nbclust-index-details table.simulation-comparison-table'));
@@ -254,7 +254,7 @@ async function validateStudyEvidence() {
     const completedHtml = renderToStaticMarkup(React.createElement(page.SimulationResults, {result: saved[0].result}));
     for (const heading of ['Feature Representation', 'Cluster Number Selection', 'Initialization &amp; Reproducibility', 'Standard vs Enhanced Comparison']) assert.ok(completedHtml.includes(heading));
     for (const row of saved[0].result.comparison) {
-      for (const value of [row.existing, row.enhanced]) assert.ok(completedHtml.includes(value.toLocaleString('en-US', {maximumFractionDigits: 6})));
+      for (const value of [row.existing, row.enhanced]) assert.ok(completedHtml.includes(value.toLocaleString('en-US', {minimumFractionDigits: 6, maximumFractionDigits: 6})));
     }
     assert.match(completedHtml, /PC1 and PC2 are used only for 2D visualization/);
     assert.doesNotMatch(completedHtml, /no supplied ARI series|Eigenvalues are not supplied|Controlled PCA-only metrics are unavailable/);
@@ -264,7 +264,7 @@ async function validateStudyEvidence() {
     const adverse = structuredClone(saved[0].result);
     adverse.comparison.forEach((row, i) => { row.favorableMethod = 'existing'; row.existing = 901 + i; row.enhanced = 951 + i; });
     const adverseHtml = renderToStaticMarkup(React.createElement(page.SimulationResults, {result:adverse}));
-    adverse.comparison.forEach(row => assert.ok(adverseHtml.includes(`<td class="simulation-favorable">${row.existing}</td><td>${row.enhanced}</td>`), 'Enhanced must not be highlighted when Standard wins'));
+    adverse.comparison.forEach(row => assert.ok(adverseHtml.includes(`<td class="simulation-favorable">${row.existing.toLocaleString('en-US',{minimumFractionDigits:6,maximumFractionDigits:6})}</td><td>${row.enhanced.toLocaleString('en-US',{minimumFractionDigits:6,maximumFractionDigits:6})}</td>`), 'Enhanced must not be highlighted when Standard wins'));
     serverState = {simulationId: 1, configurationKey: key, status: 'sample_ready', result: null, message: null};
     button().props.onClick(); hooks.render(); await hooks.settle();
     assert.deepEqual(requests.slice(-2).map(r => r.options.method), ['GET', 'POST']);
