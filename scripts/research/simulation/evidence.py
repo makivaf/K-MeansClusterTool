@@ -17,7 +17,8 @@ import dpc_initialize_clusters as dpc
 import run_dpc_initialization_comparison as sop3
 
 
-def attach_evidence(output, matrix, eigenvalues, standard_labels, enhanced_labels, random_control=None):
+def attach_evidence(output, matrix, eigenvalues, standard_labels, enhanced_labels, random_control=None,
+                    control_runs=None, calculation_partition=None):
     assert len(standard_labels) == 30 and len(enhanced_labels) == enhanced.REPRODUCIBILITY_RUNS
     n = output['existing']['participantCount']
     assert all(len(labels) == n for labels in [*standard_labels, *enhanced_labels])
@@ -38,9 +39,17 @@ def attach_evidence(output, matrix, eigenvalues, standard_labels, enhanced_label
     keys = ('silhouette', 'davies_bouldin', 'calinski_harabasz')
     if random_control is not None and k == output['enhanced']['selectedK']:
         pca_mean = random_control['randomMean']
+        example_run = control_runs[0] if control_runs is not None else None
     else:
         fits = baseline.run_baseline_replications(matrix, k, expected_shape=matrix.shape)
         pca_mean = {key: baseline._descriptive([getattr(run, key) for run in fits])['mean'] for key in keys}
+        example_run = fits[0]
+    # Capture an already computed fit only. Historical controls without labels
+    # remain unavailable; no fit is added for calculation display.
+    if calculation_partition is not None and example_run is not None:
+        calculation_partition.update({'seed': int(example_run.seed), 'k': k,
+            'labels': [int(label) for label in example_run.labels],
+            'metrics': {key: float(getattr(example_run, key)) for key in keys}})
     original_mean = output['existing']['metrics']
     output['pcaContribution'] = {'k': k, 'runCount': 30, 'existing': original_mean,
         'enhanced': pca_mean, 'relativeChange': {

@@ -89,7 +89,7 @@ try {
   fs.copyFileSync(path.join(packaged, "study_evidence.json"), evidencePath);
   fs.copyFileSync(path.join(packaged, "study_evidence.sha256"), path.join(temporary, "study_evidence.sha256"));
   assert.deepEqual(loadStudyEvidence(evaluation, loadDefenseGeometry(evaluation), temporary, temporary),
-    { ...evidence, dpcCenters: undefined }, "Packaged evidence must not invent RIDs when the private center source is absent");
+    { ...evidence, dpcCenters: undefined, calculations: undefined }, "Packaged evidence must not invent RIDs when the private center source is absent");
   fs.appendFileSync(evidencePath, " ");
   assert.throws(() => loadStudyEvidence(evaluation, loadDefenseGeometry(evaluation), temporary), /checksum/);
   const altered = structuredClone(evidence);

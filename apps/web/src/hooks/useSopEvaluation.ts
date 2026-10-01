@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { ZodError } from "zod";
 import {
   SopEvaluationResponseSchema,
   type SopEvaluation,
@@ -12,6 +13,8 @@ import { API_BASE_URL } from "../config/api";
 import { hasSharedSopProvenance, matchesFrozenSource } from "../utils/sopProvenance";
 export { hasSharedSopProvenance } from "../utils/sopProvenance";
 
+export type SopEvidenceStatus = "loading" | "ready" | "request-error" | "validation-error" | "provenance-rejected" | "unavailable";
+
 export const useSopEvaluation = (run: UnifiedResearchRun | null = null) => {
   const enabled = run !== null;
   const [evaluation, setEvaluation] = useState<SopEvaluation | null>(null);
@@ -19,9 +22,11 @@ export const useSopEvaluation = (run: UnifiedResearchRun | null = null) => {
   const [baselineSweep, setBaselineSweep] = useState<BaselineCandidateSweep | null>(null);
   const [defenseGeometry, setDefenseGeometry] = useState<DefenseGeometry | null>(null);
   const [studyEvidence, setStudyEvidence] = useState<StudyEvidence | null>(null);
+  const [requestStatus, setRequestStatus] = useState<SopEvidenceStatus>("loading");
 
   useEffect(() => {
     if (!enabled) return;
+    setRequestStatus("loading");
     const abortController = new AbortController();
     void (async () => {
       try {
@@ -33,8 +38,10 @@ export const useSopEvaluation = (run: UnifiedResearchRun | null = null) => {
         setDefenseGeometry(payload.defenseGeometry ?? null);
         setStudyEvidence(payload.studyEvidence ?? null);
         setError(null);
+        setRequestStatus("ready");
       } catch (caught) {
         if (caught instanceof DOMException && caught.name === "AbortError") return;
+        setRequestStatus(caught instanceof ZodError || caught instanceof SyntaxError ? "validation-error" : "request-error");
         setError(caught instanceof Error ? caught.message : "Unable to load the aggregate SOP evaluation");
       }
     })();
@@ -61,7 +68,14 @@ export const useSopEvaluation = (run: UnifiedResearchRun | null = null) => {
     const runHash = run.provenance.inputSha256[source];
     return Boolean(frozenHash) && (!runHash || matchesFrozenSource(source, runHash, frozenHash, studyEvidence));
   });
+  const status: SopEvidenceStatus = !enabled ? "unavailable" : requestStatus !== "ready" ? requestStatus
+    : !matches ? "provenance-rejected" : "ready";
+  const dpcStatus: SopEvidenceStatus = status !== "ready" ? status
+    : defenseGeometry !== null && !geometryMatches ? "provenance-rejected"
+    : !geometryMatches || !studyEvidence?.dpcAriByRun?.length ? "unavailable" : "ready";
   return {
+    status,
+    dpcStatus,
     evaluation: matches ? evaluation : null,
     baselineSweep: matches ? baselineSweep : null,
     defenseGeometry: geometryMatches ? defenseGeometry : null,

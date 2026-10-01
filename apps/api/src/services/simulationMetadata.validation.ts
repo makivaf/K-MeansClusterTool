@@ -4,8 +4,6 @@ import type { AddressInfo } from "node:net";
 import fs from "node:fs";
 import { createRequire } from "node:module";
 import express from "express";
-import * as React from "react";
-import { renderToStaticMarkup } from "react-dom/server";
 import ts from "typescript";
 import * as contract from "../../../../packages/shared/src/simulation";
 import { app } from "../app";
@@ -14,6 +12,7 @@ import { getSimulationMetadata } from "./simulationMetadata";
 import { getSimulationSample } from "./simulationSample";
 
 const payload = getSimulationMetadata();
+assert.equal(payload.availableParticipantCount, getSimulationSample(1).sourceParticipantCount);
 for (const entry of payload.simulations) {
   const sample = getSimulationSample(entry.simulationId);
   assert.equal(entry.sampleSize, sample.sampleParticipantCount);
@@ -92,29 +91,7 @@ try {
   for (const mode of ["ready", "error", "malformed", "abort"] as const) await checkHook(mode);
 } finally { globalThis.fetch = originalFetch; }
 
-for (const state of [
-  { metadata: null, loading: true, error: null },
-  { metadata: payload, loading: false, error: null },
-  { metadata: null, loading: false, error: "Unable to load simulation sample metadata." }
-]) {
-  const page = compile("../../../web/src/pages/SimulationRunsPage.tsx", {
-    react: { ...React, useState: (initial: unknown) => [initial, () => {}], useEffect: () => {} },
-    "../hooks/useSimulationCapabilities": { useSimulationCapabilities: () => ({ capabilities: null }) },
-    "../config/api": { API_BASE_URL: "http://local.test" },
-    "../../../../packages/shared/src/simulation": contract,
-    "../hooks/useSimulationMetadata": { useSimulationMetadata: () => ({ ...state, retry: () => {} }) }
-  }).SimulationRunsPage;
-  const html = renderToStaticMarkup(React.createElement(page));
-  assert.match(html, /disabled=""[^>]*class="simulation-run-button"/);
-  assert.match(html, /Run Simulation/);
-  assert.doesNotMatch(html, /simulation-analysis-status|simulation-stepper|Paired analysis complete/);
-  assert.equal((html.match(/class="simulation-choice /g) ?? []).length, 2);
-  assert.match(html, /Full Dataset/);
-  assert.match(html, /Custom Sample/);
-  assert.match(html, /Override k for exploration/);
-  assert.doesNotMatch(html, /Increase manual k/);
-  assert.ok(!/Davies|Calinski|Cluster Distribution|Cumulative Explained|Iterations|Feature Representation/.test(html));
-  if (state.metadata) { assert.match(html, /2,437/); assert.doesNotMatch(html, /configuration preview/); assert.match(html, /Sample ready/); }
-  else { assert.ok(!html.includes("1,949")); assert.match(html, state.loading ? /Loading sample metadata/ : /Retry/); }
-}
-console.log("PASS aggregate metadata API, strict privacy contract, safe 503, unavailable execution disabled, hook loading/retry/abort, and Simulation Runs rendering.");
+// Page behavior is covered by the current shared contract suite, including
+// custom-only controls, real progress, cached results and the inclusive maximum.
+require("../../../web/src/pages/SimulationRunsPage.validation.cjs");
+console.log("PASS aggregate metadata API, available cohort count, privacy contract, safe 503, and hook loading/retry/abort.");

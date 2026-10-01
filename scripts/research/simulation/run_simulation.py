@@ -152,6 +152,7 @@ def main():
         'enhancedCentroids': centroids(result.labels, selection.selected_k),
     }
     control = None
+    controls = None
     if configuration:
         # Existing SOP 3 fitter; same PCA, automatic k, and canonical parameters.
         controls = [sop3.fit_random_pca_kmeans(matrix, seed, seed + 1,
@@ -164,8 +165,11 @@ def main():
             'randomSd': {key: summaries[key]['standard_deviation_ddof_1'] for key in keys}
         }
         (ROOT / 'random-control.json').write_text(json.dumps(control, allow_nan=False))
+    calculation_partition = {'ids': ids}
     attach_evidence(output, matrix, pca.explained_variance_, [run.labels for run in runs],
-                    [run.labels for run in enhanced_runs], control)
+                    [run.labels for run in enhanced_runs], control, controls, calculation_partition)
+    if 'labels' in calculation_partition:
+        (ROOT / 'controlled-pca-partition.json').write_text(json.dumps(calculation_partition, allow_nan=False))
     (ROOT / 'result.json').write_text(json.dumps(output, allow_nan=False))
     digest = lambda values: hashlib.sha256(json.dumps(values, separators=(',', ':')).encode()).hexdigest()
     (ROOT / 'membership-proof.json').write_text(json.dumps({'sampleCount': len(ids), 'selected': digest(ids), 'existing': digest(baseline_ids), 'enhanced': digest(enhanced_ids), 'identical': baseline_ids == enhanced_ids == ids}))

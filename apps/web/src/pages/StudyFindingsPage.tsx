@@ -1,4 +1,4 @@
-import { PcaChart, NbClustChart, SilhouetteChart } from "../components/SopFigures";
+import { PcaChart, NbClustChart, NbClustIndexDetails, SilhouetteChart } from "../components/SopFigures";
 import { DpcCenterTable } from "../components/DpcCenterTable";
 import { InitializationComparison } from "../components/InitializationComparison";
 import { memo, useState } from "react";
@@ -14,7 +14,8 @@ import type { UnifiedResearchRun, UploadResponse } from "../../../../packages/sh
 import type { AnalysisRunState } from "../hooks/useStudyFindings";
 import { isDatasetReady } from "../utils/validatedDataset";
 import { useSopEvaluation } from "../hooks/useSopEvaluation";
-import { DefenseScatter } from "../components/charts/DefenseScatter";
+import { PartitionProjection } from "../components/charts/PartitionProjection";
+import type { DefensePanel } from "../../../../packages/shared/src/schema";
 import "./StudyFindingsPage.css";
 import { PageHeading } from "./PageHeading";
 import { MethodCard, SopComparison, VariableChips, VarianceSummary, PcaContribution, ClusterDistribution } from "../components/SopComparison";
@@ -22,6 +23,11 @@ import { getMeasureLabel } from "../utils/measureLabels";
 
 // Loading initialization evidence should not rerender the retained charts.
 const ProgressionChart = memo(LongitudinalProgressionChart);
+
+const StudyProjection = ({ panel, label }: { panel?: DefensePanel; label: string }) => panel
+  ? <PartitionProjection label={label} points={panel.observations.map(point => ({ x: point.pc1, y: point.pc2, cluster: point.cluster }))}
+      centers={panel.markers.filter(marker => marker.type === "final").map(marker => ({ x: marker.pc1, y: marker.pc2, cluster: marker.cluster }))} />
+  : <p className="text-sm text-muted">Validated projection unavailable.</p>;
 
 const Fact = ({ label, value }: { label: string; value: string | number }) => <div>
   <dt className="text-xs text-muted">{label}</dt><dd className="mt-1 text-2xl font-semibold tabular-nums">{value}</dd>
@@ -58,7 +64,15 @@ export const StudyFindingsPage = ({ analysis, dataset }: { analysis: AnalysisRun
 };
 
 const StudyResults = memo(function StudyResults({ run }: { run: UnifiedResearchRun }) {
-  const { evaluation, baselineSweep, studyEvidence, defenseGeometry, error: sopError } = useSopEvaluation(run);
+  const { evaluation, baselineSweep, studyEvidence, defenseGeometry, error: sopError, dpcStatus } = useSopEvaluation(run);
+  const dpcUnavailable = {
+    loading: "Loading validated DPC reproducibility evidence...",
+    "request-error": "The study evidence request failed. DPC reproducibility evidence could not be loaded.",
+    "validation-error": "The study evidence response failed validation. DPC reproducibility evidence cannot be shown.",
+    "provenance-rejected": "DPC reproducibility evidence was rejected because required study provenance or geometry did not match.",
+    unavailable: "Verified DPC geometry or per-run ARI evidence is not supplied by this study response.",
+    ready: undefined
+  }[dpcStatus];
   const [activeTab, setActiveTab] = useState("sop1");
   const ablation = evaluation?.sop1.ablation;
   const existing = Object.fromEntries(run.baselineComparison.metrics.map((metric) => [metric.metric, metric.baselineValue]));
@@ -113,7 +127,8 @@ const StudyResults = memo(function StudyResults({ run }: { run: UnifiedResearchR
           <VarianceSummary rows={run.pca.scree} retained={run.pca.components} />
           <PcaContribution dimensions={run.preprocessing.retainedFeatures.length} components={run.pca.components}
             n={ablation?.settings.cohortN ?? run.cohort.parentN} k={ablation?.settings.k}
-            calculationSilhouettes={{ existing: existing.silhouette, enhanced: run.enhancedClustering.metrics.silhouette }}
+            calculations={defenseGeometry ? { existing: studyEvidence?.calculations?.standard, enhanced: studyEvidence?.calculations?.pca } : undefined}
+            runCount={ablation?.settings.seeds.length}
             existing={ablation ? Object.fromEntries(metricDefinitions.map(({ key }) => [key, ablation.conditions[0].metrics[key].mean])) : undefined}
             enhanced={ablation ? Object.fromEntries(metricDefinitions.map(({ key }) => [key, ablation.conditions[1].metrics[key].mean])) : undefined}
             relativeChange={ablation ? Object.fromEntries(metricDefinitions.map(({ key }) => [key, ablation.metricChanges[key].relativeMeanChangePercent])) : undefined}
@@ -130,36 +145,37 @@ const StudyResults = memo(function StudyResults({ run }: { run: UnifiedResearchR
           <p className="simulation-compact-note">Usable indices evaluated · highest vote count determines k</p>
           <dl className="simulation-detail-list"><div><dt>Usable indices</dt><dd>{run.kSelection.usableVotes}</dd></div><div><dt>Selected k</dt><dd>{run.kSelection.selectedK}</dd></div><div><dt>Votes for k = {run.kSelection.selectedK}</dt><dd>{run.kSelection.votesForSelectedK} / {run.kSelection.usableVotes}</dd></div></dl>
           <NbClustChart selectedK={run.kSelection.selectedK} votes={run.kSelection.candidateK.map(k => ({ k, count: run.kSelection.voteDistribution.find(row => row.k === k)?.votes }))} usableIndices={run.kSelection.usableVotes} supportingIndices={run.kSelection.votesForSelectedK} />
+          <NbClustIndexDetails indices={run.kSelection.indexResults} />
           {run.kSelection.candidateK.some(k => !run.kSelection.voteDistribution.some(row => row.k === k)) && <p className="simulation-compact-note">Missing vote counts are unavailable, not zero.</p>}
         </MethodCard>} />
       </Panel>}
       {activeTab === "sop3" && <Panel title="Initialization & Reproducibility" variant="surface">
         <InitializationComparison randomRuns={studyEvidence?.ariBySeed} dpcRuns={defenseGeometry ? studyEvidence?.dpcAriByRun : undefined}
+          dpcUnavailable={dpcUnavailable}
           randomUnavailable={sopError ?? "Loading validated initialization comparison..."}
           selectedCenters={run.initialization.selectedCentroids.length}
           centerTable={<DpcCenterTable centers={run.initialization.selectedCentroids.map(center => ({ ...center, center: center.rank,
             rid: defenseGeometry ? studyEvidence?.dpcCenters?.find(row => row.center === center.rank && row.rho === center.rho &&
-              Math.abs(row.delta - center.delta) < 1e-9 && Math.abs(row.gamma - center.gamma) < 1e-9)?.rid : undefined }))} />}
-          decisionGraph={<p className="mt-4 text-sm text-muted">The full density-distance decision graph is not supplied by the study result. Selected-center statistics are shown above.</p>} />
+              Math.abs(row.delta - center.delta) < 1e-9 && Math.abs(row.gamma - center.gamma) < 1e-9)?.rid : undefined }))} />} />
       </Panel>}
       {activeTab === "final" && <>
       <Panel title="Standard vs Enhanced Comparison" variant="surface">
         <h3 className="card-title mb-4">Scatter Plot Comparison (PCA Space)</h3>
         <div className="study-method-grid">
           <MethodCard title="Standard K-Means">
-            <DefenseScatter panel={defenseGeometry?.sop1.baseline ?? null} label="Standard K-Means" />
+            <StudyProjection panel={defenseGeometry?.sop1.baseline} label="Standard K-Means" />
           </MethodCard>
           <MethodCard title="Enhanced K-Means" enhanced>
-            <DefenseScatter panel={defenseGeometry?.sop3.dpc[0] ?? null} label="Enhanced K-Means" />
+            <StudyProjection panel={defenseGeometry?.sop3.dpc[0]} label="Enhanced K-Means" />
           </MethodCard>
         </div>
-        <p className="mt-4 text-xs text-muted">PC1 and PC2 are visualization only. Both plots use the same axes; cluster labels are method-specific. Standard plot: seed {defenseGeometry?.sop1.seed ?? "—"}.</p>
+        <p className="mt-4 text-xs text-muted">PC1 and PC2 are visualization only. Both plots use the same axes; diamonds mark projected cluster means. Cluster labels are method-specific. Standard plot: seed {defenseGeometry?.sop1.seed ?? "—"}.</p>
         <section className="mt-6 border-t border-line pt-5" aria-label="Internal Validation">
           <h3 className="card-title mb-4">Internal Validation</h3>
           <MetricComparisonTable existing={existing} enhanced={enhanced} relativeChange={relativeChange} />
           <p className="mt-3 text-xs text-muted">Standard: mean of {baseline.runCount} random-initialization runs. Enhanced: validated deterministic result. Relative metric change, not statistical significance.</p>
-          <InternalValidationCalculationDetails enhanced={{ n: run.cohort.parentN, k: run.kSelection.selectedK,
-            metrics: enhanced, calinskiHarabasz: { ssw: run.enhancedClustering.inertia } }} />
+          <InternalValidationCalculationDetails standard={{ n: run.cohort.parentN, k: baseline.selectedK, metrics: existing, runCount: baseline.runCount, calculation: defenseGeometry ? studyEvidence?.calculations?.standard : undefined }} enhanced={{ n: run.cohort.parentN, k: run.kSelection.selectedK,
+            metrics: enhanced, calculation: defenseGeometry ? studyEvidence?.calculations?.enhanced : undefined }} />
         </section>
       </Panel>
 

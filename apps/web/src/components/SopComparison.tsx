@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import { MetricComparisonTable, type MetricKey } from "./MetricComparisonTable";
 import { PcaCalculationDetails } from "./PcaCalculationDetails";
+import type { CalculationEvidence } from "../../../../packages/shared/src/calculationEvidence";
 import "./SopComparison.css";
 
 // Presentation only: each page supplies its own evidence and chart bindings.
@@ -40,11 +41,12 @@ export const VarianceSummary = ({ rows, retained }: {
   <p className="mt-3 text-xs text-muted">★ Retained at ≥ 85% cumulative explained variance.{rows.some(row => row.eigenvalue === undefined) ? " Eigenvalues are not supplied for this run." : ""}</p>
 </section>;
 
-export const PcaContribution = ({ dimensions, components, existing, enhanced, relativeChange, note, n, k, calculationSilhouettes }: {
+export const PcaContribution = ({ dimensions, components, existing, enhanced, relativeChange, note, n, k, calculations, runCount }: {
   dimensions: number; components: number; existing?: Partial<Record<MetricKey, number>>;
   enhanced?: Partial<Record<MetricKey, number>>; relativeChange?: Partial<Record<MetricKey, number>>; note: string;
   n?: number; k?: number;
-  calculationSilhouettes?: { existing: number; enhanced: number };
+  calculations?: { existing?: CalculationEvidence; enhanced?: CalculationEvidence };
+  runCount?: number;
 }) => <section className="sop-support-card">
   <h3 className="card-title mb-2">Controlled PCA Contribution to Clustering</h3>
   <p className="mb-4 text-sm text-muted">{dimensions} standardized variables vs {components} principal components.</p>
@@ -52,8 +54,8 @@ export const PcaContribution = ({ dimensions, components, existing, enhanced, re
     existingLabel={`${dimensions} Features`} enhancedLabel={`${components} PCs`} metrics={["silhouette"]} />
   <p className="mt-3 text-xs text-muted">{note}</p>
   <PcaCalculationDetails n={n} k={k} representations={[
-    { label: `${dimensions} Features`, description: `${dimensions} standardized features`, silhouette: calculationSilhouettes?.existing ?? existing?.silhouette },
-    { label: `${components} PCs`, description: `${components} principal components`, silhouette: calculationSilhouettes?.enhanced ?? enhanced?.silhouette }
+    { label: `${dimensions} Features`, description: `${dimensions} standardized features`, silhouette: existing?.silhouette, calculation: calculations?.existing, runCount },
+    { label: `${components} PCs`, description: `${components} principal components`, silhouette: enhanced?.silhouette, calculation: calculations?.enhanced, runCount }
   ]} />
 </section>;
 

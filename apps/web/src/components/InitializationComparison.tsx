@@ -32,7 +32,7 @@ export const InitializationComparison = ({ randomRuns, dpcRuns, randomUnavailabl
   selectedCenters, centerTable, decisionGraph, simulation = false }: {
   randomRuns?: readonly AriObservation[]; dpcRuns?: readonly AriObservation[];
   randomUnavailable?: string; dpcUnavailable?: string;
-  selectedCenters: number; centerTable: ReactNode; decisionGraph: ReactNode; simulation?: boolean;
+  selectedCenters: number; centerTable: ReactNode; decisionGraph?: ReactNode; simulation?: boolean;
 }) => {
   const minimum = Math.max(-1, Math.min(0.85, ...[...(randomRuns ?? []), ...(dpcRuns ?? [])].map(row => row.adjustedRandIndex - 0.02)));
   const card = (enhanced: boolean, runs?: readonly AriObservation[], unavailable?: string) => <MethodCard
@@ -54,7 +54,7 @@ export const InitializationComparison = ({ randomRuns, dpcRuns, randomUnavailabl
       <h3 className="card-title mb-3">DPC Initialization Evidence</h3>
       <p className="mb-3 text-xs">Selected centers: {selectedCenters}</p>
       {centerTable}
-      <details><summary>DPC Center-Selection Details</summary>{decisionGraph}</details>
+      {decisionGraph && <details><summary>DPC Center-Selection Details</summary>{decisionGraph}</details>}
     </section>
   </div>;
 };

@@ -13,6 +13,7 @@ import { getSimulationMetadata } from "./simulationMetadata";
 import { buildResearchEnvironment, resolvePython } from "./researchPipelineOrchestrator";
 import { materializeCanonicalResearchSources, verifyCanonicalDpcSource } from "./researchSourceMaterializer";
 import { readCsvRecords } from "./artifactReaders";
+import { simulationCalculations } from "./calculationEvidence";
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../../../..");
 export const simulationRunRoot = path.join(root, "apps/api/private/simulation-runs");
@@ -122,6 +123,7 @@ export async function executeSimulation(id: number, configuration?: SimulationCo
     });
   }
   const comparison = compareSimulationMetrics(analysis);
+  analysis.calculations = simulationCalculations(workspace, analysis);
   const metadata = configuration ? {
     simulationId: id, sampleSize: sample.sampleParticipantCount, samplingFraction: sample.samplingFraction,
     samplingMethod: sample.samplingMethod, phaseSampleCounts: sample.phaseSampleCounts,
@@ -150,10 +152,11 @@ const hasCurrentEvidence = (state: SimulationRunState) => !!state.result?.analys
   !!state.result.analysis.enhanced.dpc.ariByRun && !!state.result.analysis.pcaContribution &&
   state.result.analysis.enhanced.pcaVariance.every(row => row.eigenvalue !== undefined);
 
-/** Recover only selected-center RIDs from a matching private saved projection. */
+/** Read selected-center RIDs and calculations from this completion's private
+ * workspace. Missing historical PCA labels never trigger analytical execution. */
 function mapSavedCenterRids(state: SimulationRunState, fingerprint: string, sourceHash: string) {
   const centers = state.result?.analysis.enhanced.dpc.centers;
-  if (!centers || centers.every(center => center.rid)) return state;
+  if (!centers || (centers.every(center => center.rid) && state.result?.analysis.calculations)) return state;
   for (const entry of fs.readdirSync(simulationRunRoot, { withFileTypes: true })) {
     if (!entry.isDirectory() || !entry.name.startsWith(`simulation-${state.simulationId}-`)) continue;
     const directory = path.join(simulationRunRoot, entry.name);
@@ -161,14 +164,17 @@ function mapSavedCenterRids(state: SimulationRunState, fingerprint: string, sour
       const proof = JSON.parse(fs.readFileSync(path.join(directory, "membership-proof.json"), "utf8"));
       if (!proof.identical || proof.selected !== fingerprint || proof.existing !== fingerprint || proof.enhanced !== fingerprint) continue;
       if (sha256(fs.readFileSync(path.join(directory, "data/interim/study_entry_cohort_unimputed.csv"))) !== sourceHash) continue;
+      const request = JSON.parse(fs.readFileSync(path.join(directory, "request.json"), "utf8"));
+      if (request.configuration && simulationConfigurationKey(SimulationConfigurationSchema.parse(request.configuration)) !== state.configurationKey) continue;
       const rows = readCsvRecords(path.join(directory, "data/interim"), "clustering_pca_scores.csv");
       if (sha256(JSON.stringify(rows.map(row => row.RID))) !== fingerprint) continue;
       const matches = centers.map(center => rows.filter(row => center.coordinates?.every((coordinate, i) =>
         Math.abs(Number(row[`PC${i + 1}`]) - coordinate) <= 1e-12)));
-      if (matches.some(rows => rows.length !== 1)) continue;
-      centers.forEach((center, i) => { center.rid = matches[i][0].RID; });
-      return SimulationRunStateSchema.parse(state);
-    } catch { /* A missing historical workspace cannot supply an invented RID. */ }
+      if (matches.every(rows => rows.length === 1)) centers.forEach((center, i) => { center.rid = matches[i][0].RID; });
+      const calculations = simulationCalculations(directory, state.result!.analysis);
+      return SimulationRunStateSchema.parse({ ...state, result: { ...state.result,
+        analysis: { ...state.result!.analysis, calculations } } });
+    } catch { /* Missing/mismatched historical evidence must not be displayed. */ }
   }
   return state;
 }

@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { CalculationSetSchema } from "./calculationEvidence";
 import { adjustedRandIndex } from "./adjustedRandIndex";
 
 export const AxisSchema = z.enum(["Axis A", "Axis B"]);
@@ -1374,6 +1375,7 @@ export type DefenseGeometry = z.infer<typeof DefenseGeometrySchema>;
 export type DefensePanel = z.infer<typeof DefensePanelSchema>;
 
 export const StudyEvidenceSchema = z.object({
+  calculations: CalculationSetSchema.optional(),
   // Explicit selected-center RID display; no additional participant attributes.
   dpcCenters: z.array(z.object({ center: z.number().int().positive(), rid: z.string().regex(/^[1-9]\d*$/),
     rho: z.number().int().nonnegative(), delta: z.number().finite(), gamma: z.number().finite() }).strict()).length(2).optional(),
