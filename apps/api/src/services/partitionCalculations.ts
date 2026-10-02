@@ -27,13 +27,22 @@ export function partitionCalculations(matrix: number[][], ids: string[], labels:
     const b = Math.min(...groups.flatMap((members, c) => c === labels[i] ? [] : [row[c] / members.length]));
     return { a, b, s: singleton || Math.max(a, b) === 0 ? 0 : (b - a) / Math.max(a, b), singleton };
   });
+  const silhouette = examples.reduce((sum, row) => sum + row.s, 0) / n;
+  const numericIds = ids.every(id => id.trim() !== "" && Number.isFinite(Number(id)));
+  // Selection is diagnostic only: retain the original all-participant mean.
+  const exampleIndex = examples.reduce((best, row, i) => {
+    const difference = Math.abs(row.s - silhouette) - Math.abs(examples[best].s - silhouette);
+    const ridOrder = (numericIds ? Number(ids[i]) - Number(ids[best]) : 0) ||
+      (ids[i] < ids[best] ? -1 : ids[i] > ids[best] ? 1 : 0);
+    return difference < 0 || (difference === 0 && ridOrder < 0) ? i : best;
+  }, 0);
   const db = scatter.every(value => Math.abs(value) <= 1e-8) || distances.every(row => row.every(value => Math.abs(value) <= 1e-8)) ? 0 :
     scatter.reduce((sum, sigma, c) => sum + Math.max(...scatter.map((other, j) => j === c || distances[c][j] === 0 ? 0 : (sigma + other) / distances[c][j])), 0) / k;
   return CalculationEvidenceSchema.parse({ n, k, representation, seed,
-    exampleParticipant: { rid: ids[0], ...examples[0] },
+    exampleParticipant: { rid: ids[exampleIndex], cluster: labels[exampleIndex], ...examples[exampleIndex] },
     daviesBouldin: { sigma0: scatter[0], sigma1: scatter[1], centroidDistance: distances[0][1] },
     calinskiHarabasz: { ssb, ssw }, metrics: {
-      silhouette: examples.reduce((sum, row) => sum + row.s, 0) / n,
+      silhouette,
       davies_bouldin: db, calinski_harabasz: ssw === 0 ? 1 : ssb * (n - k) / (ssw * (k - 1))
     } });
 }

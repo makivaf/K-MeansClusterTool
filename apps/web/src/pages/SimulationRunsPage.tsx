@@ -3,6 +3,7 @@ import { PcaChart, NbClustChart, NbClustIndexDetails, SilhouetteChart } from "..
 import { DpcCenterTable } from "../components/DpcCenterTable";
 import { InitializationComparison } from "../components/InitializationComparison";
 import { InternalValidationCalculationDetails } from "../components/InternalValidationCalculationDetails";
+import { formatMetric } from "../components/MetricComparisonTable";
 ﻿import { useEffect, useState } from "react";
 import { Check, Play, RefreshCw } from "lucide-react";
 import { useRef } from "react";
@@ -116,7 +117,7 @@ export const SimulationResults = ({ result }: { result: NonNullable<SimulationRu
             metrics: Object.fromEntries(result.comparison.map(row => [row.metric, row.existing])) }}
           enhanced={{ n: enhanced.participantCount, k: enhanced.selectedK, calculation: result.analysis.calculations?.enhanced,
             metrics: Object.fromEntries(result.comparison.map(row => [row.metric, row.enhanced])) }}
-          formatValue={value => value === undefined ? "—" : format(value)} />
+          formatValue={value => formatMetric(value, true)} />
       </section>
       <section className="simulation-chart"><h3 className="card-title">Cluster Distribution</h3><div className="simulation-two-column"><ClusterDistribution title="Standard K-Means · Seed 0" sizes={selectedRun.clusterSizes} participants={existing.participantCount} /><ClusterDistribution title="Enhanced K-Means" sizes={enhanced.clusterSizes} participants={enhanced.participantCount} /></div></section>
     </section>

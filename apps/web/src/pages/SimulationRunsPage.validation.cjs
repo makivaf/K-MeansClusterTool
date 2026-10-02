@@ -204,13 +204,13 @@ async function validateStudyEvidence() {
     assert.ok(final.includes('Overall metrics are means of '+persisted.baselineComparison.baselineMethod.runCount+' runs'));
     assert.ok(!sop1.includes('Participant-level calculation unavailable for this cached run.'));
     const calculation = ready.studyEvidence.calculations;
-    assert.ok(sop1.includes(calculation.pca.exampleParticipant.a.toFixed(3)));
+    assert.ok(sop1.includes(calculation.pca.exampleParticipant.a.toFixed(6)));
     assert.ok(sop1.includes('Seed '+calculation.pca.seed));
     assert.ok(sop1.includes('mean of '+evaluation.sop1.ablation.conditions[1].runCount+' runs'));
     const {formatMetric} = compile(path.join(root,'apps/web/src/components/MetricComparisonTable.tsx'));
     assert.ok(sop1.includes('<dt>Overall Silhouette</dt><dd>'+formatMetric(evaluation.sop1.ablation.conditions[1].metrics.silhouette.mean)+'</dd>'));
     assert.ok(final.includes('stored seed '+calculation.standard.seed));
-    assert.ok(final.includes(calculation.standard.calinskiHarabasz.ssb.toLocaleString('en-US',{minimumFractionDigits:3,maximumFractionDigits:3})));
+    assert.ok(final.includes(calculation.standard.calinskiHarabasz.ssb.toLocaleString('en-US',{minimumFractionDigits:6,maximumFractionDigits:6})));
     assert.ok(!final.includes('Participant-level calculation unavailable for this cached run.'));
     const sharedCss = fs.readFileSync(path.join(root,'apps/web/src/components/SopFigures.css'),'utf8');
     assert.ok(sharedCss.includes('.nbclust-index-details table.simulation-comparison-table'));

@@ -4,7 +4,9 @@ export const metricDefinitions = [
   { key: "calinski_harabasz", field: "calinskiHarabasz", label: "Calinski–Harabasz Index", direction: "higher" }
 ] as const;
 export type MetricKey = typeof metricDefinitions[number]["key"];
-export const formatMetric = (value: number | undefined) => value === undefined ? "—" : value.toFixed(6);
+export const formatMetric = (value: number | undefined, useGrouping = false) => value === undefined ? "—" : useGrouping
+  ? value.toLocaleString("en-US", { minimumFractionDigits: 6, maximumFractionDigits: 6 })
+  : value.toFixed(6);
 
 export const MetricComparisonTable = ({ existing = {}, enhanced = {}, relativeChange, existingLabel = "Standard K-Means", enhancedLabel = "Enhanced K-Means", metrics }: {
   existing?: Partial<Record<MetricKey, number>>;

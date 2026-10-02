@@ -156,7 +156,8 @@ const hasCurrentEvidence = (state: SimulationRunState) => !!state.result?.analys
  * workspace. Missing historical PCA labels never trigger analytical execution. */
 function mapSavedCenterRids(state: SimulationRunState, fingerprint: string, sourceHash: string) {
   const centers = state.result?.analysis.enhanced.dpc.centers;
-  if (!centers || (centers.every(center => center.rid) && state.result?.analysis.calculations)) return state;
+  if (!centers || (centers.every(center => center.rid) && state.result?.analysis.calculations &&
+    Object.values(state.result.analysis.calculations).every(calculation => calculation?.exampleParticipant.cluster !== undefined))) return state;
   for (const entry of fs.readdirSync(simulationRunRoot, { withFileTypes: true })) {
     if (!entry.isDirectory() || !entry.name.startsWith(`simulation-${state.simulationId}-`)) continue;
     const directory = path.join(simulationRunRoot, entry.name);

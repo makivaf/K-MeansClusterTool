@@ -12,9 +12,7 @@ type MethodDetails = {
   calculation?: CalculationEvidence;
   runCount?: number;
 };
-const intermediate = (value?: number) => value === undefined ? "—" : value.toLocaleString("en-US", {
-  minimumFractionDigits: 3, maximumFractionDigits: 3
-});
+const intermediate = (value?: number) => formatMetric(value, true);
 const Row = ({ label, value }: { label: string; value: ReactNode }) => <div><dt>{label}</dt><dd>{value}</dd></div>;
 const MetricCard = ({ title, totalLabel = title, value, direction, children }: {
   title: string; totalLabel?: string; value: string; direction: "Higher" | "Lower"; children: ReactNode;
