@@ -1,3 +1,4 @@
+import { formatContinuous } from "../../utils/numberFormatting";
 import { Bar, BarChart, CartesianGrid, Cell, LabelList, Line, LineChart, ReferenceDot, ReferenceLine, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import type { UnifiedResearchRun, BaselineCandidateSweep, StudyEvidence } from "../../../../../packages/shared/src";
 import { getMeasureLabel } from "../../utils/measureLabels";
@@ -16,8 +17,8 @@ export const CorrelationHeatmap = ({ correlation, compact = false, showKey = tru
       <thead><tr><th>Variable</th>{correlation.features.map((feature, i) => <th key={feature} className="text-center" title={getMeasureLabel(feature)}>{i + 1}</th>)}</tr></thead>
       <tbody>{correlation.matrix.map((row, i) => <tr key={correlation.features[i]}>
         <th scope="row" className="whitespace-nowrap text-left" title={getMeasureLabel(correlation.features[i])}>{compact ? i + 1 : `${i + 1}. ${getMeasureLabel(correlation.features[i])}`}</th>
-        {row.map((value, j) => <td key={j} className="text-center tabular-nums" title={`${correlation.features[i]} / ${correlation.features[j]}: ${value === null ? "Undefined (constant feature)" : value.toFixed(6)}`}
-          style={{ backgroundColor: value === null ? "#eee" : `color-mix(in srgb, ${value >= 0 ? teal : chartPalette.comparison} ${Math.abs(value) * 70}%, transparent)` }}><span className={compact ? "sr-only" : undefined}>{value === null ? "—" : value.toFixed(2)}</span></td>)}
+        {row.map((value, j) => <td key={j} className="text-center tabular-nums" title={`${correlation.features[i]} / ${correlation.features[j]}: ${value === null ? "Undefined (constant feature)" : formatContinuous(value)}`}
+          style={{ backgroundColor: value === null ? "#eee" : `color-mix(in srgb, ${value >= 0 ? teal : chartPalette.comparison} ${Math.abs(value) * 70}%, transparent)` }}><span className={compact ? "sr-only" : undefined}>{value === null ? "—" : formatContinuous(value)}</span></td>)}
       </tr>)}</tbody>
     </table>
   </div>

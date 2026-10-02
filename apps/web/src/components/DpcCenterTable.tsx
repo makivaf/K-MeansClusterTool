@@ -1,3 +1,4 @@
+import { formatContinuous, formatInteger } from "../utils/numberFormatting";
 type DpcCenter = {
   center: number;
   candidateId?: string;
@@ -16,8 +17,8 @@ export const DpcCenterTable = ({ centers }: { centers: readonly DpcCenter[] }) =
     <tbody>{centers.map(center => <tr key={center.center}>
       <th scope="row"><span className="dpc-center-star" aria-hidden="true">★</span><span className="sr-only">Selected center </span>{center.center}</th>
       <td>{center.rid ?? center.candidateId ?? <span className="text-muted">Unavailable</span>}</td>
-      <td>{center.rho.toLocaleString("en-US", { maximumFractionDigits: 6 })}</td>
-      <td>{center.delta.toFixed(4)}</td><td className="dpc-center-gamma">{center.gamma.toFixed(4)}</td>
+      <td>{Number.isInteger(center.rho) ? formatInteger(center.rho) : formatContinuous(center.rho)}</td>
+      <td>{formatContinuous(center.delta)}</td><td className="dpc-center-gamma">{formatContinuous(center.gamma)}</td>
     </tr>)}</tbody>
   </table>
 </div>;

@@ -1,3 +1,4 @@
+import { formatContinuous, formatPercent, formatInteger } from "../utils/numberFormatting";
 import type { ReactNode } from "react";
 import { MetricComparisonTable, type MetricKey } from "./MetricComparisonTable";
 import { PcaCalculationDetails } from "./PcaCalculationDetails";
@@ -34,11 +35,11 @@ export const VarianceSummary = ({ rows, retained }: {
     <thead><tr><th>PC</th><th>Eigenvalue</th><th>Cumulative Var.</th></tr></thead>
     <tbody>{rows.filter(row => row.component <= retained).map(row => <tr key={row.component} className={row.component === retained ? "sop-selected-row" : undefined}>
       <th scope="row">PC{row.component}{row.component === retained ? " ★" : ""}</th>
-      <td>{row.eigenvalue === undefined ? "Unavailable" : row.eigenvalue.toFixed(3)}</td>
-      <td>{(row.cumulativeVariance * 100).toFixed(2)}%</td>
+      <td>{row.eigenvalue === undefined ? "Unavailable" : formatContinuous(row.eigenvalue)}</td>
+      <td>{formatPercent(row.cumulativeVariance * 100)}</td>
     </tr>)}</tbody>
   </table></div>
-  <p className="mt-3 text-xs text-muted">★ Retained at ≥ 85% cumulative explained variance.{rows.some(row => row.eigenvalue === undefined) ? " Eigenvalues are not supplied for this run." : ""}</p>
+  <p className="mt-3 text-xs text-muted">★ Retained at ≥ 85.00% cumulative explained variance.{rows.some(row => row.eigenvalue === undefined) ? " Eigenvalues are not supplied for this run." : ""}</p>
 </section>;
 
 export const PcaContribution = ({ dimensions, components, existing, enhanced, relativeChange, note, n, k, calculations, runCount }: {
@@ -62,7 +63,7 @@ export const PcaContribution = ({ dimensions, components, existing, enhanced, re
 export const ClusterDistribution = ({ sizes, participants, title }: { sizes: number[]; participants: number; title: string }) => <div className="sop-distribution">
   <h3 className="card-title">{title}</h3>
   {sizes.map((size, index) => <div className="sop-cluster" key={index}>
-    <div className="sop-distribution-values"><span>Cluster {index}<small>{size.toLocaleString("en-US")} participants</small></span><strong>{(100 * size / participants).toFixed(1)}%</strong></div>
+    <div className="sop-distribution-values"><span>Cluster {index}<small>{formatInteger(size)} participants</small></span><strong>{formatPercent(100 * size / participants)}</strong></div>
     <div className="sop-distribution-track"><div className={index % 2 ? "is-light" : ""} style={{ width: `${100 * size / participants}%` }} /></div>
   </div>)}
 </div>;

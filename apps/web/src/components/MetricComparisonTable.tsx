@@ -1,10 +1,11 @@
+import { formatContinuous, formatPercent } from "../utils/numberFormatting";
 export const metricDefinitions = [
   { key: "silhouette", field: "silhouette", label: "Silhouette Coefficient", direction: "higher" },
   { key: "davies_bouldin", field: "daviesBouldin", label: "Davies–Bouldin Index", direction: "lower" },
   { key: "calinski_harabasz", field: "calinskiHarabasz", label: "Calinski–Harabasz Index", direction: "higher" }
 ] as const;
 export type MetricKey = typeof metricDefinitions[number]["key"];
-export const formatMetric = (value: number | undefined) => value === undefined ? "—" : value.toFixed(6);
+export const formatMetric = (value: number | undefined) => value === undefined ? "—" : formatContinuous(value);
 
 export const MetricComparisonTable = ({ existing = {}, enhanced = {}, relativeChange, existingLabel = "Standard K-Means", enhancedLabel = "Enhanced K-Means", metrics }: {
   existing?: Partial<Record<MetricKey, number>>;
@@ -20,6 +21,6 @@ export const MetricComparisonTable = ({ existing = {}, enhanced = {}, relativeCh
     <td className="text-right tabular-nums">{formatMetric(existing[key])}</td>
     <td className={`text-right tabular-nums ${relativeChange ? "font-semibold text-teal-800" : ""}`}>{formatMetric(enhanced[key])}</td>
     {relativeChange && <td className="text-right font-semibold tabular-nums text-teal-800">{relativeChange[key] === undefined ? "—" : relativeChange[key]! < 0
-      ? `${Math.abs(relativeChange[key]!).toFixed(2)}% lower` : `+${relativeChange[key]!.toFixed(2)}%`}</td>}
+      ? `${formatPercent(Math.abs(relativeChange[key]!))} lower` : `+${formatPercent(relativeChange[key]!)}`}</td>}
   </tr>)}</tbody>
 </table></div>;
