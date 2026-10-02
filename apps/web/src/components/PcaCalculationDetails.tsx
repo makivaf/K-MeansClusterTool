@@ -1,3 +1,4 @@
+import { formatContinuous } from "../utils/numberFormatting";
 import { useState } from "react";
 import { ChevronDown } from "lucide-react";
 import { formatMetric } from "./MetricComparisonTable";
@@ -37,9 +38,9 @@ export const PcaCalculationDetails = ({ n, k, representations }: {
         <dl>
           {example && <>
           <div><dt>RID</dt><dd>{example?.rid ?? "Unavailable"}</dd></div>
-          <div><dt>a(i)</dt><dd>{example.a === undefined ? "Unavailable" : formatMetric(example.a)}</dd></div>
-          <div><dt>b(i)</dt><dd>{example.b === undefined ? "Unavailable" : formatMetric(example.b)}</dd></div>
-          <div><dt>s(i)</dt><dd>{example.s === undefined ? "Unavailable" : formatMetric(example.s)}</dd></div>
+          <div><dt>a(i)</dt><dd>{formatContinuous(example?.a, "Unavailable")}</dd></div>
+          <div><dt>b(i)</dt><dd>{formatContinuous(example?.b, "Unavailable")}</dd></div>
+          <div><dt>s(i)</dt><dd>{formatContinuous(example?.s, "Unavailable")}</dd></div>
           </>}
           <div className="pca-silhouette-overall"><dt>Overall Silhouette</dt><dd>{formatMetric(representation.silhouette)}</dd></div>
         </dl>

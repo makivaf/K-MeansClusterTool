@@ -1,3 +1,4 @@
+import { formatContinuous } from "../utils/numberFormatting";
 import type { ReactNode } from "react";
 import { CartesianGrid, Line, LineChart, ReferenceLine, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { MethodCard, SopComparison } from "./SopComparison";
@@ -14,12 +15,12 @@ const AriChart = ({ runs, axisLabel, minimum, unavailable }: {
       <XAxis type="number" dataKey="seed" domain={["dataMin", "dataMax"]} allowDecimals={false}
         tick={{ fontSize: 11, fill: chartPalette.text }} tickLine={false}
         label={{ value: axisLabel, position: "bottom", fontSize: 12, fill: chartPalette.text }} />
-      <YAxis domain={[minimum, 1]} width={52} tickFormatter={(value: number) => value.toFixed(2)}
+      <YAxis domain={[minimum, 1]} width={52} tickFormatter={(value: number) => formatContinuous(value)}
         tick={{ fontSize: 11, fill: chartPalette.text }} tickLine={false}
         label={{ value: "ARI", angle: -90, position: "insideLeft", fontSize: 11, fill: chartPalette.text }} />
-      <Tooltip formatter={(value: number) => [value.toFixed(6), "ARI"]} labelFormatter={value => `${axisLabel} ${value}`} />
+      <Tooltip formatter={(value: number) => [formatContinuous(value), "ARI"]} labelFormatter={value => `${axisLabel} ${value}`} />
       <ReferenceLine y={1} stroke={chartPalette.primary} strokeDasharray="4 4"
-        label={{ value: "ARI = 1.000", position: "insideBottomRight", fontSize: 10, fill: chartPalette.primary }} />
+        label={{ value: `ARI = ${formatContinuous(1)}`, position: "insideBottomRight", fontSize: 10, fill: chartPalette.primary }} />
       <Line type="linear" dataKey="adjustedRandIndex" stroke={chartPalette.neutral} strokeWidth={1.5}
         dot={{ r: 3, fill: chartPalette.primary, stroke: "white" }} isAnimationActive={false} />
     </LineChart>

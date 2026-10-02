@@ -1,3 +1,4 @@
+import { formatContinuous, formatInteger } from "../../utils/numberFormatting";
 import { useMemo } from "react";
 import { Bar, BarChart, CartesianGrid, Legend, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import type { UnifiedResearchRun } from "../../../../../packages/shared/src";
@@ -11,9 +12,9 @@ const SupportTooltip = ({ active, payload }: { active?: boolean; payload?: Array
   return <div className="rounded-sm border border-line bg-white p-3 text-xs">
     <strong>Years {bin.label}</strong>
     {[bin.support0, bin.support1].map((point) => point ? <div key={point.clusterId} className="mt-2">
-      <p>Cluster {point.clusterId}: {point.meanAdas13.toFixed(3)} mean ADAS-Cog13</p>
-      <p>{point.participantCount.toLocaleString()} participants · {point.observationCount.toLocaleString()} observations</p>
-      <p>Mean elapsed years: {point.meanElapsedYears.toFixed(2)}</p>
+      <p>Cluster {point.clusterId}: {formatContinuous(point.meanAdas13)} mean ADAS-Cog13</p>
+      <p>{formatInteger(point.participantCount)} participants · {formatInteger(point.observationCount)} observations</p>
+      <p>Mean elapsed years: {formatContinuous(point.meanElapsedYears)}</p>
     </div> : null)}
   </div>;
 };
@@ -35,7 +36,7 @@ export const LongitudinalProgressionChart = ({ data }: { defense?: boolean; data
       <BarChart data={bins} margin={{ top: 15, right: 15, left: 15, bottom: 25 }}>
         <CartesianGrid vertical={false} stroke={chartPalette.grid} />
         <XAxis dataKey="label" label={{ value: "Elapsed years (bin)", position: "bottom" }} />
-        <YAxis label={{ value: "Mean ADAS-Cog13", angle: -90, position: "insideLeft" }} />
+        <YAxis tickFormatter={(value: number) => formatContinuous(value)} label={{ value: "Mean ADAS-Cog13", angle: -90, position: "insideLeft" }} />
         <Tooltip content={<SupportTooltip />} />
         <Legend verticalAlign="top" height={40} />
         <Bar dataKey="cluster0" name="Cluster 0 · lower impairment" fill={chartPalette.primary} isAnimationActive={false} />

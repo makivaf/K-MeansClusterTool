@@ -1,3 +1,4 @@
+import { formatContinuous, formatInteger } from "../utils/numberFormatting";
 import { useState, type ReactNode } from "react";
 import { ChevronDown } from "lucide-react";
 import { formatMetric, type MetricKey } from "./MetricComparisonTable";
@@ -12,7 +13,7 @@ type MethodDetails = {
   calculation?: CalculationEvidence;
   runCount?: number;
 };
-const intermediate = (value?: number) => formatMetric(value, true);
+const intermediate = (value?: number) => value === undefined ? "—" : formatContinuous(value);
 const Row = ({ label, value }: { label: string; value: ReactNode }) => <div><dt>{label}</dt><dd>{value}</dd></div>;
 const MetricCard = ({ title, totalLabel = title, value, direction, children }: {
   title: string; totalLabel?: string; value: string; direction: "Higher" | "Lower"; children: ReactNode;
@@ -40,7 +41,7 @@ export const InternalValidationCalculationDetails = ({ standard, enhanced, forma
         </button>)}
       </div>}
       <div className="pca-calculation-metadata">
-        <span>Participants (N): <strong>{method.n.toLocaleString("en-US")}</strong></span>
+        <span>Participants (N): <strong>{formatInteger(method.n)}</strong></span>
         <span>Clusters (K): <strong>{method.k}</strong></span>
       </div>
       {method.runCount && <p className="text-xs text-muted mt-3">Overall metrics are means of {method.runCount} runs.{calculation && ` Intermediate calculations describe stored seed ${calculation.seed}; they do not reproduce the aggregate means.`}</p>}
@@ -68,7 +69,7 @@ export const InternalValidationCalculationDetails = ({ standard, enhanced, forma
           {calculation && <dl>
             <Row label="SSB" value={intermediate(calculation?.calinskiHarabasz?.ssb)} />
             <Row label="SSW" value={intermediate(calculation?.calinskiHarabasz?.ssw)} />
-            <Row label="N" value={method.n.toLocaleString("en-US")} />
+            <Row label="N" value={formatInteger(method.n)} />
             <Row label="K" value={method.k} />
           </dl>}
         </MetricCard>
