@@ -35,6 +35,22 @@
 .sop-support-card .research-table th { font-weight: 400; }
 .sop-table :is(th, td):not(:first-child) { text-align: right; }
 .sop-selected-row { background: var(--research-selected-bg, #eef8f7); color: var(--research-primary); }
+.sop-support-card .pca-variance-table { table-layout: fixed; min-width: 320px; border-collapse: collapse; }
+.sop-support-card .pca-variance-table tbody > tr:not([hidden]) { border-bottom: 1px solid var(--research-border); }
+.sop-support-card .pca-variance-table tbody > tr > :is(th, td) { border-bottom: 0; }
+.sop-support-card .pca-variance-table thead th:first-child { width: 24%; text-align: left; }
+.sop-support-card .pca-variance-table :is(th, td) { padding: 8px 10px; vertical-align: middle; }
+.sop-support-card .pca-variance-table :is(th, td):not(:first-child) { text-align: right; font-variant-numeric: tabular-nums; }
+.pca-variance-toggle { display: flex; align-items: center; justify-content: flex-start; gap: 6px; width: 100%; min-height: 28px; text-align: left; color: var(--research-primary); font-weight: 600; white-space: nowrap; }
+.pca-variance-table tbody tr:not(.pca-variance-details):hover,
+.pca-variance-table tbody tr:not(.pca-variance-details):focus-within { background: var(--research-selected-bg, #eef8f7); }
+.pca-variance-toggle svg { flex-shrink: 0; }
+.pca-variance-toggle[aria-expanded="true"] svg { transform: rotate(180deg); }
+.sop-support-card .pca-variance-table .pca-variance-details > td { text-align: left; padding: 8px 10px; background: var(--research-canvas); }
+.pca-top-loadings { display: flex; flex-wrap: wrap; gap: 8px 16px; margin-top: 6px; font-size: 11px; }
+.pca-top-loadings li { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; min-width: 0; }
+.pca-top-loadings li + li { padding-left: 16px; border-left: 1px solid var(--research-border); }
+.pca-top-loadings .research-badge { padding: 2px 7px; border: 1px solid var(--research-selected-border); border-radius: 20px; font-size: 10px; overflow-wrap: anywhere; white-space: normal; }
 .sop3-headline { font-size: 30px; line-height: 1.2; font-weight: 600; font-variant-numeric: tabular-nums; }
 .sop3-description { margin-top: 6px; margin-bottom: 20px; }
 .sop3-chart-title { margin-top: auto; }

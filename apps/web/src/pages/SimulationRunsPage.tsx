@@ -1,12 +1,16 @@
+import { NbClustComparison } from "../components/NbClustComparison";
+import { RunProgress } from "../components/RunProgress";
+import { PcaLoadingMatrix } from "../components/PcaLoadingMatrix";
+import { readPcaLoadings } from "../utils/pcaLoadings";
 import { formatContinuous, formatPercent, formatInteger } from "../utils/numberFormatting";
 import { PartitionProjection } from "../components/charts/PartitionProjection";
-import { PcaChart, NbClustChart, NbClustIndexDetails, SilhouetteChart } from "../components/SopFigures";
+import { PcaChart, SilhouetteChart } from "../components/SopFigures";
 import { DpcCenterTable } from "../components/DpcCenterTable";
 import { InitializationComparison } from "../components/InitializationComparison";
 import { InternalValidationCalculationDetails } from "../components/InternalValidationCalculationDetails";
-import { formatMetric } from "../components/MetricComparisonTable";
+import { MetricComparisonTable, formatMetric } from "../components/MetricComparisonTable";
 ﻿import { useEffect, useState } from "react";
-import { Check, Play, RefreshCw } from "lucide-react";
+import { Play, RefreshCw } from "lucide-react";
 import { useRef } from "react";
 import { Link } from "react-router-dom";
 import { CartesianGrid, ResponsiveContainer, Scatter, ScatterChart, Tooltip, XAxis, YAxis } from "recharts";
@@ -18,7 +22,6 @@ import "./SimulationRunsPage.css";
 import { CorrelationHeatmap } from "../components/charts/FinalFindingsCharts";
 import { MethodCard, SopComparison, VariableChips, VarianceSummary, PcaContribution, ClusterDistribution } from "../components/SopComparison";
 
-const format = (value: number) => formatContinuous(value);
 const axisNumber = (value: number) => formatContinuous(value);
 const displayCoordinate = (value: number) => formatContinuous(value);
 type Analysis = NonNullable<SimulationRunState["result"]>["analysis"];
@@ -37,16 +40,7 @@ const progressStages = [
   ["Complete", "Results ready", 4]
 ] as const;
 export const SimulationProgress = ({ stage, interrupted }: { stage: number; interrupted: boolean }) => (
-  <ol className="simulation-stepper" aria-label="Simulation run progress">
-    {progressStages.map(([label, subtitle, runtimeStage]) => {
-      const done = runtimeStage < stage || (stage === 4 && !interrupted);
-      const active = !interrupted && stage < 4 && runtimeStage === stage;
-      return <li key={label} aria-current={active ? "step" : undefined} className={"simulation-step " + (done ? "is-reached" : active ? "is-active" : "")}>
-        <span className="simulation-step-node" aria-hidden="true">{done ? <Check size={16} /> : <span className="simulation-step-dot" />}</span>
-        <span>{label}<span className="sr-only">: {done ? "complete" : active ? "in progress" : "pending"}</span><span className="simulation-step-subtitle">{subtitle}</span></span>
-      </li>;
-    })}
-  </ol>
+  <RunProgress steps={progressStages} stage={stage} interrupted={interrupted} completeStage={4} label="Simulation run progress" />
 );
 
 const CorrelationChart = ({ analysis }: { analysis: Analysis }) => analysis.correlation
@@ -61,17 +55,16 @@ const ProjectionChart = ({ analysis, method }: { analysis: Analysis; method: "st
   return <PartitionProjection points={projection.points.map(point => ({ x: point.x, y: point.y, cluster: point[method] }))} centers={centers} label={method} />;
 };
 
-const metricTitles = { silhouette: "Silhouette Coefficient", davies_bouldin: "Davies-Bouldin Index", calinski_harabasz: "Calinski-Harabasz Index" };
 
 export const SimulationResults = ({ result }: { result: NonNullable<SimulationRunState["result"]> }) => {
   const { existing, enhanced } = result.analysis;
+  const pcaLoadings = readPcaLoadings(enhanced, enhanced.retainedVariables, enhanced.pcaComponents);
   const exploratory = result.metadata.configuration?.manualK != null;
   const selectedRun = existing.runs.find(run => run.seed === 0) ?? existing.runs[0];
   const usableIndices = enhanced.nbclust.indices.filter(index => index.status === "success").length;
-  const support = enhanced.nbclust.votes.find(vote => vote.k === enhanced.selectedK)?.count;
   return <>
     <section className="simulation-surface simulation-results-section">
-      <div className="simulation-section-heading"><h2 className="simulation-section-title">Feature Representation</h2><p>How each method represents the input feature space before clustering.</p></div>
+      <div className="simulation-section-heading"><h2 className="simulation-section-title">SOP 1 · Feature Representation</h2><p>How each method represents the input feature space before clustering.</p></div>
       <SopComparison simulation figures standard={<MethodCard simulation title="Original Feature Representation">
         <p className="simulation-compact-note">{enhanced.retainedVariables.length} standardized input variables</p>
         <CorrelationChart analysis={result.analysis} />
@@ -81,7 +74,9 @@ export const SimulationResults = ({ result }: { result: NonNullable<SimulationRu
         <PcaChart enhanced={enhanced} />
         <dl className="simulation-detail-list sop-summary"><div><dt>Input variables</dt><dd>{enhanced.retainedVariables.length}</dd></div><div><dt>Components retained</dt><dd>{enhanced.pcaComponents}</dd></div><div><dt>Cumulative variance</dt><dd>{percent(enhanced.cumulativeExplainedVariance)}</dd></div><div><dt>Variance threshold</dt><dd>≥ 85.00%</dd></div></dl>
       </MethodCard>}>
-        <VarianceSummary retained={enhanced.pcaComponents} rows={enhanced.pcaVariance.map(row => ({ component: row.component, eigenvalue: row.eigenvalue, cumulativeVariance: row.cumulativeExplainedVariance }))} />
+        <VarianceSummary retained={enhanced.pcaComponents} loadingData={pcaLoadings} rows={enhanced.pcaVariance.map(row => ({ component: row.component, eigenvalue: row.eigenvalue, cumulativeVariance: row.cumulativeExplainedVariance }))} />
+        <PcaLoadingMatrix variables={pcaLoadings?.variables ?? enhanced.retainedVariables}
+            components={Array.from({ length: enhanced.pcaComponents }, (_, index) => `PC${index + 1}`)} values={pcaLoadings?.values} />
         <PcaContribution dimensions={enhanced.retainedVariables.length} components={enhanced.pcaComponents}
           n={existing.participantCount} k={result.analysis.pcaContribution?.k ?? existing.selectedK}
           calculations={{ existing: result.analysis.calculations?.standard, enhanced: result.analysis.calculations?.pca }} runCount={result.analysis.pcaContribution?.runCount}
@@ -91,13 +86,14 @@ export const SimulationResults = ({ result }: { result: NonNullable<SimulationRu
       </SopComparison>
     </section>
     <section className="simulation-surface simulation-results-section">
-      <div className="simulation-section-heading"><h2 className="simulation-section-title">Cluster Number Selection</h2><p>How each method determines the number of clusters (k).</p></div>
+      <div className="simulation-section-heading"><h2 className="simulation-section-title">SOP 2 · Cluster Number Selection</h2><p>How each method determines the number of clusters (k).</p></div>
       {exploratory && <p className="simulation-preview-note">Exploratory Standard manual k = {existing.selectedK}. The canonical study baseline uses Silhouette selection over k = 2–10; this sample's Silhouette choice is {existing.silhouetteSelectedK}. Enhanced remains automatic.</p>}
-      <SopComparison simulation figures standard={
-        <MethodCard simulation title="Silhouette-Based Selection"><p className="simulation-compact-note">Single-index criterion · k with highest average Silhouette selected</p><dl className="simulation-detail-list"><div><dt>Selection method</dt><dd>{exploratory ? "Exploratory manual k" : "Silhouette Coefficient"}</dd></div><div><dt>Candidate k</dt><dd>2–10</dd></div><div><dt>Selected k</dt><dd>{existing.selectedK}</dd></div></dl><h3 className="card-title">Silhouette by k</h3>{existing.silhouetteByK ? <SilhouetteChart candidates={existing.silhouetteByK} /> : <p className="simulation-unavailable">Candidate-k scores unavailable for this historical run.</p>}</MethodCard>} enhanced={<MethodCard simulation enhanced title="NbClust Multi-Index Selection"><p className="simulation-compact-note">Usable indices evaluated · highest vote count determines k</p><dl className="simulation-detail-list"><div><dt>Usable indices</dt><dd>{usableIndices}</dd></div><div><dt>Selected k</dt><dd>{enhanced.selectedK}</dd></div><div><dt>Votes for k = {enhanced.selectedK}</dt><dd>{support ?? "Unavailable"} / {usableIndices}</dd></div></dl><NbClustChart selectedK={enhanced.selectedK} votes={enhanced.nbclust.votes} usableIndices={usableIndices} supportingIndices={support} /><NbClustIndexDetails indices={enhanced.nbclust.indices} /></MethodCard>} />
+      <NbClustComparison standard={
+        <MethodCard simulation title="Silhouette-Based Selection"><p className="simulation-compact-note">Single-index criterion · k with highest average Silhouette selected</p><dl className="simulation-detail-list"><div><dt>Selection method</dt><dd>{exploratory ? "Exploratory manual k" : "Silhouette Coefficient"}</dd></div><div><dt>Candidate k</dt><dd>2–10</dd></div><div><dt>Selected k</dt><dd>{existing.selectedK}</dd></div></dl><h3 className="card-title">Silhouette by k</h3>{existing.silhouetteByK ? <SilhouetteChart candidates={existing.silhouetteByK} /> : <p className="simulation-unavailable">Candidate-k scores unavailable for this historical run.</p>}</MethodCard>} candidateK={Array.from({ length: 9 }, (_, i) => i + 2)} selectedK={enhanced.selectedK}
+          usableIndices={usableIndices} votes={enhanced.nbclust.votes} indices={enhanced.nbclust.indices} />
     </section>
     <section className="simulation-surface simulation-results-section">
-      <div className="simulation-section-heading"><h2 className="simulation-section-title">Initialization &amp; Reproducibility</h2></div>
+      <div className="simulation-section-heading"><h2 className="simulation-section-title">SOP 3 · Initialization &amp; Reproducibility</h2></div>
       <InitializationComparison simulation randomRuns={existing.ariBySeed} dpcRuns={enhanced.dpc.ariByRun} selectedCenters={enhanced.dpc.centroidCount}
         centerTable={<DpcCenterTable centers={enhanced.dpc.centers.map((center, index) => ({ ...center, center: index + 1 }))} />}
         decisionGraph={<>
@@ -112,7 +108,13 @@ export const SimulationResults = ({ result }: { result: NonNullable<SimulationRu
     <section className="simulation-surface simulation-results-section">
       <div className="simulation-section-heading"><h2 className="simulation-section-title">Standard vs Enhanced Comparison</h2><p>Internal validation and cluster distributions for the actual run: n = {formatInteger(existing.participantCount)}.</p></div>
       <section className="simulation-chart"><h3 className="card-title">Scatter Plot Comparison (PCA Space)</h3><div className="simulation-two-column">{(["Standard K-Means", "Enhanced K-Means"] as const).map((name, index) => <div key={name}><h4>{name}</h4><ProjectionChart analysis={result.analysis} method={index ? "enhanced" : "standard"} /><p className="simulation-compact-note">Initialization: {index ? "DPC (Deterministic)" : "Random"} · {index ? enhanced.iterations : selectedRun.iterations} iterations · Converged: {(index ? enhanced.convergedBeforeMaxIter : selectedRun.convergedBeforeMaxIter) ? "Yes" : "No"}{!index && " · Seed 0"}</p></div>)}</div><p className="simulation-compact-note">PC1 and PC2 are used only for 2D visualization. Both plots share coordinates and axes; diamonds mark projected cluster means. Cluster numbers are method-specific.</p></section>
-      <section className="simulation-chart"><h3 className="card-title">{exploratory ? "Internal Validation (Exploratory Override)" : "Internal Validation"}</h3>{exploratory && <p className="simulation-preview-note">These relative changes compare an exploratory Standard k override with automatic Enhanced clustering. They are not the canonical enhancement comparison.</p>}<div className="simulation-table-container"><table className="simulation-comparison-table"><thead><tr><th>Metric</th><th>Standard K-Means</th><th>Enhanced K-Means</th><th>{exploratory ? "Relative Change (Exploratory)" : "Relative Change"}</th></tr></thead><tbody>{result.comparison.map(row => <tr key={row.metric}><th>{metricTitles[row.metric]}<br /><span>{row.direction === "lower_is_better" ? "Lower is better" : "Higher is better"}</span></th><td className={row.favorableMethod === "existing" ? "simulation-favorable" : undefined}>{format(row.existing)}</td><td className={row.favorableMethod === "enhanced" ? "simulation-favorable" : undefined}>{format(row.enhanced)}</td><td>{row.relativeImprovementPercent == null ? "Undefined (zero baseline) or unavailable" : formatPercent(row.relativeImprovementPercent)}</td></tr>)}</tbody></table></div><p className="simulation-compact-note">Direction-aware relative metric change, not statistical significance. Standard metrics are the mean of 30 runs; the scatter and distribution show seed 0.</p>
+      <section className="simulation-chart">
+        {exploratory && <p className="simulation-preview-note">These relative changes compare an exploratory Standard k override with automatic Enhanced clustering. They are not the canonical enhancement comparison.</p>}
+        <MetricComparisonTable existing={Object.fromEntries(result.comparison.map(row => [row.metric, row.existing]))}
+          enhanced={Object.fromEntries(result.comparison.map(row => [row.metric, row.enhanced]))}
+          relativeChange={Object.fromEntries(result.comparison.map(row => [row.metric, row.relativeImprovementPercent]))}
+          changeConvention="direction-aware"
+          footerNote={`Standard: mean of ${existing.runs.length} random-initialization runs. Enhanced: deterministic result. Relative metric change, not statistical significance. Scatter and distribution show seed 0.`} />
         <InternalValidationCalculationDetails
           standard={{ n: existing.participantCount, k: existing.selectedK, runCount: existing.runs.length, calculation: result.analysis.calculations?.standard,
             metrics: Object.fromEntries(result.comparison.map(row => [row.metric, row.existing])) }}

@@ -24,6 +24,26 @@ export const readValidatedDataset = (): UploadResponse | null => {
 };
 
 export const saveValidatedDataset = (dataset: UploadResponse | null) => {
-  if (dataset) sessionStorage.setItem(DATASET_KEY, JSON.stringify(dataset));
-  else sessionStorage.removeItem(DATASET_KEY);
+  try {
+    if (dataset) sessionStorage.setItem(DATASET_KEY, JSON.stringify(dataset));
+    else sessionStorage.removeItem(DATASET_KEY);
+  } catch { /* In-memory navigation state remains available if storage is disabled. */ }
+};
+
+const FILENAMES_KEY = "ad-clustering.validated-filenames";
+export const readValidatedFilenames = (): Record<string, string> => {
+  const dataset = readValidatedDataset();
+  if (!dataset) return {};
+  try {
+    const saved = JSON.parse(sessionStorage.getItem(FILENAMES_KEY) ?? "null");
+    return Object.fromEntries(DATASETS.map(([, key]) => [key,
+      saved?.uploadRef === dataset.upload_ref && typeof saved?.filenames?.[key] === "string" ? saved.filenames[key] : key]));
+  } catch { return Object.fromEntries(DATASETS.map(([, key]) => [key, key])); }
+};
+
+export const saveValidatedFilenames = (dataset: UploadResponse | null, filenames: Record<string, string>) => {
+  try {
+    if (dataset) sessionStorage.setItem(FILENAMES_KEY, JSON.stringify({ uploadRef: dataset.upload_ref, filenames }));
+    else sessionStorage.removeItem(FILENAMES_KEY);
+  } catch { /* Display metadata is optional; never persist File objects. */ }
 };

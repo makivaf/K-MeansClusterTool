@@ -30,12 +30,12 @@ const AriChart = ({ runs, axisLabel, minimum, unavailable }: {
 // Only participant-level ARI observations may populate the counts and lines.
 // Aggregate metric agreement and determinism flags are not ARI observations.
 export const InitializationComparison = ({ randomRuns, dpcRuns, randomUnavailable, dpcUnavailable,
-  selectedCenters, centerTable, decisionGraph, simulation = false }: {
+  selectedCenters, centerTable, decisionGraph, simulation = false, standardOnly = false }: {
   randomRuns?: readonly AriObservation[]; dpcRuns?: readonly AriObservation[];
   randomUnavailable?: string; dpcUnavailable?: string;
-  selectedCenters: number; centerTable: ReactNode; decisionGraph?: ReactNode; simulation?: boolean;
+  selectedCenters: number; centerTable: ReactNode; decisionGraph?: ReactNode; simulation?: boolean; standardOnly?: boolean;
 }) => {
-  const minimum = Math.max(-1, Math.min(0.85, ...[...(randomRuns ?? []), ...(dpcRuns ?? [])].map(row => row.adjustedRandIndex - 0.02)));
+  const minimum = Math.max(-1, Math.min(0.85, ...[...(randomRuns ?? []), ...(standardOnly ? [] : dpcRuns ?? [])].map(row => row.adjustedRandIndex - 0.02)));
   const card = (enhanced: boolean, runs?: readonly AriObservation[], unavailable?: string) => <MethodCard
     simulation={simulation} enhanced={enhanced} title={enhanced ? "DPC Initialization" : "Random Initialization"}>
     <strong className={`sop3-headline ${enhanced ? "text-teal-800" : ""}`}>
@@ -49,13 +49,13 @@ export const InitializationComparison = ({ randomRuns, dpcRuns, randomUnavailabl
   </MethodCard>;
   return <div className="sop3-comparison">
     <p className="section-subtitle mb-4">How initial cluster centers are selected and how consistently the solution can be reproduced.</p>
-    <SopComparison simulation={simulation} standard={card(false, randomRuns, randomUnavailable)} enhanced={card(true, dpcRuns, dpcUnavailable)} />
+    <SopComparison standardOnly={standardOnly} simulation={simulation} standard={card(false, randomRuns, randomUnavailable)} enhanced={card(true, dpcRuns, dpcUnavailable)} />
     <p className="sop3-note text-xs text-muted">ARI = 1 indicates equivalent participant-level cluster assignments, independent of cluster labels.</p>
-    <section className="sop-evidence">
+    {!standardOnly && <section className="sop-evidence">
       <h3 className="card-title mb-3">DPC Initialization Evidence</h3>
       <p className="mb-3 text-xs">Selected centers: {selectedCenters}</p>
       {centerTable}
       {decisionGraph && <details><summary>DPC Center-Selection Details</summary>{decisionGraph}</details>}
-    </section>
+    </section>}
   </div>;
 };

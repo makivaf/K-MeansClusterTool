@@ -1,5 +1,7 @@
 import { formatContinuous, formatPercent, formatInteger } from "../utils/numberFormatting";
-import type { ReactNode } from "react";
+import { Fragment, useId, useState, type ReactNode } from "react";
+import { ChevronDown } from "lucide-react";
+import { topLoadingRows, type PcaLoadingEvidence } from "../utils/pcaLoadings";
 import { MetricComparisonTable, type MetricKey } from "./MetricComparisonTable";
 import { PcaCalculationDetails } from "./PcaCalculationDetails";
 import type { CalculationEvidence } from "../../../../packages/shared/src/calculationEvidence";
@@ -14,12 +16,12 @@ export const MethodCard = ({ title, enhanced = false, children, simulation = fal
   {children}
 </section>;
 
-export const SopComparison = ({ standard, enhanced, children, simulation = false, figures = false }: {
-  standard: ReactNode; enhanced: ReactNode; children?: ReactNode; simulation?: boolean; figures?: boolean;
+export const SopComparison = ({ standard, enhanced, children, simulation = false, figures = false, standardOnly = false }: {
+  standard: ReactNode; enhanced: ReactNode; children?: ReactNode; simulation?: boolean; figures?: boolean; standardOnly?: boolean;
 }) => {
   const content = <>
-    <div className={simulation ? "simulation-two-column" : "study-method-grid"}>{standard}{enhanced}</div>
-    {children}
+    <div className={standardOnly ? "study-single-method" : simulation ? "simulation-two-column" : "study-method-grid"}>{standard}{!standardOnly && enhanced}</div>
+    {!standardOnly && children}
   </>;
   return figures ? <div className="sop-figures">{content}</div> : content;
 };
@@ -27,20 +29,40 @@ export const SopComparison = ({ standard, enhanced, children, simulation = false
 export const VariableChips = ({ variables }: { variables: readonly string[] }) =>
   <ul className="sop-variable-chips" aria-label="Input variables">{variables.map((variable, index) => <li key={variable}>{index + 1}. {variable.replace(/_/g, " ")}</li>)}</ul>;
 
-export const VarianceSummary = ({ rows, retained }: {
+export const VarianceSummary = ({ rows, retained, loadingData }: {
   rows: { component: number; eigenvalue?: number; cumulativeVariance: number }[]; retained: number;
-}) => <section className="sop-support-card">
+  loadingData?: PcaLoadingEvidence;
+}) => {
+  const [expanded, setExpanded] = useState<number | null>(null);
+  const disclosureId = useId();
+  return <section className="sop-support-card">
   <h3 className="card-title mb-4">Principal Components — Variance Summary</h3>
-  <div className="overflow-x-auto"><table className="research-table sop-table">
+  <div className="overflow-x-auto"><table className="research-table sop-table pca-variance-table">
     <thead><tr><th>PC</th><th>Eigenvalue</th><th>Cumulative Var.</th></tr></thead>
-    <tbody>{rows.filter(row => row.component <= retained).map(row => <tr key={row.component} className={row.component === retained ? "sop-selected-row" : undefined}>
-      <th scope="row">PC{row.component}{row.component === retained ? " ★" : ""}</th>
+    <tbody>{rows.filter(row => row.component <= retained).map(row => {
+      const open = expanded === row.component;
+      const label = `PC${row.component}`;
+      const column = loadingData?.components.indexOf(label) ?? -1;
+      const contributors = loadingData && column >= 0 ? topLoadingRows(loadingData.values, column) : [];
+      return <Fragment key={row.component}><tr className={open || row.component === retained ? "sop-selected-row" : undefined}>
+      <th scope="row"><button type="button" className="pca-variance-toggle" aria-expanded={open} aria-controls={`${disclosureId}-${row.component}`}
+        onClick={() => setExpanded(current => current === row.component ? null : row.component)}>
+        {label}{row.component === retained ? " ★" : ""}<ChevronDown size={14} aria-hidden="true" />
+      </button></th>
       <td>{row.eigenvalue === undefined ? "Unavailable" : formatContinuous(row.eigenvalue)}</td>
       <td>{formatPercent(row.cumulativeVariance * 100)}</td>
-    </tr>)}</tbody>
+    </tr><tr id={`${disclosureId}-${row.component}`} hidden={!open} className="pca-variance-details"><td colSpan={3}>
+      <h4 className="text-xs font-semibold text-muted">Top Absolute Loadings</h4>
+      {loadingData && contributors.length ? <ul className="pca-top-loadings">{contributors.map(index => {
+        const value = loadingData.values[index][column];
+        return <li key={loadingData.variables[index]}><span className="research-badge is-valid">{loadingData.variables[index]}</span><strong className="tabular-nums">{value > 0 ? "+" : ""}{formatContinuous(value)}</strong></li>;
+      })}</ul> : <p className="mt-2 text-xs text-muted">Loading values will appear when PCA loading data is available.</p>}
+    </td></tr></Fragment>;
+    })}</tbody>
   </table></div>
   <p className="mt-3 text-xs text-muted">★ Retained at ≥ 85.00% cumulative explained variance.{rows.some(row => row.eigenvalue === undefined) ? " Eigenvalues are not supplied for this run." : ""}</p>
 </section>;
+};
 
 export const PcaContribution = ({ dimensions, components, existing, enhanced, relativeChange, note, n, k, calculations, runCount }: {
   dimensions: number; components: number; existing?: Partial<Record<MetricKey, number>>;
@@ -52,8 +74,7 @@ export const PcaContribution = ({ dimensions, components, existing, enhanced, re
   <h3 className="card-title mb-2">Controlled PCA Contribution to Clustering</h3>
   <p className="mb-4 text-sm text-muted">{dimensions} standardized variables vs {components} principal components.</p>
   <MetricComparisonTable existing={existing} enhanced={enhanced} relativeChange={relativeChange ?? {}}
-    existingLabel={`${dimensions} Features`} enhancedLabel={`${components} PCs`} metrics={["silhouette"]} />
-  <p className="mt-3 text-xs text-muted">{note}</p>
+    metrics={["silhouette"]} footerNote={note} />
   <PcaCalculationDetails n={n} k={k} representations={[
     { label: `${dimensions} Features`, description: `${dimensions} standardized features`, silhouette: existing?.silhouette, calculation: calculations?.existing, runCount },
     { label: `${components} PCs`, description: `${components} principal components`, silhouette: enhanced?.silhouette, calculation: calculations?.enhanced, runCount }

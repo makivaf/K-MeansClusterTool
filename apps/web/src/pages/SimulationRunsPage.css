@@ -159,19 +159,8 @@
 .simulation-progress-heading .simulation-section-heading { margin-bottom: 0; }
 .simulation-progress-heading .simulation-section-heading p { color: var(--simulation-teal); }
 .simulation-progress-ready { flex-shrink: 0; padding: 12px 14px; border: 1px solid var(--research-border); border-radius: 6px; background: #f8f9fb; color: #4b5563; font-size: 12px; }
-.simulation-stepper { display: grid; grid-template-columns: repeat(9, minmax(0, 1fr)); width: 100%; margin: 24px auto 4px; padding: 0; list-style: none; }
-.simulation-step { display: flex; min-width: 0; flex-direction: column; align-items: center; gap: 8px; color: #4b5563; text-align: center; font-size: 11px; line-height: 1.4; }
-.simulation-step-subtitle { display: block; color: #7b8193; font-size: 10px; }
-.simulation-step-node { display: flex; width: 32px; height: 32px; align-items: center; justify-content: center; border: 2px solid #cfd6de; border-radius: 50%; background: #f8fafb; }
-.simulation-step-dot { width: 7px; height: 7px; border-radius: 50%; background: #cfd6de; }
-.simulation-step.is-reached { color: var(--simulation-teal); }
-.simulation-step.is-reached .simulation-step-node { border-color: var(--simulation-teal); background: var(--simulation-teal); color: white; }
-.simulation-step.is-active { color: var(--simulation-teal); }
-.simulation-step.is-active .simulation-step-node { border-color: var(--simulation-teal); box-shadow: 0 0 0 4px #e5f3f0; }
-.simulation-step.is-active .simulation-step-dot { background: var(--simulation-teal); }
 @media (max-width: 767px) {
   .simulation-chart-plot { height: 260px; }
-  .simulation-stepper { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 20px 8px; }
 }
 .simulation-method-content .simulation-compact-panel > * + * { margin-top: 16px; }
 .simulation-method-content .simulation-compact-stat { display: flex; align-items: center; gap: 16px; padding: 16px 18px; border: 1px solid var(--research-border); border-radius: 8px; background: #f6f9fa; }
