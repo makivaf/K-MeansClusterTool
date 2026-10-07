@@ -39,6 +39,36 @@ export function loadStudyEvidence(evaluation: SopEvaluation, geometry: DefenseGe
     }
   }
   // Geometry has already passed checksum, source linkage and aligned-row checks.
+  const standardSource = "data/interim/baseline_kmeans_assignments.csv" as const;
+  const standardFile = path.join(sourceDirectory, path.posix.basename(standardSource));
+  let standardAriBySeed;
+  let standardAri;
+  if (fs.existsSync(standardFile)) {
+    const sourceSha256 = digest(fs.readFileSync(standardFile));
+    const expected = evaluation.provenance.sourceSha256[standardSource] ?? geometry?.provenance.sourceSha256[standardSource];
+    if (!expected || sourceSha256 !== expected || (geometry?.provenance.sourceSha256[standardSource] &&
+      geometry.provenance.sourceSha256[standardSource] !== sourceSha256)) throw new Error("Standard ARI source linkage mismatch.");
+    const participants = readCsvRecords(sourceDirectory, "clustering_features_standardized.csv").map(row => row.RID);
+    if (participants.length !== evidence.cohortN || new Set(participants).size !== participants.length ||
+      participants.some(rid => !rid)) throw new Error("Invalid Standard ARI cohort.");
+    const assignments = readCsvRecords(sourceDirectory, path.posix.basename(standardSource));
+    const partitions = Array.from({ length: 30 }, () => new Map<string, number>());
+    for (const row of assignments) {
+      const seed = Number(row.seed), label = Number(row.cluster_label);
+      if (!/^\d+$/.test(row.seed) || !Number.isInteger(seed) || seed < 0 || seed >= partitions.length ||
+        !/^\d+$/.test(row.cluster_label) || !Number.isInteger(label) ||
+        partitions[seed].has(row.RID)) throw new Error("Invalid Standard ARI assignment.");
+      partitions[seed].set(row.RID, label);
+    }
+    const labels = partitions.map(partition => {
+      if (partition.size !== participants.length || participants.some(rid => !partition.has(rid))) {
+        throw new Error("Standard ARI participant membership mismatch.");
+      }
+      return participants.map(rid => partition.get(rid)!);
+    });
+    standardAriBySeed = labels.map((partition, seed) => ({ seed, adjustedRandIndex: adjustedRandIndex(labels[0], partition) }));
+    standardAri = { source: standardSource, sourceSha256, referenceSeed: 0 as const };
+  }
   // Derive ARI from the actual saved/reconstructed partitions, never a flag.
   const reference = geometry?.sop3.dpc[0].observations.map(point => point.cluster);
   const centersFile = "clustering_dpc_selected_centroids.csv";
@@ -48,7 +78,10 @@ export function loadStudyEvidence(evaluation: SopEvaluation, geometry: DefenseGe
     dpcCenters = readCsvRecords(sourceDirectory, centersFile).map(row => ({ center: Number(row.centroid_order), rid: row.RID,
       rho: Number(row.rho), delta: Number(row.delta), gamma: Number(row.gamma) }));
   }
-  return StudyEvidenceSchema.parse({ ...evidence, calculations: studyCalculations(sourceDirectory, geometry), dpcCenters, dpcAriByRun: reference && geometry
+  return StudyEvidenceSchema.parse({ ...evidence, standardAriBySeed,
+    provenance: { ...evidence.provenance, standardAri,
+      sourceSha256: { ...evidence.provenance.sourceSha256, ...(standardAri ? { [standardSource]: standardAri.sourceSha256 } : {}) } },
+    calculations: studyCalculations(sourceDirectory, geometry), dpcCenters, dpcAriByRun: reference && geometry
     ? geometry.sop3.dpc.map(panel => ({ seed: panel.checkNumber,
       adjustedRandIndex: adjustedRandIndex(reference, panel.observations.map(point => point.cluster)) })) : undefined });
 }

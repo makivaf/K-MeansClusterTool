@@ -8,8 +8,8 @@ const PcaLoadingEvidenceSchema = z.object({
 }).strict();
 export type PcaLoadingEvidence = z.infer<typeof PcaLoadingEvidenceSchema>;
 
-// Future integration: Study run.pca.pcaLoadings and simulation
-// result.analysis.enhanced.pcaLoadings. Current payloads have neither field.
+// Study run.pca.pcaLoadings and simulation result.analysis.enhanced.pcaLoadings
+// share this shape; historical results may omit loading evidence.
 export const readPcaLoadings = (source: unknown, variables: readonly string[], retained: number): PcaLoadingEvidence | undefined => {
   if (!source || typeof source !== "object" || !("pcaLoadings" in source)) return undefined;
   const result = PcaLoadingEvidenceSchema.safeParse(source.pcaLoadings);

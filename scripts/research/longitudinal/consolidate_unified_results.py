@@ -29,6 +29,7 @@ IMPUTED_PATH = INTERIM / "clustering_features_imputed.csv"
 EXCLUSIONS_PATH = INTERIM / "study_entry_final_exclusion_preview.csv"
 PREPROCESSING_PATH = INTERIM / "clustering_preprocessing_summary.csv"
 PCA_PATH = INTERIM / "clustering_pca_explained_variance.csv"
+PCA_LOADINGS_PATH = INTERIM / "clustering_pca_loadings.csv"
 NBCLUST_SUMMARY_PATH = INTERIM / "clustering_nbclust_summary.csv"
 NBCLUST_VOTES_PATH = INTERIM / "clustering_nbclust_votes.csv"
 SELECTED_K_PATH = INTERIM / "clustering_selected_k.csv"
@@ -37,6 +38,7 @@ DPC_CENTROIDS_PATH = INTERIM / "clustering_dpc_selected_centroids.csv"
 ENHANCED_METRICS_PATH = INTERIM / "enhanced_kmeans_metrics.csv"
 ENHANCED_SUMMARY_PATH = INTERIM / "enhanced_kmeans_run_summary.csv"
 BASELINE_SUMMARY_PATH = INTERIM / "baseline_kmeans_summary.csv"
+BASELINE_SELECTION_PATH = INTERIM / "baseline_kmeans_k_selection.csv"
 BASELINE_COMPARISON_PATH = INTERIM / "baseline_vs_enhanced_metrics.csv"
 DPC_ABLATION_PATH = INTERIM / "dpc_initialization_comparison.csv"
 LONGITUDINAL_COHORT_PATH = INTERIM / "unified_longitudinal_cohort.csv"
@@ -72,6 +74,7 @@ FROZEN = {
     "pca_components": 6,
     "pca_cumulative_variance": 0.8747945923377831,
     "selected_k": 2,
+    "baseline_selected_k": 2,
     "nbclust_votes_for_k2": 9,
     "nbclust_usable_votes": 24,
     "enhanced_metrics": {
@@ -290,6 +293,7 @@ def main() -> None:
         EXCLUSIONS_PATH,
         PREPROCESSING_PATH,
         PCA_PATH,
+        PCA_LOADINGS_PATH,
         NBCLUST_SUMMARY_PATH,
         NBCLUST_VOTES_PATH,
         SELECTED_K_PATH,
@@ -335,6 +339,14 @@ def main() -> None:
         raise AssertionError("Frozen feature exclusions disagree")
 
     pca = pd.read_csv(PCA_PATH)
+    pca_loadings = pd.read_csv(PCA_LOADINGS_PATH)
+    loading_components = [column for column in pca_loadings.columns if column != "variable"]
+    if (pca_loadings["variable"].tolist() != RETAINED_FEATURES
+            or loading_components != [f"PC{index}" for index in range(1, len(pca) + 1)]):
+        raise AssertionError("PCA loading feature or component order mismatch")
+    loading_values = pca_loadings.loc[:, loading_components].to_numpy(dtype=float)
+    if not np.isfinite(loading_values).all():
+        raise AssertionError("PCA loadings must be finite")
     retained_pca = pca.loc[pca["retained_for_85_percent"].astype(bool)]
     if len(retained_pca) != FROZEN["pca_components"]:
         raise AssertionError("Frozen PCA component count disagrees")
@@ -443,6 +455,14 @@ def main() -> None:
     dpc_summary = read_metric_rows(DPC_SUMMARY_PATH)
     dpc_centroids = pd.read_csv(DPC_CENTROIDS_PATH)
     baseline_summary = pd.read_csv(BASELINE_SUMMARY_PATH)
+    baseline_selection = pd.read_csv(BASELINE_SELECTION_PATH)
+    selected_baseline = baseline_selection.loc[baseline_selection["selected"].astype(bool)]
+    if len(selected_baseline) != 1:
+        raise AssertionError("Baseline k-selection artifact must select exactly one k")
+    baseline_selected_k = int(selected_baseline.iloc[0]["k"])
+    if baseline_selected_k != FROZEN["baseline_selected_k"]:
+        raise AssertionError("Frozen Standard selected k disagrees")
+    selected_vote_row = nbclust_summary.loc[nbclust_summary["k"].eq(int(selected_k["selected_k"]))].iloc[0]
     dpc_ablation = pd.read_csv(DPC_ABLATION_PATH)
 
     comparison_metrics: list[dict[str, Any]] = []
@@ -540,7 +560,12 @@ def main() -> None:
             "standardization": "Z-score standardization",
         },
         "pca": {
-            "components": 6,
+            "pcaLoadings": {
+                "variables": pca_loadings["variable"].tolist(),
+                "components": loading_components,
+                "values": loading_values.tolist(),
+            },
+            "components": len(retained_pca),
             "cumulativeExplainedVariance": cumulative_variance,
             "scree": [
                 {
@@ -556,9 +581,9 @@ def main() -> None:
         "kSelection": {
             "method": "NbClust index voting",
             "candidateK": [int(value) for value in nbclust_summary["k"].tolist()],
-            "selectedK": 2,
-            "usableVotes": 24,
-            "votesForSelectedK": 9,
+            "selectedK": int(selected_k["selected_k"]),
+            "usableVotes": int(selected_vote_row["total_usable_indices"]),
+            "votesForSelectedK": int(selected_vote_row["vote_count"]),
             "voteDistribution": [
                 {"k": int(row.k), "votes": int(row.vote_count)} for row in nbclust_summary.itertuples(index=False)
             ],
@@ -606,7 +631,7 @@ def main() -> None:
             "baselineMethod": {
                 "representation": "13 standardized original variables; no PCA",
                 "kSelection": "Maximum Silhouette over k=2..10",
-                "selectedK": 2,
+                "selectedK": baseline_selected_k,
                 "initialization": "Random initialization across seeds 0-29",
                 "algorithm": "Lloyd K-Means",
                 "runCount": int(baseline_summary.iloc[0]["run_count"]),

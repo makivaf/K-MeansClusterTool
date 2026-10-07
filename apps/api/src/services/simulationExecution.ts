@@ -156,7 +156,7 @@ const hasCurrentEvidence = (state: SimulationRunState) => !!state.result?.analys
  * workspace. Missing historical PCA labels never trigger analytical execution. */
 function mapSavedCenterRids(state: SimulationRunState, fingerprint: string, sourceHash: string) {
   const centers = state.result?.analysis.enhanced.dpc.centers;
-  if (!centers || (centers.every(center => center.rid) && state.result?.analysis.calculations &&
+  if (!centers || (state.result?.analysis.enhanced.pcaLoadings && centers.every(center => center.rid) && state.result?.analysis.calculations &&
     Object.values(state.result.analysis.calculations).every(calculation => calculation?.exampleParticipant.cluster !== undefined))) return state;
   for (const entry of fs.readdirSync(simulationRunRoot, { withFileTypes: true })) {
     if (!entry.isDirectory() || !entry.name.startsWith(`simulation-${state.simulationId}-`)) continue;
@@ -173,8 +173,27 @@ function mapSavedCenterRids(state: SimulationRunState, fingerprint: string, sour
         Math.abs(Number(row[`PC${i + 1}`]) - coordinate) <= 1e-12)));
       if (matches.every(rows => rows.length === 1)) centers.forEach((center, i) => { center.rid = matches[i][0].RID; });
       const calculations = simulationCalculations(directory, state.result!.analysis);
+      // Recover coefficients from this completion's saved artifact, without fitting PCA.
+      let pcaLoadings = state.result!.analysis.enhanced.pcaLoadings;
+      const loadingFile = path.join(directory, "data/interim/clustering_pca_loadings.csv");
+      if (!pcaLoadings && fs.existsSync(loadingFile)) {
+        const savedAnalysis = SimulationRunStateSchema.parse(JSON.parse(fs.readFileSync(path.join(directory, "public-result.json"), "utf8"))).result?.analysis;
+        if (savedAnalysis && JSON.stringify(savedAnalysis.projection) === JSON.stringify(state.result!.analysis.projection) &&
+          JSON.stringify(savedAnalysis.enhanced.pcaVariance) === JSON.stringify(state.result!.analysis.enhanced.pcaVariance)) {
+          const loadingRows = readCsvRecords(path.join(directory, "data/interim"), "clustering_pca_loadings.csv");
+          if (loadingRows.length) {
+            const components = Object.keys(loadingRows[0]).filter(column => column !== "variable");
+            pcaLoadings = { variables: loadingRows.map(row => row.variable), components,
+              values: loadingRows.map(row => components.map(component => {
+                if (row[component] === "") throw new Error("Missing PCA loading coefficient.");
+                return Number(row[component]);
+              })) };
+          }
+        }
+      }
       return SimulationRunStateSchema.parse({ ...state, result: { ...state.result,
-        analysis: { ...state.result!.analysis, calculations } } });
+        analysis: { ...state.result!.analysis, calculations,
+          enhanced: { ...state.result!.analysis.enhanced, pcaLoadings } } } });
     } catch { /* Missing/mismatched historical evidence must not be displayed. */ }
   }
   return state;

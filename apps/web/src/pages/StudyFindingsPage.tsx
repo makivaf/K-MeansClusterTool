@@ -181,9 +181,9 @@ const StudyResults = memo(function StudyResults({ run, standardRun, comparison }
           indices={run.kSelection.indexResults} />
       </Panel>}
       {activeTab === "sop3" && <Panel title="Initialization & Reproducibility" variant="surface">
-        <InitializationComparison standardOnly={!comparison} randomRuns={studyEvidence?.ariBySeed} dpcRuns={defenseGeometry ? studyEvidence?.dpcAriByRun : undefined}
+        <InitializationComparison standardOnly={!comparison} randomRuns={studyEvidence?.standardAriBySeed} dpcRuns={defenseGeometry ? studyEvidence?.dpcAriByRun : undefined}
           dpcUnavailable={dpcUnavailable}
-          randomUnavailable={sopError ?? "Loading validated initialization comparison..."}
+          randomUnavailable={sopError ?? (studyEvidence ? "Standard ARI unavailable: verified baseline assignment evidence is not supplied." : "Loading validated Standard initialization evidence...")}
           selectedCenters={run.initialization.selectedCentroids.length}
           centerTable={<DpcCenterTable centers={run.initialization.selectedCentroids.map(center => ({ ...center, center: center.rank,
             rid: defenseGeometry ? studyEvidence?.dpcCenters?.find(row => row.center === center.rank && row.rho === center.rho &&
