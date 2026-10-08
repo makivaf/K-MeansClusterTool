@@ -3,6 +3,7 @@ import { Navigate, Route, Routes, useLocation } from "react-router-dom";
 import type { UploadResponse } from "../../../packages/shared/src";
 import { AppShell } from "./components/layout/AppShell";
 import { useStudyFindings } from "./hooks/useStudyFindings";
+import { DATASETS, readValidatedDataset, readValidatedFilenames, saveValidatedDataset, saveValidatedFilenames } from "./utils/validatedDataset";
 
 const DatasetSetup = lazy(() => import("./pages/UploadAndCluster").then((module) => ({ default: module.UploadAndCluster })));
 const StudyFindings = lazy(() => import("./pages/StudyFindingsPage").then((module) => ({ default: module.StudyFindingsPage })));
@@ -14,18 +15,28 @@ export default function App() {
   useEffect(() => {
     if (pathname === "/simulation-runs") setSimulationVisited(true);
   }, [pathname]);
-  // Validation belongs to this running app; navigation preserves it, reloads do not.
-  const [dataset, setDataset] = useState<UploadResponse | null>(null);
+  // Restore metadata synchronously; raw browser Files remain memory-only.
+  const [dataset, setDataset] = useState<UploadResponse | null>(readValidatedDataset);
+  const [validatedFiles, setValidatedFiles] = useState<Record<string, string>>(readValidatedFilenames);
+  // Keep selected files and their statuses with validation for this app session.
+  const [files, setFiles] = useState<Record<string, File>>({});
+  const [invalidFiles, setInvalidFiles] = useState<string[]>([]);
   const [datasetRevision, setDatasetRevision] = useState(0);
   const analysis = useStudyFindings(dataset);
   const onValidated = (value: UploadResponse | null) => {
     analysis.reset();
     setDatasetRevision(revision => revision + 1);
     setDataset(value);
+    const filenames = value ? Object.fromEntries(DATASETS.map(([, name]) => [name, files[name]?.name ?? name])) : {};
+    if (value) setValidatedFiles(filenames);
+    saveValidatedDataset(value);
+    saveValidatedFilenames(value, filenames);
   };
   return <AppShell>
     <Suspense fallback={<p role="status">Loading page…</p>}>
-      <div hidden={pathname !== "/dataset-setup"}><DatasetSetup onValidated={onValidated} dataset={dataset} /></div>
+      <div hidden={pathname !== "/dataset-setup"}><DatasetSetup onValidated={onValidated} dataset={dataset}
+        files={files} setFiles={setFiles} invalidFiles={invalidFiles} setInvalidFiles={setInvalidFiles}
+        validatedFiles={validatedFiles} setValidatedFiles={setValidatedFiles} /></div>
       {/* Keep the visited simulation mounted, as with Dataset Setup, so route
           changes preserve configuration, results, and in-flight polling. */}
       {(simulationVisited || pathname === "/simulation-runs") && <div hidden={pathname !== "/simulation-runs"}><SimulationRuns key={datasetRevision} /></div>}

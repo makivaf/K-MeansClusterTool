@@ -11,7 +11,7 @@ export const createSimulationMetadataRouter = (loadMetadata = getSimulationMetad
     response.setHeader("Cache-Control", "no-store");
     try {
       const metadata = loadMetadata();
-      response.json(SimulationMetadataResponseSchema.parse({ simulations: metadata.simulations.map(value => ({
+      response.json(SimulationMetadataResponseSchema.parse({ availableParticipantCount: metadata.availableParticipantCount, simulations: metadata.simulations.map(value => ({
         ...value, analysisStatus: executor.get(value.simulationId).status
       })) }));
     } catch {

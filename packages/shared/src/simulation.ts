@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { CalculationSetSchema } from "./calculationEvidence";
+import { PcaLoadingEvidenceSchema } from "./schema";
 
 export const simulationParticipantLimit = 2437;
 
@@ -67,6 +68,7 @@ export const SimulationAnalysisSchema = z.object({
     iterations: z.number().int().positive(), convergedBeforeMaxIter: z.boolean(), clusterSizes: sizes, metrics: SimulationMetricsSchema,
     retainedVariables: z.array(z.string()).length(13), excludedVariables: z.array(z.string()),
     pcaComponents: z.number().int().min(1).max(13), cumulativeExplainedVariance: finite.min(0.85).max(1.000000000001),
+    pcaLoadings: PcaLoadingEvidenceSchema.optional(),
     pcaVariance: z.array(z.object({ component: count, eigenvalue: finite.nonnegative().optional(), explainedVarianceRatio: finite, cumulativeExplainedVariance: finite }).strict()).length(13),
     nbclust: z.object({ votes: z.array(z.object({ k: count, count }).strict()),
       indices: z.array(z.object({ index: z.string(), status: z.string(), recommendedK: count.nullable() }).strict()),
@@ -92,6 +94,11 @@ export const SimulationAnalysisSchema = z.object({
   const n = value.existing.participantCount;
   const fail = () => ctx.addIssue({ code: z.ZodIssueCode.custom, message: "Paired output dimensions or assignments differ." });
   if (value.enhanced.participantCount !== n) fail();
+  const loadings = value.enhanced.pcaLoadings;
+  if (loadings && (loadings.variables.length !== value.enhanced.retainedVariables.length ||
+    loadings.variables.some((variable, index) => variable !== value.enhanced.retainedVariables[index]) ||
+    loadings.components.length !== value.enhanced.pcaVariance.length ||
+    loadings.components.length < value.enhanced.pcaComponents)) fail();
   if (value.calculations) {
     const { standard, enhanced, pca } = value.calculations;
     if (standard.n !== n || enhanced.n !== n || standard.k !== value.existing.selectedK || enhanced.k !== value.enhanced.selectedK ||

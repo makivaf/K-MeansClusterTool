@@ -446,9 +446,21 @@ const UnifiedPreprocessingSchema = z
   })
   .strict();
 
+export const PcaLoadingEvidenceSchema = z.object({
+  variables: z.array(z.string().min(1)).min(1),
+  components: z.array(z.string().min(1)).min(1),
+  values: z.array(z.array(z.number().finite()))
+}).strict().refine(value =>
+  new Set(value.variables).size === value.variables.length &&
+  value.components.every((name, index) => name === `PC${index + 1}`) &&
+  value.values.length === value.variables.length &&
+  value.values.every(row => row.length === value.components.length),
+  "PCA loading rows and columns must match unique variables and ordered PCs.");
+
 const UnifiedPcaSchema = z
   .object({
     components: z.number().int().positive(),
+    pcaLoadings: PcaLoadingEvidenceSchema.optional(),
     cumulativeExplainedVariance: z.number().min(0).max(1),
     scree: z.array(z.object({
       component: z.number().int().positive(),
@@ -796,6 +808,12 @@ export const UnifiedResearchRunSchema = UnifiedResearchArtifactSchema
     pipeline: z.literal("unified")
   })
   .superRefine((run, context) => {
+    const loadings = run.pca.pcaLoadings;
+    if (loadings && (loadings.variables.length !== run.preprocessing.retainedFeatures.length ||
+      loadings.variables.some((variable, index) => variable !== run.preprocessing.retainedFeatures[index]) ||
+      loadings.components.length !== run.pca.scree.length || loadings.components.length < run.pca.components)) {
+      context.addIssue({ code: z.ZodIssueCode.custom, path: ["pca", "pcaLoadings"], message: "PCA loadings must match retained feature order and fitted components." });
+    }
     const clusterSizeTotal = run.enhancedClustering.clusterSizes.reduce((sum, entry) => sum + entry.nMembers, 0);
     if (clusterSizeTotal !== run.cohort.parentN) context.addIssue({ code: z.ZodIssueCode.custom, path: ["enhancedClustering", "clusterSizes"], message: "Enhanced cluster sizes must sum to the parent cohort." });
     if (run.longitudinal.eligibleParticipants !== run.cohort.longitudinalEligibleN) context.addIssue({ code: z.ZodIssueCode.custom, path: ["longitudinal", "eligibleParticipants"], message: "Longitudinal and cohort eligibility totals must match." });
@@ -815,6 +833,7 @@ export const FrozenUnifiedStudyResultSchema = UnifiedResearchRunSchema.superRefi
   const sizes = [...run.enhancedClustering.clusterSizes].sort((left, right) => left.clusterId - right.clusterId).map((entry) => entry.nMembers);
   if (sizes[0] !== 1553 || sizes[1] !== 884) context.addIssue({ code: z.ZodIssueCode.custom, path: ["enhancedClustering", "clusterSizes"], message: "Frozen original cluster sizes are 1,553 and 884." });
   if (run.pca.components !== 6 || run.kSelection.selectedK !== 2 || run.kSelection.usableVotes !== 24 || run.kSelection.votesForSelectedK !== 9) context.addIssue({ code: z.ZodIssueCode.custom, message: "Frozen PCA/k-selection result disagrees." });
+  if (run.baselineComparison.baselineMethod.selectedK !== 2) context.addIssue({ code: z.ZodIssueCode.custom, path: ["baselineComparison", "baselineMethod", "selectedK"], message: "Frozen Standard selected k disagrees." });
   expectClose(run.pca.cumulativeExplainedVariance, 0.8747945923377831, ["pca", "cumulativeExplainedVariance"], "Frozen PCA explained variance disagrees.");
   const enhanced = run.enhancedClustering.metrics;
   expectClose(enhanced.silhouette, 0.3727004724250328, ["enhancedClustering", "metrics", "silhouette"], "Frozen enhanced silhouette disagrees.");
@@ -1386,16 +1405,29 @@ export const StudyEvidenceSchema = z.object({
     matrix: z.array(z.array(z.number().finite().min(-1).max(1)).length(13)).length(13)
   }).strict(),
   ariBySeed: z.array(z.object({ seed: z.number().int(), adjustedRandIndex: z.number().finite().min(-1).max(1) }).strict()).length(30),
+  // Original-feature Standard runs; ariBySeed remains the PCA random control.
+  standardAriBySeed: z.array(z.object({ seed: z.number().int(), adjustedRandIndex: z.number().finite().min(-1).max(1) }).strict()).length(30)
+    .refine(rows => rows.every((row, i) => row.seed === i) && rows[0]?.adjustedRandIndex === 1).optional(),
   dpcAriByRun: z.array(z.object({ seed: z.number().int(), adjustedRandIndex: z.number().finite().min(-1).max(1) }).strict()).length(3)
     .refine(rows => rows.every((row, i) => row.seed === i + 1)).optional(),
   provenance: z.object({
     // Same cohort bytes, changing only the seven approved source filename aliases.
     canonicalCohortSha256: sha256Schema,
     sourceSha256: z.record(sha256Schema),
-    aggregateCsvSha256: z.object({ correlation: sha256Schema, ariBySeed: sha256Schema }).strict()
+    aggregateCsvSha256: z.object({ correlation: sha256Schema, ariBySeed: sha256Schema }).strict(),
+    standardAri: z.object({
+      source: z.literal("data/interim/baseline_kmeans_assignments.csv"),
+      sourceSha256: sha256Schema,
+      referenceSeed: z.literal(0)
+    }).strict().optional()
   }).strict()
 }).strict().superRefine((evidence, context) => {
   const { features, matrix } = evidence.correlation;
+  const standard = evidence.provenance.standardAri;
+  if (Boolean(evidence.standardAriBySeed) !== Boolean(standard) ||
+    (standard && evidence.provenance.sourceSha256[standard.source] !== standard.sourceSha256)) {
+    context.addIssue({ code: z.ZodIssueCode.custom, message: "Standard ARI requires linked baseline assignment provenance." });
+  }
   if (new Set(features).size !== 13 || matrix.some((row, i) => row[i] !== 1 || row.some((value, j) => Math.abs(value - matrix[j][i]) > 1e-12)) ||
     evidence.ariBySeed.some((row, i) => row.seed !== i)) {
     context.addIssue({ code: z.ZodIssueCode.custom, message: "Invalid frozen correlation matrix or ordered ARI seeds." });
