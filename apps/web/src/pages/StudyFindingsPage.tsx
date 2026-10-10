@@ -1,4 +1,4 @@
-import { NbClustComparison } from "../components/NbClustComparison";
+import { NbClustComparison, StandardSelectionSummary } from "../components/NbClustComparison";
 import { formatContinuous, formatPercent, formatInteger } from "../utils/numberFormatting";
 import { PcaChart, SilhouetteChart } from "../components/SopFigures";
 import { DpcCenterTable } from "../components/DpcCenterTable";
@@ -35,12 +35,8 @@ const StudyProjection = ({ panel, label }: { panel?: DefensePanel; label: string
       centers={panel.markers.filter(marker => marker.type === "final").map(marker => ({ x: marker.pc1, y: marker.pc2, cluster: marker.cluster }))} />
   : <p className="text-sm text-muted">Validated projection unavailable.</p>;
 
-const Fact = ({ label, value }: { label: string; value: string | number }) => <div>
-  <dt className="text-xs text-muted">{label}</dt><dd className="mt-1 text-2xl font-semibold tabular-nums">{value}</dd>
-</div>;
-
-const RunBadge = ({ status }: { status: string }) => <span className={`research-badge ${["completed", "running"].includes(status) ? "is-valid" : ""}`}>
-  {status === "completed" ? "✓ Completed" : status === "error" ? "Error" : status[0].toUpperCase() + status.slice(1)}
+const RunBadge = ({ status, method }: { status: string; method: "Standard" | "Enhanced" }) => <span className={`research-badge ${["completed", "running"].includes(status) ? "is-valid" : ""}`}>
+  {status === "completed" ? `${method} K-Means complete` : status === "error" ? "Error" : status[0].toUpperCase() + status.slice(1)}
 </span>;
 
 export const StudyFindingsPage = ({ analysis, dataset }: { analysis: AnalysisRunState; dataset: UploadResponse | null }) => {
@@ -69,11 +65,11 @@ export const StudyFindingsPage = ({ analysis, dataset }: { analysis: AnalysisRun
         <strong>Analysis Runs</strong>
         <div className="study-run-state">
           {comparison && <span className="research-status-icon study-method-icon" aria-hidden="true"><Network size={20} /></span>}
-          <div className="study-run-details"><span>Standard K-Means</span><RunBadge status={standard.status} /></div>
+          <div className="study-run-details"><span>Standard K-Means</span><RunBadge method="Standard" status={standard.status} /></div>
         </div>
         <div className="study-run-state">
           {comparison && <span className="research-status-icon study-method-icon" aria-hidden="true"><Network size={20} /></span>}
-          <div className="study-run-details"><span>Enhanced K-Means</span><RunBadge status={enhanced.status} /></div>
+          <div className="study-run-details"><span>Enhanced K-Means</span><RunBadge method="Enhanced" status={enhanced.status} /></div>
         </div>
         <div className="study-run-action">
           {comparison ? <span className="study-comparison-ready"><span aria-hidden="true"><Check size={19} strokeWidth={2.5} /></span>Comparison Ready</span> : standard.status === "completed" && ["ready", "error"].includes(enhanced.status)
@@ -94,7 +90,7 @@ export const StudyFindingsPage = ({ analysis, dataset }: { analysis: AnalysisRun
 };
 
 const StudyResults = memo(function StudyResults({ run, standardRun, comparison }: { run: UnifiedResearchRun; standardRun: UnifiedResearchRun; comparison: boolean }) {
-  const { evaluation, baselineSweep, studyEvidence, defenseGeometry, error: sopError, dpcStatus } = useSopEvaluation(run);
+  const { evaluation, baselineSweep, studyEvidence, defenseGeometry, error: sopError, dpcStatus, status: sopStatus } = useSopEvaluation(run);
   const dpcUnavailable = {
     loading: "Loading validated DPC reproducibility evidence...",
     "request-error": "The study evidence request failed. DPC reproducibility evidence could not be loaded.",
@@ -111,7 +107,7 @@ const StudyResults = memo(function StudyResults({ run, standardRun, comparison }
   const baseline = standardRun.baselineComparison.baselineMethod;
   const relativeChange = Object.fromEntries(run.baselineComparison.metrics.map(metric => [metric.metric, metric.signedRelativeChangePercent]));
   const candidates = baselineSweep?.candidates.map(candidate => candidate.k) ?? standardRun.kSelection.candidateK;
-  const candidateRange = `${candidates[0]}–${candidates.at(-1)}`;
+  const candidateRange = `${candidates[0]}–${candidates[candidates.length - 1]}`;
   const variance = formatPercent(run.pca.cumulativeExplainedVariance * 100);
   const profiles = new Map(run.clusterProfiles.profiles.map((profile) => [profile.clusterId, profile]));
   const model = run.longitudinal.mixedEffects;
@@ -174,8 +170,9 @@ const StudyResults = memo(function StudyResults({ run, standardRun, comparison }
         <p className="section-subtitle mb-4">How each method determines the number of clusters (k).</p>
         <NbClustComparison standardOnly={!comparison} standard={<MethodCard simulation title="Silhouette-Based Selection">
           <p className="simulation-compact-note">Single-index criterion · k with highest average Silhouette selected</p>
-          <dl className="simulation-detail-list"><div><dt>Selection method</dt><dd>Silhouette Coefficient</dd></div><div><dt>Candidate k</dt><dd>{candidateRange}</dd></div><div><dt>Selected k</dt><dd>{baseline.selectedK}</dd></div></dl><h3 className="card-title">Silhouette by k</h3>
+          <dl className="simulation-detail-list"><div><dt>Selection method</dt><dd>Silhouette Coefficient</dd></div><div><dt>Candidate k</dt><dd>{candidateRange}</dd></div></dl><h3 className="card-title">Silhouette by k</h3>
           {baselineSweep ? <SilhouetteChart candidates={baselineSweep.candidates} /> : <p className="text-sm text-muted">{sopError ?? "Loading validated baseline sweep…"}</p>}
+          <StandardSelectionSummary selectedK={baseline.selectedK} />
         </MethodCard>} candidateK={run.kSelection.candidateK} selectedK={run.kSelection.selectedK}
           usableIndices={run.kSelection.usableVotes} votes={run.kSelection.voteDistribution.map(row => ({ k: row.k, count: row.votes }))}
           indices={run.kSelection.indexResults} />
@@ -192,7 +189,7 @@ const StudyResults = memo(function StudyResults({ run, standardRun, comparison }
       {activeTab === "final" && <>
       <Panel title={comparison ? "Standard vs Enhanced Comparison" : "Standard Clustering Results"} variant="surface">
         <h3 className="card-title mb-4">{comparison ? "Scatter Plot Comparison (PCA Space)" : "Standard Clustering (PCA Space)"}</h3>
-        <div className={comparison ? "study-method-grid" : "study-single-method"}>
+        <div className={comparison ? "projection-comparison-grid" : "study-single-method"}>
           <MethodCard title="Standard K-Means">
             <StudyProjection panel={defenseGeometry?.sop1.baseline} label="Standard K-Means" />
           </MethodCard>
@@ -210,13 +207,17 @@ const StudyResults = memo(function StudyResults({ run, standardRun, comparison }
       </Panel>
 
       <Panel title="Cluster Distribution" variant="surface">
-        <div className={comparison ? "study-method-grid" : "study-single-method"}>
-          {defenseGeometry ? <ClusterDistribution title={`Standard K-Means - Seed ${defenseGeometry.sop1.seed}`} participants={run.cohort.parentN}
-            sizes={[0, 1].map(cluster => defenseGeometry.sop1.baseline.observations.filter(point => point.cluster === cluster).length)} />
-            : <p className="text-sm text-muted">{sopError ?? "Loading validated Standard cluster distribution..."}</p>}
+        <div className={`sop-distribution-grid${comparison ? " is-comparison" : ""}`}>
+          <ClusterDistribution title="Standard K-Means" participants={run.cohort.parentN}
+            metadata={defenseGeometry ? `Seed ${defenseGeometry.sop1.seed}` : undefined}
+            sizes={defenseGeometry ? [0, 1].map(cluster => defenseGeometry.sop1.baseline.observations.filter(point => point.cluster === cluster).length) : undefined}
+            unavailableMessage={sopError ?? (sopStatus === "loading" ? "Loading validated Standard cluster distribution..."
+              : "Required shared provenance is missing or mismatched.")} />
           {comparison && <ClusterDistribution title="Enhanced K-Means" participants={run.cohort.parentN}
+            interpretations={["Lower impairment", "Higher impairment"]}
             sizes={[...run.enhancedClustering.clusterSizes].sort((a, b) => a.clusterId - b.clusterId).map(cluster => cluster.nMembers)} />}
         </div>
+        {comparison && <p className="mt-3 text-xs text-muted">Cluster labels are method-specific.</p>}
       </Panel>
       {comparison && <><Panel title="Final Cluster Profiles" variant="surface">
         <div className="overflow-x-auto" role="region" aria-label="Final cluster profile table" tabIndex={0}>
@@ -238,18 +239,26 @@ const StudyResults = memo(function StudyResults({ run, standardRun, comparison }
         <ProgressionChart data={run.longitudinal.timeSeries} />
         <p className="mt-2 text-xs text-muted">Observed means by elapsed-year bin; bars describe available observations, not fitted model predictions.</p>
       </Panel>
-      <Panel title="Linear Mixed-Effects Model (LME)" variant="surface">
-        <p className="mb-4 text-xs text-muted">{formatInteger(model.participantCount)} eligible participants · {formatInteger(model.observationCount)} observations · {model.estimationMethod}</p>
-        <dl className="grid gap-5 sm:grid-cols-2">
-          {model.estimatedAnnualChangeByOriginalCluster.map((entry) =>
-            <Fact key={entry.clusterId} label={`Cluster ${entry.clusterId} · ${entry.clusterId === 0 ? "lower" : "higher"} impairment · ADAS-Cog13 points/year`} value={formatContinuous(entry.estimate)} />)}
-        </dl>
-        <div className="mt-5 overflow-x-auto" role="region" aria-label="LME results table" tabIndex={0}><table className="research-table min-w-[560px]">
-          <thead><tr><th>Time × Cluster</th><th>Estimate</th><th>95% CI</th><th>p-value</th></tr></thead>
-          <tbody><tr><td>Difference in annual change (Cluster 1 − Cluster 0)</td><td className="tabular-nums">{formatContinuous(result.estimate)}</td>
-            <td className="whitespace-nowrap tabular-nums">{formatContinuous(result.confidenceInterval95.lower)} to {formatContinuous(result.confidenceInterval95.upper)}</td>
-            <td>{result.pValue < 0.001 ? "<0.001000" : formatContinuous(result.pValue)}</td></tr></tbody>
-        </table></div>
+      <Panel title="Linear Mixed-Effects Model (LME)" variant="surface" className="study-lme">
+        <p className="mb-5 text-xs text-muted">{formatInteger(model.participantCount)} eligible participants · {formatInteger(model.observationCount)} repeated ADAS-Cog13 observations · {model.estimationMethod?.replace("; random", " · Random")}</p>
+        <h3 className="card-title mb-3">Annual ADAS-Cog13 Change</h3>
+        <div className="study-lme-slopes">
+          {[...model.estimatedAnnualChangeByOriginalCluster].sort((a, b) => a.clusterId - b.clusterId).map((entry) =>
+            <section key={entry.clusterId} className={`study-lme-slope${entry.clusterId === 1 ? " is-secondary" : ""}`} aria-label={`Cluster ${entry.clusterId} annual ADAS-Cog13 change`}>
+              <h4>Cluster {entry.clusterId}</h4>
+              <p className="study-lme-interpretation">{entry.clusterId === 0 ? "Lower" : "Higher"} impairment</p>
+              <p className="study-lme-slope-value">{formatContinuous(entry.estimate)}</p>
+              <p className="text-xs text-muted">{entry.unit}</p>
+            </section>)}
+        </div>
+        <section className="study-lme-effect" aria-labelledby="study-lme-effect-title">
+          <h3 id="study-lme-effect-title" className="card-title">Time × Cluster Effect</h3>
+          <dl className="study-lme-statistics">
+            <div><dt>Difference in annual change</dt><dd>{formatContinuous(result.estimate)} <span className="study-lme-unit">points/year</span></dd></div>
+            <div><dt>95% CI</dt><dd>{formatContinuous(result.confidenceInterval95.lower)} to {formatContinuous(result.confidenceInterval95.upper)}</dd></div>
+            <div><dt>p-value</dt><dd>{result.pValue < 0.001 ? "<0.001" : formatContinuous(result.pValue)}</dd></div>
+          </dl>
+        </section>
       </Panel></>}
       </>}
       </div>

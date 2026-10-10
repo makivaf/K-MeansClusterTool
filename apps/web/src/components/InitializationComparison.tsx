@@ -10,17 +10,19 @@ const AriChart = ({ runs, axisLabel, minimum, unavailable }: {
   runs?: readonly AriObservation[]; axisLabel: "Random seed" | "Run"; minimum: number; unavailable?: string;
 }) => <div className="sop3-chart">
   {runs?.length ? <ResponsiveContainer width="100%" height="100%">
-    <LineChart data={[...runs]} margin={{ top: 16, right: 20, bottom: 30, left: 0 }}>
+    <LineChart data={[...runs]} margin={{ top: 28, right: 32, bottom: 32, left: 12 }}>
       <CartesianGrid stroke={chartPalette.grid} strokeDasharray="3 3" />
       <XAxis type="number" dataKey="seed" domain={["dataMin", "dataMax"]} allowDecimals={false}
-        tick={{ fontSize: 11, fill: chartPalette.text }} tickLine={false}
+        tick={{ fontSize: 11, fill: chartPalette.text }} tickLine={false} tickMargin={8}
+        height={44} minTickGap={24} interval="preserveStartEnd"
         label={{ value: axisLabel, position: "bottom", fontSize: 12, fill: chartPalette.text }} />
-      <YAxis domain={[minimum, 1]} width={52} tickFormatter={(value: number) => formatContinuous(value)}
-        tick={{ fontSize: 11, fill: chartPalette.text }} tickLine={false}
-        label={{ value: "ARI", angle: -90, position: "insideLeft", fontSize: 11, fill: chartPalette.text }} />
+      <YAxis domain={[minimum, 1]} width={108} tickFormatter={(value: number) => formatContinuous(value)}
+        tick={{ fontSize: 11, fill: chartPalette.text }} tickLine={false} tickMargin={8} minTickGap={16}
+        label={{ value: "Adjusted Rand Index (ARI)", angle: -90, position: "insideLeft", offset: 12,
+          style: { textAnchor: "middle" }, fontSize: 11, fill: chartPalette.text }} />
       <Tooltip formatter={(value: number) => [formatContinuous(value), "ARI"]} labelFormatter={value => `${axisLabel} ${value}`} />
       <ReferenceLine y={1} stroke={chartPalette.primary} strokeDasharray="4 4"
-        label={{ value: `ARI = ${formatContinuous(1)}`, position: "insideBottomRight", fontSize: 10, fill: chartPalette.primary }} />
+        label={{ value: `ARI = ${formatContinuous(1)}`, position: "insideTopRight", offset: 12, fontSize: 10, fill: chartPalette.primary }} />
       <Line type="linear" dataKey="adjustedRandIndex" stroke={chartPalette.neutral} strokeWidth={1.5}
         dot={{ r: 3, fill: chartPalette.primary, stroke: "white" }} isAnimationActive={false} />
     </LineChart>

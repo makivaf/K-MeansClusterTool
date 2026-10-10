@@ -44,3 +44,33 @@ assert.match(details, /<details/); assert.match(details, /View Calculation Detai
 const standardOnly = render(MetricComparisonTable, { existing: values, standardOnly: true });
 assert.doesNotMatch(standardOnly, />Enhanced<|>Improvement</);
 console.log("PASS shared table rows, signed/direction-aware percentages, arrows, favorable styling, six/two-decimal formatting, PCA-only row and calculation disclosures");
+const calculation = {
+  seed: 0, representation: 'Standardized features',
+  exampleParticipant: { rid: '6839', a: 4.329275, b: 6.459013, s: 0.329731 },
+  daviesBouldin: { sigma0: 1.234567, sigma1: 2.345678, centroidDistance: 3.456789 },
+  calinskiHarabasz: { ssb: 1234.567890, ssw: 2345.678901 }
+};
+const descriptiveSilhouette = ['Participant ID (RID)', 'Mean intra-cluster distance, a(i)',
+  'Mean nearest-cluster distance, b(i)', 'Participant Silhouette value, s(i)', 'Overall Silhouette Coefficient'];
+const descriptiveIndices = ['Cluster 0 average within-cluster scatter, σ0', 'Cluster 1 average within-cluster scatter, σ1',
+  'Distance between cluster centroids, d(c0,c1)', 'Between-cluster sum of squares (SSB)',
+  'Within-cluster sum of squares (SSW)', 'Number of participants (N)', 'Number of clusters (K)'];
+const method = { n: 100, k: 2, metrics: values, calculation };
+for (const props of [{ standard: method, enhanced: method }, { enhanced: method }]) {
+  const html = render(InternalValidationCalculationDetails, props);
+  for (const label of [...descriptiveSilhouette, ...descriptiveIndices]) assert.ok(html.includes(label), label);
+  assert.doesNotMatch(html, /<dt>(RID|a\(i\)|b\(i\)|s\(i\)|σ0|σ1|d\(c0,c1\)|SSB|SSW|N|K)<\/dt>/);
+  assert.deepEqual([...html.matchAll(/<dd>(.*?)<\/dd>/g)].map(match => match[1]), [
+    '6839', '4.329275', '6.459013', '0.329731', '0.329681',
+    '1.234567', '2.345678', '3.456789', '1.238391',
+    '1,234.567890', '2,345.678901', '100', '2', '1,123.992000'
+  ], 'descriptive labels leave all evidence values and six-decimal precision unchanged');
+}
+const pcaEvidence = render(PcaContribution, { dimensions: 13, components: 6, existing: values, enhanced: values,
+  relativeChange: changes, note: 'Controlled random starts', n: 100, k: 2,
+  calculations: { existing: calculation, enhanced: calculation } });
+for (const label of descriptiveSilhouette) assert.ok(pcaEvidence.includes(label), label);
+assert.match(pcaEvidence, /<dd>6839<\/dd>/); assert.match(pcaEvidence, /<dd>4\.329275<\/dd>/);
+assert.match(pcaEvidence, /<dd>6\.459013<\/dd>/); assert.match(pcaEvidence, /<dd>0\.329731<\/dd>/);
+assert.doesNotMatch(pcaEvidence, /<dt>(RID|a\(i\)|b\(i\)|s\(i\))<\/dt>/);
+console.log('PASS descriptive Standard/Enhanced/PCA calculation labels, unchanged evidence values and precision, and no bare-symbol row labels');

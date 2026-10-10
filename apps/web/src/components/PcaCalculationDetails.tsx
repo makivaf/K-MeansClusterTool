@@ -34,15 +34,15 @@ export const PcaCalculationDetails = ({ n, k, representations }: {
       <section className="pca-silhouette-card">
         <h5>Silhouette Coefficient</h5>
         <p>{example ? `Example Participant Calculation · Seed ${representation.calculation?.seed}` : "Participant-level calculation unavailable for this cached run."}</p>
-        {representation.runCount && <p>Overall Silhouette is the mean of {representation.runCount} runs{example ? "; the participant example describes one stored run." : "."}</p>}
+        {representation.runCount && <p>Overall Silhouette Coefficient is the mean of {representation.runCount} runs{example ? "; the participant example describes one stored run." : "."}</p>}
         <dl>
           {example && <>
-          <div><dt>RID</dt><dd>{example?.rid ?? "Unavailable"}</dd></div>
-          <div><dt>a(i)</dt><dd>{formatContinuous(example?.a, "Unavailable")}</dd></div>
-          <div><dt>b(i)</dt><dd>{formatContinuous(example?.b, "Unavailable")}</dd></div>
-          <div><dt>s(i)</dt><dd>{formatContinuous(example?.s, "Unavailable")}</dd></div>
+          <div><dt>Participant ID (RID)</dt><dd>{example?.rid ?? "Unavailable"}</dd></div>
+          <div><dt>Mean intra-cluster distance, a(i)</dt><dd>{formatContinuous(example?.a, "Unavailable")}</dd></div>
+          <div><dt>Mean nearest-cluster distance, b(i)</dt><dd>{formatContinuous(example?.b, "Unavailable")}</dd></div>
+          <div><dt>Participant Silhouette value, s(i)</dt><dd>{formatContinuous(example?.s, "Unavailable")}</dd></div>
           </>}
-          <div className="pca-silhouette-overall"><dt>Overall Silhouette</dt><dd>{formatMetric(representation.silhouette)}</dd></div>
+          <div className="pca-silhouette-overall"><dt>Overall Silhouette Coefficient</dt><dd>{formatMetric(representation.silhouette)}</dd></div>
         </dl>
         <small>Higher is better</small>
       </section>

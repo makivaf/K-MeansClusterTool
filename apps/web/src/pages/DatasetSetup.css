@@ -1,0 +1,51 @@
+.dataset-source-field { display: block; margin-top: 4px; font-size: 10px; color: var(--research-muted); }
+.dataset-candidates { margin-top: 4px; }
+.dataset-candidates > summary { cursor: pointer; width: fit-content; }
+.dataset-candidates dl { margin-top: 12px; display: grid; gap: 8px; }
+.dataset-candidates dl > div { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 4px 16px; font-size: 12px; }
+.dataset-candidates dd { color: var(--research-muted); font-size: 10px; }
+.dataset-cohort, .dataset-ready { display: flex; align-items: center; justify-content: space-between; gap: 24px; padding: 20px 24px; }
+.dataset-cohort { margin-top: 16px; }
+.dataset-stats { display: grid; overflow: hidden; border: 1px solid var(--research-border); border-radius: var(--research-control-radius); background: #f8fafb; }
+.dataset-phase-stats { flex: 1; grid-template-columns: 1.35fr repeat(4, 1fr); }
+.dataset-stats > div { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; padding: 10px 12px; border-left: 1px solid var(--research-border); }
+.dataset-stats > div:first-child { border-left: 0; }
+.dataset-stats dt { font-size: 10px; color: var(--research-muted); }
+.dataset-stats dd { font-weight: 600; font-variant-numeric: tabular-nums; }
+.dataset-stats .is-emphasized { background: var(--research-success); color: var(--research-primary); }
+.dataset-phase-stats > div:first-child { align-items: flex-start; }
+.dataset-phase-stats > div:first-child dd, .dataset-screening-stats dd { order: -1; font-size: 18px; }
+.dataset-screening-stats { grid-template-columns: repeat(3, 1fr); }
+.dataset-screening .section-title { color: var(--research-primary); }
+.dataset-screening .research-panel-body { padding-top: 6px; }
+.dataset-setup .dataset-audit table { min-width: 790px; border-collapse: separate; border-spacing: 0; }
+.dataset-setup .dataset-audit thead { background: #f6f9fa; font-size: 11px; }
+.dataset-setup .dataset-audit thead th { border-top: 1px solid var(--research-border); border-bottom: 1px solid var(--research-border); }
+.dataset-setup .dataset-audit th, .dataset-setup .dataset-audit td { padding: 9px 12px; vertical-align: middle; }
+.dataset-setup .dataset-audit tbody th { border-bottom: 1px solid var(--research-border); font-size: 12px; font-weight: 400; }
+.dataset-setup .dataset-audit td { font-size: 12px; color: var(--research-muted); font-variant-numeric: tabular-nums; }
+.dataset-setup .dataset-audit th:not(:first-child), .dataset-setup .dataset-audit td { text-align: right; }
+.dataset-audit tr > :first-child { border-left: 1px solid var(--research-border); }
+.dataset-audit tr > :last-child { border-right: 1px solid var(--research-border); }
+.dataset-audit thead th:first-child { border-top-left-radius: 7px; }
+.dataset-audit thead th:last-child { border-top-right-radius: 7px; }
+.dataset-setup .dataset-audit tbody tr:last-child > * { border-bottom: 1px solid var(--research-border); }
+.dataset-audit tbody tr:last-child > :first-child { border-bottom-left-radius: 7px; }
+.dataset-audit tbody tr:last-child > :last-child { border-bottom-right-radius: 7px; }
+.dataset-audit tr.is-excluded { background: #fffbf5; }
+.dataset-setup .dataset-audit tr.is-excluded th { font-weight: 600; }
+.dataset-decision { justify-content: center; padding: 3px 7px; font-size: 10px; border: 1px solid var(--research-selected-border); }
+.dataset-decision.is-excluded { color: #b45309; background: #fff7ed; border-color: #fed7aa; }
+.dataset-ready { border-color: var(--research-selected-border); }
+.dataset-ready-badge { padding: 3px 8px; font-size: 10px; border: 1px solid var(--research-selected-border); }
+@media (max-width: 1023px) {
+  .dataset-cohort, .dataset-ready { flex-wrap: wrap; }
+  .dataset-phase-stats { flex-basis: 100%; }
+}
+@media (max-width: 767px) {
+  .dataset-cohort, .dataset-ready { padding: 16px; gap: 16px; }
+  .dataset-stats > div { padding: 10px 6px; }
+  .dataset-phase-stats { grid-template-columns: repeat(4, 1fr); }
+  .dataset-phase-stats > div:first-child { grid-column: 1 / -1; align-items: center; border-bottom: 1px solid var(--research-border); }
+  .dataset-phase-stats > div:nth-child(2) { border-left: 0; }
+}

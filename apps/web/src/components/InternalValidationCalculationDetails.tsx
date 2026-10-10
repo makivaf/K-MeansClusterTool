@@ -48,29 +48,29 @@ export const InternalValidationCalculationDetails = ({ standard, enhanced, forma
       {calculation && <p className="text-xs text-muted mt-3">Representation: {calculation.representation}.{method.k > 2 && " DBI fields below describe cluster pair 0 and 1; the overall index uses all clusters."}</p>}
       {!calculation && <p className="text-xs text-muted mt-3">Participant-level calculation unavailable for this cached run.</p>}
       <div className="internal-calculation-grid">
-        <MetricCard title="Silhouette Coefficient" totalLabel="Overall Silhouette"
+        <MetricCard title="Silhouette Coefficient" totalLabel="Overall Silhouette Coefficient"
           value={formatValue(method.metrics.silhouette)} direction="Higher">
           {calculation && <><p>Example Participant Calculation{calculation.seed !== undefined ? ` - Seed ${calculation.seed}` : ""}</p>
           <dl>
-            <Row label="RID" value={calculation?.exampleParticipant?.rid ?? "—"} />
-            <Row label="a(i)" value={intermediate(calculation?.exampleParticipant?.a)} />
-            <Row label="b(i)" value={intermediate(calculation?.exampleParticipant?.b)} />
-            <Row label="s(i)" value={intermediate(calculation?.exampleParticipant?.s)} />
+            <Row label="Participant ID (RID)" value={calculation?.exampleParticipant?.rid ?? "—"} />
+            <Row label="Mean intra-cluster distance, a(i)" value={intermediate(calculation?.exampleParticipant?.a)} />
+            <Row label="Mean nearest-cluster distance, b(i)" value={intermediate(calculation?.exampleParticipant?.b)} />
+            <Row label="Participant Silhouette value, s(i)" value={intermediate(calculation?.exampleParticipant?.s)} />
           </dl></>}
         </MetricCard>
         <MetricCard title="Davies-Bouldin Index" value={formatValue(method.metrics.davies_bouldin)} direction="Lower">
           {calculation && <dl>
-            <Row label="σ0" value={intermediate(calculation?.daviesBouldin?.sigma0)} />
-            <Row label="σ1" value={intermediate(calculation?.daviesBouldin?.sigma1)} />
-            <Row label="d(c0,c1)" value={intermediate(calculation?.daviesBouldin?.centroidDistance)} />
+            <Row label="Cluster 0 average within-cluster scatter, σ0" value={intermediate(calculation?.daviesBouldin?.sigma0)} />
+            <Row label="Cluster 1 average within-cluster scatter, σ1" value={intermediate(calculation?.daviesBouldin?.sigma1)} />
+            <Row label="Distance between cluster centroids, d(c0,c1)" value={intermediate(calculation?.daviesBouldin?.centroidDistance)} />
           </dl>}
         </MetricCard>
         <MetricCard title="Calinski-Harabasz Index" value={formatValue(method.metrics.calinski_harabasz)} direction="Higher">
           {calculation && <dl>
-            <Row label="SSB" value={intermediate(calculation?.calinskiHarabasz?.ssb)} />
-            <Row label="SSW" value={intermediate(calculation?.calinskiHarabasz?.ssw)} />
-            <Row label="N" value={formatInteger(method.n)} />
-            <Row label="K" value={method.k} />
+            <Row label="Between-cluster sum of squares (SSB)" value={intermediate(calculation?.calinskiHarabasz?.ssb)} />
+            <Row label="Within-cluster sum of squares (SSW)" value={intermediate(calculation?.calinskiHarabasz?.ssw)} />
+            <Row label="Number of participants (N)" value={formatInteger(method.n)} />
+            <Row label="Number of clusters (K)" value={method.k} />
           </dl>}
         </MetricCard>
       </div>

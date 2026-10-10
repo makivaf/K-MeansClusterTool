@@ -11,3 +11,24 @@
 @media (max-width: 767px) {
   .simulation-stepper { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 20px 8px; }
 }
+
+/* Both pages use the Study Findings progress treatment. Scroll narrow lanes
+   horizontally so eight stage labels remain readable without a tall card. */
+.study-running-badge { border: 1px solid var(--research-selected-border); flex-shrink: 0; }
+.method-progress-scroll { min-width: 0; overflow-x: auto; }
+.study-progress-card .study-stepper { grid-template-columns: repeat(var(--study-stage-count, 6), minmax(0, 1fr)); min-width: calc(var(--study-stage-count, 6) * 145px); gap: 0; margin: 36px 0 10px; }
+.study-stepper .simulation-step { position: relative; gap: 12px; padding-inline: 6px; font-size: 13px; color: var(--research-ink); }
+.study-stepper .simulation-step:is(.is-reached, .is-active) { color: var(--research-primary); }
+.study-stepper .simulation-step-subtitle { margin-top: 4px; font-size: 12px; color: var(--research-muted); }
+.study-stepper .simulation-step-node { position: relative; z-index: 1; width: 38px; height: 38px; flex-shrink: 0; background: white; }
+.study-stepper .simulation-step:not(:first-child)::before { content: ""; position: absolute; top: 18px; right: calc(50% + 24px); width: calc(100% - 48px); border-top: 2px dashed var(--research-control-border); }
+.study-stepper .simulation-step:is(.is-reached, .is-active)::before { border-top-style: solid; border-top-color: var(--research-primary); }
+.study-progress-wait { margin-top: 16px; }
+.comparison-progress-card .section-title, .comparison-progress-card .section-subtitle { color: var(--research-primary); }
+.comparison-progress-card .research-panel-heading { align-items: center; }
+.comparison-progress-lane { margin-top: 24px; }
+.comparison-progress-lane + .comparison-progress-lane { padding-top: 20px; border-top: 1px solid var(--research-border); }
+.comparison-progress-lane .study-stepper { margin-top: 20px; }
+@media (max-width: 767px) {
+  .study-progress-card .study-stepper { min-width: calc(var(--study-stage-count, 6) * 135px); }
+}

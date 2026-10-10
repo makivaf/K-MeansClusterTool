@@ -2,14 +2,16 @@
 .internal-validation > .card-title,
 .research-page .internal-validation > .card-title,
 .simulation-page .internal-validation > .card-title { margin: 0 0 4px; }
-.internal-validation-helper { margin: 0 0 18px; color: var(--research-muted); font-size: 12px; }
-.internal-validation-table { width: 100%; min-width: 540px; border-collapse: collapse; table-layout: fixed; font-size: 13px; }
-.internal-validation-table :is(th, td) { text-align: left; vertical-align: middle; padding: 16px 12px; border-bottom: 1px solid var(--research-border); overflow-wrap: anywhere; }
-.internal-validation-table :is(th, td):first-child { width: 40%; padding-left: 0; }
-.internal-validation-table :is(th, td):last-child { padding-right: 0; }
-.internal-validation-table thead th { padding-top: 10px; padding-bottom: 10px; color: var(--research-muted); font-size: 11px; font-weight: 500; }
+.internal-validation-helper { margin: 0 0 20px; color: var(--research-muted); font-size: 12px; }
+.internal-validation-table { width: 100%; min-width: 680px; border-collapse: collapse; table-layout: fixed; font-size: 14px; }
+.internal-validation-table :is(th, td) { text-align: left; vertical-align: middle; padding: 20px 16px; border-bottom: 1px solid var(--research-border); overflow-wrap: anywhere; }
+.internal-validation-table :is(th, td):first-child { width: 40%; }
+.internal-validation-table :is(th, td):not(:first-child) { text-align: right; white-space: nowrap; overflow-wrap: normal; }
+.internal-validation-table thead th { padding-top: 14px; padding-bottom: 14px; color: var(--research-muted); font-size: 12px; font-weight: 600; }
 .internal-validation-table tbody th { font-weight: 400; }
+.internal-validation-table tbody td { font-weight: 500; }
+.internal-validation-table tbody td.internal-validation-enhanced { font-weight: 600; }
 .internal-validation-table tbody tr:last-child > * { border-bottom: 0; }
-.internal-validation-hint { display: block; margin-top: 2px; color: var(--research-muted); font-size: 11px; }
+.internal-validation-hint { display: block; margin-top: 5px; color: var(--research-muted); font-size: 12px; }
 .internal-validation-direction, .internal-validation-table .internal-validation-enhanced { color: var(--research-primary); }
-.internal-validation-note { margin-top: 18px; color: var(--research-muted); font-size: 11px; font-style: italic; }
+.internal-validation-note { margin-top: 20px; color: var(--research-muted); font-size: 12px; line-height: 1.6; font-style: italic; }

@@ -1,12 +1,13 @@
 import { CheckCircle2, UploadCloud } from "lucide-react";
 import { useEffect, useRef, useState, type Dispatch, type SetStateAction } from "react";
-import { Link } from "react-router-dom";
 import { UploadResponseSchema, type UploadResponse } from "../../../../packages/shared/src/schema";
 import { API_BASE_URL, isLocalApiBaseUrl } from "../config/api";
 import { canonicalUploadFilename } from "../utils/uploadFilename";
 import { Panel } from "../components/ui/Panel";
 import { PageHeading } from "./PageHeading";
 import { DATASETS, isDatasetReady } from "../utils/validatedDataset";
+import { CandidateVariables, StudyEntrySummary } from "../components/StudyEntrySummary";
+import "./DatasetSetup.css";
 
 export const UploadAndCluster = ({ onValidated, dataset, files, setFiles, invalidFiles, setInvalidFiles, validatedFiles, setValidatedFiles }: {
   onValidated: (dataset: UploadResponse | null) => void;
@@ -90,7 +91,7 @@ export const UploadAndCluster = ({ onValidated, dataset, files, setFiles, invali
     }
   };
 
-  return <div className="research-page">
+  return <div className="research-page dataset-setup">
     <PageHeading title="Dataset Setup" description="Validate the seven ADNI CSV exports to continue." />
     <Panel title="Required datasets" variant="surface" action={
       <label className="research-file-action research-secondary-button" aria-disabled={busy || !localApi}>
@@ -102,7 +103,7 @@ export const UploadAndCluster = ({ onValidated, dataset, files, setFiles, invali
       <p role="status" className="mb-4 text-sm text-muted">{validated ? "7 of 7 datasets validated" : `${selectedCount} of 7 ${Object.keys(validatedFiles).length ? "datasets available" : "files selected"}`}</p>
       <div className="overflow-x-auto" role="region" aria-label="Required datasets" tabIndex={0} aria-busy={busy}><table className="research-table">
         <caption className="sr-only">Required ADNI exports and validation status</caption>
-        <thead><tr><th scope="col">Dataset</th><th scope="col">Selected file</th><th scope="col">Status</th></tr></thead>
+        <thead><tr><th scope="col">Dataset</th><th scope="col">Selected file</th>{validated ? <th scope="col">Candidate variables</th> : null}<th scope="col">Status</th></tr></thead>
         <tbody>{DATASETS.map(([label, name]) => {
           const file = files[name];
           const invalid = invalidFiles.includes(name);
@@ -117,6 +118,7 @@ export const UploadAndCluster = ({ onValidated, dataset, files, setFiles, invali
                   onChange={(event) => { const selected = event.target.files?.[0]; if (selected) chooseFiles([selected], name); event.currentTarget.value = ""; }} />
               </label>
             </td>
+            {validated ? <td><CandidateVariables dataset={label} /></td> : null}
             <td><span className={`research-badge ${invalid ? "is-invalid" : rowValidated ? "is-valid" : ""}`}>{rowValidated ? <CheckCircle2 size={14} aria-hidden="true" /> : null}{status}</span></td>
           </tr>;
         })}</tbody>
@@ -130,8 +132,8 @@ export const UploadAndCluster = ({ onValidated, dataset, files, setFiles, invali
           className="research-primary-button">
           {busy ? "Validating…" : "Validate Dataset"}
         </button> : null}
-        {validated ? <Link to="/study-findings" className="research-primary-button">Continue to Study Findings</Link> : null}
       </div>
     </Panel>
+    {validated ? <StudyEntrySummary /> : null}
   </div>;
 };

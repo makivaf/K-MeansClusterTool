@@ -10,10 +10,10 @@ export const PartitionProjection = ({ points, centers, label }: { points: Point[
   const xs = points.map(point => point.x), ys = points.map(point => point.y);
   const clusters = [...new Set(points.map(point => point.cluster))].sort((a, b) => a - b);
   return <div className="partition-projection simulation-chart-plot" role="img" aria-label={`${label}: ${formatInteger(points.length)} assignments on common PC1-PC2 coordinates; diamonds are projected cluster means`}>
-    <ResponsiveContainer width="100%" height="100%"><ScatterChart>
+    <ResponsiveContainer width="100%" height="100%"><ScatterChart margin={{ top: 20, right: 52, bottom: 20, left: 12 }}>
       <CartesianGrid strokeDasharray="3 3" />
-      <XAxis type="number" dataKey="x" name="PC1" minTickGap={24} tickFormatter={axisNumber} domain={[Math.min(...xs), Math.max(...xs)]} />
-      <YAxis type="number" dataKey="y" name="PC2" tickFormatter={axisNumber} width={70} domain={[Math.min(...ys), Math.max(...ys)]} />
+      <XAxis type="number" dataKey="x" name="PC1" minTickGap={32} tickCount={5} interval="preserveStartEnd" height={44} tickMargin={10} tickFormatter={axisNumber} domain={[Math.min(...xs), Math.max(...xs)]} />
+      <YAxis type="number" dataKey="y" name="PC2" tickCount={5} minTickGap={16} tickMargin={8} tickFormatter={axisNumber} width={86} domain={[Math.min(...ys), Math.max(...ys)]} />
       <Tooltip formatter={(value: number, name: string) => [formatContinuous(value), name]} />
       {clusters.map(cluster => <Scatter key={cluster} name={`Cluster ${cluster}`} data={points.filter(point => point.cluster === cluster)} fill={palette[cluster % palette.length]} fillOpacity={.55} isAnimationActive={false} />)}
       <Scatter name="Projected centroids" data={centers} fill="#142d38" shape="diamond" isAnimationActive={false} />

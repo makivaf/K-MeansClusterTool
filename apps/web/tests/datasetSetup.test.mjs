@@ -27,12 +27,50 @@ const names=DATASETS.map(([,name])=>name), dataset={upload_ref:'test-validated-u
 let uploads=0, fail=false;
 globalThis.fetch=async (_url,options)=>{uploads++;assert.equal(options.method,'POST');assert.equal([...options.body.entries()].length,7);return {ok:!fail,json:async()=>fail?{error:'ADAS.csv: invalid export'}:dataset};};
 const flush=async()=>{for(let i=0;i<20;i++)await Promise.resolve();};
+function assertSelectionTable(html,status) {
+ const table=html.match(/<table[^>]*><caption[^>]*>Required ADNI exports and validation status<\/caption>([\s\S]*?)<\/table>/)?.[1];
+ assert.ok(table,'required datasets table is present');
+ assert.equal((table.match(/<th\b/g)??[]).length,3,'only upload/selection columns before full validation');
+ assert.equal((table.match(/<td\b/g)??[]).length,21,'each dataset row has three cells');
+ assert.doesNotMatch(table,/Candidate variables|dataset-source-field|dataset-candidates|View variables|TOTAL13|LIMMTOTAL|NPISCORE/,'no provenance before full validation');
+ if(status) assert.equal((table.match(new RegExp(`>${status}</span>`,'g'))??[]).length,7);
+}
 assert.match(render().html,/0 of 7 files selected/);
+assertSelectionTable(render().html,'Missing');
+assert.doesNotMatch(render().html,/Analysis-Ready Study-Entry Dataset/,'unvalidated exports cannot show a ready result');
 const files=names.map(name=>new File(['test-only'],`All_Subjects_${name.replace('.csv','')}_10Aug2026.csv`,{type:'text/csv'}));
 choose(files);
 assert.match(render().html,/7 of 7 files selected/);
-find(render().tree,n=>n.type==='button')[0].props.onClick();await flush();
+assertSelectionTable(render().html,'Selected');
+assert.equal(find(render().tree,n=>n.type==='button')[0].props.disabled,false,'all selected files enable validation');
+find(render().tree,n=>n.type==='button')[0].props.onClick();
+assertSelectionTable(render().html,'Selected');
+await flush();
 assert.equal(uploads,1);
+const setupHtml=render().html;
+assert.match(setupHtml,/<th scope="col">Selected file<\/th><th scope="col">Candidate variables<\/th><th scope="col">Status<\/th>/);
+assert.equal((setupHtml.match(/>Validated<\/span>/g)??[]).length,7);
+assert.match(setupHtml,/<a[^>]*href="\/study-findings"[^>]*>Continue to Study Findings<\/a>/);
+assert.match(setupHtml,/<details class="dataset-candidates"><summary[^>]*>View variables<\/summary>/);
+for(const field of ['TOTAL13','CDRSB','FAQTOTAL','MMSCORE','LIMMTOTAL','LDELTOTAL','TRAASCOR','TRABSCOR','CATANIMSC','BNTTOTAL','AVTOT1–AVTOT5','AVDEL30MIN','AVTOT5 − AVDEL30MIN','NPISCORE','GDTOTAL']) assert.ok(setupHtml.includes(field),`source mapping ${field}`);
+const audit=setupHtml.match(/<caption[^>]*>Variable Missingness Audit<\/caption>[\s\S]*?<tbody>([\s\S]*?)<\/tbody>/)?.[1];
+assert.ok(audit,'missingness audit renders after validation');
+assert.equal((audit.match(/<tr\b/g)??[]).length,15);
+assert.equal((audit.match(/>Retained<\/span>/g)??[]).length,13);
+assert.equal((audit.match(/>Excluded<\/span>/g)??[]).length,2);
+assert.doesNotMatch(audit,/&gt;20%/,'Decision badges show only the outcome');
+assert.match(audit,/Boston Naming Test<\/th><td>1,730<\/td><td>707<\/td><td>2,437<\/td><td>29.01%/);
+assert.match(audit,/NPI-Q<\/th><td>949<\/td><td>1,488<\/td><td>2,437<\/td><td>61.06%/);
+assert.ok(setupHtml.indexOf('Study-Entry Cohort')<setupHtml.indexOf('Missingness Screening'));
+assert.ok(setupHtml.indexOf('Missingness Screening')<setupHtml.indexOf('Candidate variables</dt>'));
+assert.ok(setupHtml.indexOf('Candidate variables</dt>')<setupHtml.indexOf('Analysis-Ready Study-Entry Dataset'));
+slots=appSlots;cursor=0;
+const appHtml=renderToStaticMarkup(React.createElement(StaticRouter,{location:pathname},App()));
+for(const section of appHtml.matchAll(/<nav[^>]*aria-label="Research sections"[^>]*>([\s\S]*?)<\/nav>/g)) {
+ assert.ok(section[1].indexOf('Dataset Setup')<section[1].indexOf('Study Findings'));
+ assert.ok(section[1].indexOf('Study Findings')<section[1].indexOf('K-Means Comparison'));
+ assert.match(section[1],/02<\/span>Study Findings/);assert.match(section[1],/03<\/span>K-Means Comparison/);
+}
 for(const path of ['/dataset-setup','/simulation-runs','/study-findings','/simulation-runs','/dataset-setup']){
  pathname=path;pageSlots=[];const {html}=render();
  assert.match(html,/7 of 7 datasets validated/);assert.match(html,/Continue to Study Findings/);assert.doesNotMatch(html,/>Missing</);
@@ -48,6 +86,7 @@ assert.match(render().html,/7 of 7 datasets validated/);
 assert.equal(Object.keys(props().files).length,0);
 choose([new File(['replacement'],'ADAS.csv')],'Choose ADAS file');
 assert.equal(Object.keys(props().validatedFiles).length,6);
+assertSelectionTable(render().html);
 assert.match(render().html,/Reselect all seven files/);
 assert.equal(find(render().tree,n=>n.type==='button')[0].props.disabled,true);
 // In the original live session, replacement requires no reselect of other files.
@@ -57,10 +96,13 @@ assert.equal(Object.keys(props().validatedFiles).length,6);
 assert.equal(props().files['CDR.csv'],files[1]);
 fail=true;find(render().tree,n=>n.type==='button')[0].props.onClick();await flush();
 assert.match(render().html,/>Invalid</);assert.equal(props().invalidFiles.join(','),'ADAS.csv');
+assertSelectionTable(render().html);
+assert.match(render().html,/ADAS.csv: invalid export/,'existing validation error stays visible');
 assert.equal(Object.keys(props().validatedFiles).length,6);
 pathname='/study-findings';render();pathname='/dataset-setup';pageSlots=[];
 assert.match(render().html,/>Invalid</);assert.equal(uploads,2);
+assertSelectionTable(render().html);
 assert.equal(readValidatedDataset(),null,'replacement invalidates batch metadata');
 storage.set('ad-clustering.validated-dataset','not json');assert.equal(readValidatedDataset(),null);
-console.log('PASS seven-file selection/validation, navigation and remount restoration, metadata-only refresh, replacement isolation, failed validation, and no duplicate uploads');
+console.log('PASS missing/selected/pending/successful/failed validation table states, validated provenance and disclosure, navigation and remount restoration, metadata-only refresh, replacement isolation, and no duplicate uploads');
 

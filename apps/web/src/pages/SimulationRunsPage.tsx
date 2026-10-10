@@ -1,5 +1,5 @@
-import { NbClustComparison } from "../components/NbClustComparison";
-import { RunProgress } from "../components/RunProgress";
+import { NbClustComparison, StandardSelectionSummary } from "../components/NbClustComparison";
+import { ComparisonRunProgress } from "../components/ComparisonRunProgress";
 import { PcaLoadingMatrix } from "../components/PcaLoadingMatrix";
 import { readPcaLoadings } from "../utils/pcaLoadings";
 import { formatContinuous, formatPercent, formatInteger } from "../utils/numberFormatting";
@@ -27,20 +27,8 @@ const displayCoordinate = (value: number) => formatContinuous(value);
 type Analysis = NonNullable<SimulationRunState["result"]>["analysis"];
 const percent = (value: number) => formatPercent(100 * value);
 
-// Methodology groups reflect coarse runtime boundaries, not separate backend stages.
-const progressStages = [
-  ["Preparing Sample", "Sampling participants", 0],
-  ["Preprocessing", "Cleaning & standardization", 1],
-  ["Standard Setup", "Feature scaling", 1],
-  ["PCA", "Dimensionality reduction", 1],
-  ["NbClust", "Cluster selection", 2],
-  ["DPC", "Centroid initialization", 2],
-  ["K-Means", "Clustering both methods", 2],
-  ["Validation", "Computing metrics", 3],
-  ["Complete", "Results ready", 4]
-] as const;
 export const SimulationProgress = ({ stage, interrupted }: { stage: number; interrupted: boolean }) => (
-  <RunProgress steps={progressStages} stage={stage} interrupted={interrupted} completeStage={4} label="Simulation run progress" />
+  <ComparisonRunProgress stage={stage} interrupted={interrupted} />
 );
 
 const CorrelationChart = ({ analysis }: { analysis: Analysis }) => analysis.correlation
@@ -89,7 +77,7 @@ export const SimulationResults = ({ result }: { result: NonNullable<SimulationRu
       <div className="simulation-section-heading"><h2 className="simulation-section-title">SOP 2 · Cluster Number Selection</h2><p>How each method determines the number of clusters (k).</p></div>
       {exploratory && <p className="simulation-preview-note">Exploratory Standard manual k = {existing.selectedK}. The canonical study baseline uses Silhouette selection over k = 2–10; this sample's Silhouette choice is {existing.silhouetteSelectedK}. Enhanced remains automatic.</p>}
       <NbClustComparison standard={
-        <MethodCard simulation title="Silhouette-Based Selection"><p className="simulation-compact-note">Single-index criterion · k with highest average Silhouette selected</p><dl className="simulation-detail-list"><div><dt>Selection method</dt><dd>{exploratory ? "Exploratory manual k" : "Silhouette Coefficient"}</dd></div><div><dt>Candidate k</dt><dd>2–10</dd></div><div><dt>Selected k</dt><dd>{existing.selectedK}</dd></div></dl><h3 className="card-title">Silhouette by k</h3>{existing.silhouetteByK ? <SilhouetteChart candidates={existing.silhouetteByK} /> : <p className="simulation-unavailable">Candidate-k scores unavailable for this historical run.</p>}</MethodCard>} candidateK={Array.from({ length: 9 }, (_, i) => i + 2)} selectedK={enhanced.selectedK}
+        <MethodCard simulation title="Silhouette-Based Selection"><p className="simulation-compact-note">Single-index criterion · k with highest average Silhouette selected</p><dl className="simulation-detail-list"><div><dt>Selection method</dt><dd>{exploratory ? "Exploratory manual k" : "Silhouette Coefficient"}</dd></div><div><dt>Candidate k</dt><dd>2–10</dd></div></dl><h3 className="card-title">Silhouette by k</h3>{existing.silhouetteByK ? <SilhouetteChart candidates={existing.silhouetteByK} /> : <p className="simulation-unavailable">Candidate-k scores unavailable for this historical run.</p>}<StandardSelectionSummary selectedK={existing.selectedK} /></MethodCard>} candidateK={Array.from({ length: 9 }, (_, i) => i + 2)} selectedK={enhanced.selectedK}
           usableIndices={usableIndices} votes={enhanced.nbclust.votes} indices={enhanced.nbclust.indices} />
     </section>
     <section className="simulation-surface simulation-results-section">
@@ -107,7 +95,7 @@ export const SimulationResults = ({ result }: { result: NonNullable<SimulationRu
     </section>
     <section className="simulation-surface simulation-results-section">
       <div className="simulation-section-heading"><h2 className="simulation-section-title">Standard vs Enhanced Comparison</h2><p>Internal validation and cluster distributions for the actual run: n = {formatInteger(existing.participantCount)}.</p></div>
-      <section className="simulation-chart"><h3 className="card-title">Scatter Plot Comparison (PCA Space)</h3><div className="simulation-two-column">{(["Standard K-Means", "Enhanced K-Means"] as const).map((name, index) => <div key={name}><h4>{name}</h4><ProjectionChart analysis={result.analysis} method={index ? "enhanced" : "standard"} /><p className="simulation-compact-note">Initialization: {index ? "DPC (Deterministic)" : "Random"} · {index ? enhanced.iterations : selectedRun.iterations} iterations · Converged: {(index ? enhanced.convergedBeforeMaxIter : selectedRun.convergedBeforeMaxIter) ? "Yes" : "No"}{!index && " · Seed 0"}</p></div>)}</div><p className="simulation-compact-note">PC1 and PC2 are used only for 2D visualization. Both plots share coordinates and axes; diamonds mark projected cluster means. Cluster numbers are method-specific.</p></section>
+      <section className="simulation-chart"><h3 className="card-title">Scatter Plot Comparison (PCA Space)</h3><div className="projection-comparison-grid">{(["Standard K-Means", "Enhanced K-Means"] as const).map((name, index) => <div key={name} className="projection-method-panel"><h4>{name}</h4><ProjectionChart analysis={result.analysis} method={index ? "enhanced" : "standard"} /><p className="simulation-compact-note projection-method-metadata">Initialization: {index ? "DPC (Deterministic)" : "Random"} · {index ? enhanced.iterations : selectedRun.iterations} iterations · Converged: {(index ? enhanced.convergedBeforeMaxIter : selectedRun.convergedBeforeMaxIter) ? "Yes" : "No"}{!index && " · Seed 0"}</p></div>)}</div><p className="simulation-compact-note projection-comparison-note">PC1 and PC2 are used only for 2D visualization. Both plots share coordinates and axes; diamonds mark projected cluster means. Cluster numbers are method-specific.</p></section>
       <section className="simulation-chart">
         {exploratory && <p className="simulation-preview-note">These relative changes compare an exploratory Standard k override with automatic Enhanced clustering. They are not the canonical enhancement comparison.</p>}
         <MetricComparisonTable existing={Object.fromEntries(result.comparison.map(row => [row.metric, row.existing]))}
@@ -122,7 +110,7 @@ export const SimulationResults = ({ result }: { result: NonNullable<SimulationRu
             metrics: Object.fromEntries(result.comparison.map(row => [row.metric, row.enhanced])) }}
           formatValue={value => formatMetric(value, true)} />
       </section>
-      <section className="simulation-chart"><h3 className="card-title">Cluster Distribution</h3><div className="simulation-two-column"><ClusterDistribution title="Standard K-Means · Seed 0" sizes={selectedRun.clusterSizes} participants={existing.participantCount} /><ClusterDistribution title="Enhanced K-Means" sizes={enhanced.clusterSizes} participants={enhanced.participantCount} /></div></section>
+      <section className="simulation-chart"><h3 className="card-title">Cluster Distribution</h3><div className="sop-distribution-grid is-comparison"><ClusterDistribution title="Standard K-Means" metadata={`Seed ${selectedRun.seed}`} sizes={selectedRun.clusterSizes} participants={existing.participantCount} /><ClusterDistribution title="Enhanced K-Means" sizes={enhanced.clusterSizes} participants={enhanced.participantCount} /></div></section>
     </section>
   </>;
 };
@@ -249,7 +237,7 @@ export const SimulationRunsPage = () => {
       </fieldset>
       <div className="simulation-control-row">
         <button type="button" onClick={start} disabled={!selected || !capabilities?.executionAvailable || running} className="simulation-run-button" aria-describedby={stage !== null ? "simulation-analysis-status" : undefined}>
-          {hasCompleted ? <RefreshCw size={14} aria-hidden="true" /> : <Play size={14} fill="currentColor" aria-hidden="true" />}{running ? "Running..." : hasCompleted ? "Rerun" : "Run Simulation"}
+          {hasCompleted ? <RefreshCw size={14} aria-hidden="true" /> : <Play size={14} fill="currentColor" aria-hidden="true" />}{running ? "Running..." : hasCompleted ? "Rerun" : "Run K-Means Comparison"}
         </button>
       </div>
       {(error || runError || active?.status === "failed") && <div className="mt-6 text-sm text-muted">
@@ -257,7 +245,7 @@ export const SimulationRunsPage = () => {
         {(runError || active?.status === "failed") && <p role="alert">{runError ?? active?.message ?? "Simulation analysis failed."} <button type="button" className="underline" onClick={start}>Retry</button></p>}
       </div>}
     </section>
-    <section id="simulation-analysis-status" className="simulation-surface simulation-results-section" aria-label="Simulation Progress"><div className="simulation-progress-heading"><div className="simulation-section-heading"><h2 className="simulation-section-title">Run Simulation</h2><p>Track simulation progress. Both methods use the same participant sample.</p></div>{stage === null && <span className="simulation-progress-ready">Ready to run</span>}{result && <span className="simulation-result-badge">Simulation completed successfully</span>}</div><SimulationProgress stage={stage ?? -1} interrupted={stage === null || interrupted} /></section>
+    <section id="simulation-analysis-status" className="research-page" aria-label="K-Means Comparison Progress"><SimulationProgress stage={stage ?? -1} interrupted={stage === null || interrupted} /></section>
     {result && <SimulationResults result={result} />}
   </div>;
 };
