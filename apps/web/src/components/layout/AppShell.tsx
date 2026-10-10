@@ -10,7 +10,7 @@ import {
 import { useState, type ReactNode } from "react";
 import { NavLink, useLocation } from "react-router-dom";
 import { researchPages } from "./researchNavigation";
-const navIcons = [UploadCloud, FlaskConical, BarChart3];
+const navIcons = [UploadCloud, BarChart3, FlaskConical];
 const navItems = researchPages.map((page, index) => ({ ...page, icon: navIcons[index] }));
 
 type AppShellProps = { children: ReactNode };

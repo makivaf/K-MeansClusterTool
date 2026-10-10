@@ -81,10 +81,21 @@ export const PcaContribution = ({ dimensions, components, existing, enhanced, re
   ]} />
 </section>;
 
-export const ClusterDistribution = ({ sizes, participants, title }: { sizes: number[]; participants: number; title: string }) => <div className="sop-distribution">
-  <h3 className="card-title">{title}</h3>
-  {sizes.map((size, index) => <div className="sop-cluster" key={index}>
-    <div className="sop-distribution-values"><span>Cluster {index}<small>{formatInteger(size)} participants</small></span><strong>{formatPercent(100 * size / participants)}</strong></div>
-    <div className="sop-distribution-track"><div className={index % 2 ? "is-light" : ""} style={{ width: `${100 * size / participants}%` }} /></div>
-  </div>)}
-</div>;
+export const ClusterDistribution = ({ sizes, participants, title, metadata, interpretations, unavailableMessage }: {
+  sizes?: number[]; participants: number; title: string; metadata?: string;
+  interpretations?: readonly string[]; unavailableMessage?: string;
+}) => <section className="sop-distribution" aria-label={`${title} cluster distribution`}>
+  <header className="sop-distribution-heading"><h3 className="card-title">{title}</h3>
+    <p className="sop-distribution-metadata">{metadata}</p>
+  </header>
+  {sizes ? <div className="sop-clusters">{sizes.map((size, index) => <article className="sop-cluster" key={index}>
+    <h4>Cluster {index}</h4>
+    <p className="sop-cluster-interpretation">{interpretations?.[index]}</p>
+    <p className="sop-cluster-count">{formatInteger(size)}</p>
+    <p className="sop-cluster-percentage">participants · {formatPercent(100 * size / participants)}</p>
+    <div className="sop-distribution-track" aria-hidden="true"><div className={index % 2 ? "is-secondary" : ""} style={{ width: `${100 * size / participants}%` }} /></div>
+  </article>)}</div> : <div className="sop-distribution-unavailable" role="status">
+    <p className="font-medium">{title.replace(" K-Means", "")} distribution unavailable</p>
+    <p className="mt-1 text-xs text-muted">{unavailableMessage}</p>
+  </div>}
+</section>;

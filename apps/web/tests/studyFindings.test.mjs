@@ -127,8 +127,9 @@ const render = (standard, enhanced, tab = "sop1", progress = {}) => {
 };
 let html = render("idle", "locked");
 assert.match(html, /Run Standard K-Means/); assert.match(html, /n = 2,437/); assert.doesNotMatch(html, /role="tab"|Method Comparison Overview|Analysis Runs/);
-html = render("running", "locked"); assert.match(html, /Running\.\.\./); assert.match(html, /What happens next/); assert.match(html, /Results will appear here/); assert.doesNotMatch(html, /role="tab"|Run Enhanced K-Means|aria-label="Analysis Runs"/);
-const workflowSteps = ["Preparing Data", "Preprocessing", "Standard Setup", "K-Means", "Validation", "Complete"];
+html = render("running", "locked"); assert.match(html, /Running Standard K-Means/); assert.match(html, /What happens next/); assert.match(html, /Results will appear here/); assert.doesNotMatch(html, /role="tab"|Run Enhanced K-Means|aria-label="Analysis Runs"/);
+const workflowSteps = ["Preparing Run", "Preprocessing", "Standard Setup", "K-Means", "Validation", "Complete"];
+assert.doesNotMatch(html,/Preparing Data|Dataset ready|Cleaning &amp; standardization|Feature space ready/);
 const stageCases = [
   ["preparing_inputs", 0], ["constructing_study_entry_cohort", 0], ["preprocessing", 1],
   ["pca", 2], ["selecting_k", 2], ["deterministic_initialization", 2], ["enhanced_kmeans", 2], ["cluster_profiling", 2],
@@ -153,6 +154,17 @@ for (const progress of [{ status: "queued" }, { status: "submitting" }, { status
   assert.equal((html.match(/: pending/g) ?? []).length, 6);
 }
 console.log("PASS all reported runtime stage mappings; pending queue/verification; no premature completion or results");
+for (const enhancedStatus of ['ready', 'completed']) {
+  const sop2 = render('completed', enhancedStatus, 'sop2');
+  const standardPanel = sop2.match(/<section class="sop-method-card simulation-chart ">([\s\S]*?)<\/section>/)?.[1];
+  assert.ok(standardPanel);
+  assert.ok(standardPanel.indexOf('Silhouette by k') < standardPanel.indexOf('Selection Summary'));
+  assert.ok(standardPanel.indexOf('Loading validated baseline sweep') < standardPanel.indexOf('Selection Summary'));
+  assert.ok(standardPanel.indexOf('Selection Summary') < standardPanel.indexOf('Selected k'));
+  assert.equal((standardPanel.match(/<dt>Selected k<\/dt>/g) ?? []).length, 1);
+  assert.match(standardPanel, /<dt>Selected k<\/dt><dd>2<\/dd>/);
+}
+console.log('PASS Study Findings Standard summary follows unavailable evidence in Standard-only and comparison states');
 for (const tab of ["sop1", "sop2", "sop3", "final"]) {
   html = render("completed", "ready", tab); assert.match(html, /Standard K-Means Results/); assert.match(html, /Run Enhanced K-Means/);
   assert.doesNotMatch(html, /Method Comparison Overview|Principal Component Analysis|DPC Initialization Evidence|Final Cluster Profiles|Relative Change/);
@@ -163,7 +175,8 @@ for (const tab of ["sop1", "sop2", "sop3", "final"]) {
   assert.match(html, /Loading and verifying Enhanced results/);
   assert.doesNotMatch(html, /What happens next|Results will appear here|aria-label="Analysis Runs"|aria-current="step"/);
   assert.equal((html.match(/: pending/g) ?? []).length, 8, "No fabricated Enhanced workflow progress");
-  for (const label of ["Validated cohort ready", "Dimensionality reduction", "Cluster number selection", "Centroid initialization", "Lloyd clustering", "Computing clustering metrics", "Enhanced results ready"]) assert.ok(html.includes(label));
+  assert.match(html,/Running Enhanced K-Means/);
+  for (const label of ["Initialize analysis", "Using validated, standardized study-entry data", "Dimensionality reduction", "Cluster-number selection", "Deterministic centroid initialization", "Lloyd clustering", "Metrics &amp; reproducibility evidence", "Enhanced results ready"]) assert.ok(html.includes(label));
   assert.match(html, new RegExp(`id="study-panel-${tab}"`));
   assert.match(html, new RegExp(`id="study-tab-${tab}"[^>]*aria-selected="true"`));
   assert.ok(html.indexOf("Run Enhanced K-Means") < html.indexOf("Standard K-Means Results"));
@@ -230,7 +243,8 @@ assert.doesNotMatch(render("completed", "running", "sop1", { enhanced: { status:
 console.log("PASS Comparison Ready SOP 1 consumes Enhanced loading evidence once, in the required order; absent evidence shows neutral placeholders");
 const completedCard = html.match(/<section class="study-runs is-completed"[\s\S]*?<\/section>/)?.[0];
 assert.ok(completedCard);
-assert.equal((completedCard.match(/✓ Completed/g) ?? []).length, 2);
+assert.match(completedCard, /Standard K-Means complete/);
+assert.match(completedCard, /Enhanced K-Means complete/);
 assert.match(completedCard, /study-comparison-ready/);
 assert.match(completedCard, /Both analyses completed successfully\./);
 assert.match(completedCard, /Comparative Study Findings are now available below\./);
@@ -240,5 +254,66 @@ for (const [standard, enhanced] of [["idle", "locked"], ["running", "locked"], [
 }
 assert.doesNotMatch(render("completed", "completed", "sop1", { enhanced: { status: "completed", run: null } }), /study-runs is-completed|Comparison Ready/);
 console.log("PASS completion card uses both completed states and available results; final findings remain below");
+// The same production panel must recover when provenance-checked geometry
+// becomes available, without changing the independently returned Enhanced data.
+const originalEvidence = globalThis.__studyEvidence;
+const distributionRun = { ...run, enhancedClustering: { ...run.enhancedClustering,
+  clusterSizes: [{ clusterId: 1, nMembers: 884 }, { clusterId: 0, nMembers: 1553 }] } };
+const distributionHtml = () => render("completed", "completed", "final", {
+  enhanced: { status: "completed", run: distributionRun }
+}).match(/<div class="sop-distribution-grid is-comparison">[\s\S]*?<\/section><\/div>/)?.[0];
+globalThis.__studyEvidence = { ...originalEvidence, status: "provenance-rejected", defenseGeometry: null,
+  error: "Frozen-study evaluation unavailable: required shared provenance is missing or mismatched." };
+let distributions = distributionHtml();
+assert.ok(distributions);
+assert.match(distributions, /Standard distribution unavailable/);
+assert.match(distributions, /required shared provenance is missing or mismatched/);
+assert.match(distributions, /1,553/); assert.match(distributions, /884/);
+assert.match(distributions, /participants · 63.73%/); assert.match(distributions, /participants · 36.27%/);
+assert.equal((distributions.match(/class="sop-cluster"/g) ?? []).length, 2, 'unavailable Standard never fabricates counts');
+globalThis.__studyEvidence = { ...originalEvidence, status: "ready",
+  defenseGeometry: JSON.parse(readFileSync(new URL("../../api/artifacts/defense_geometry.json", import.meta.url))) };
+distributions = distributionHtml();
+assert.doesNotMatch(distributions, /distribution unavailable/);
+assert.equal((distributions.match(/class="sop-cluster"/g) ?? []).length, 4, 'validated provenance restores Standard cards');
+assert.match(distributions, /Seed 0/);
+globalThis.__studyEvidence = { ...originalEvidence, status: "loading", defenseGeometry: null };
+assert.match(distributionHtml(), /Loading validated Standard cluster distribution/);
+globalThis.__studyEvidence = { ...originalEvidence, status: "ready",
+  defenseGeometry: JSON.parse(readFileSync(new URL("../../api/artifacts/defense_geometry.json", import.meta.url))) };
+assert.doesNotMatch(distributionHtml(), /distribution unavailable/);
+globalThis.__studyEvidence = originalEvidence;
+console.log("PASS unavailable/loading/valid/restored Standard distribution, independent Enhanced counts and percentages, and aligned method panels");
+// Exercise the LME card with two distinct result objects so display values
+// cannot silently be replaced with the mockup's example numbers.
+for (const values of [
+  { n: 1845, observations: 11111, lower: 0.566467, higher: 2.036148, effect: 1.469681, ci: [1.364061, 1.575300], p: 0.00001 },
+  { n: 321, observations: 987, lower: 0.123456, higher: 1.654321, effect: 1.530865, ci: [1.250001, 1.811729], p: 0.024321 }
+]) {
+  const lmeRun = { ...run, longitudinal: { ...run.longitudinal, mixedEffects: {
+    ...run.longitudinal.mixedEffects, participantCount: values.n, observationCount: values.observations,
+    estimationMethod: 'Maximum likelihood (ML); random intercept only',
+    estimatedAnnualChangeByOriginalCluster: [
+      { clusterId: 1, estimate: values.higher, unit: 'ADAS-Cog13 points/year' },
+      { clusterId: 0, estimate: values.lower, unit: 'ADAS-Cog13 points/year' }
+    ], primaryResult: { estimate: values.effect, confidenceInterval95: { lower: values.ci[0], upper: values.ci[1] }, pValue: values.p }
+  } } };
+  const final = render('completed', 'completed', 'final', { enhanced: { status: 'completed', run: lmeRun } });
+  const lme = final.match(/<section class="research-panel[^"]*study-lme">[\s\S]*?<\/dl><\/section><\/div><\/section>/)?.[0];
+  assert.ok(lme);
+  assert.ok(lme.includes(`${values.n.toLocaleString('en-US')} eligible participants · ${values.observations.toLocaleString('en-US')} repeated ADAS-Cog13 observations`));
+  assert.match(lme, /Maximum likelihood \(ML\) · Random intercept only/);
+  assert.match(lme, /Annual ADAS-Cog13 Change/);
+  assert.ok(lme.indexOf('Cluster 0') < lme.indexOf('Cluster 1'), 'cluster cards keep comparison order');
+  for (const value of [values.lower, values.higher, values.effect, ...values.ci]) assert.ok(lme.includes(value.toFixed(6)));
+  assert.ok(lme.includes(values.p < 0.001 ? '&lt;0.001' : values.p.toFixed(6)));
+  assert.equal((lme.match(/ADAS-Cog13 points\/year/g) ?? []).length, 2);
+  assert.equal((lme.match(/study-lme-slope-value/g) ?? []).length, 2);
+  assert.doesNotMatch(lme, /<table|<svg|interpretation banner|Cluster 1 shows a greater annual increase/);
+  assert.doesNotMatch(final, /LME results table/);
+  assert.match(final, /ADAS-Cog13 Longitudinal Progression/);
+  assert.match(final, /Observed means by elapsed-year bin; bars describe available observations, not fitted model predictions/);
+}
+console.log('PASS dynamic LME metadata/slopes/effect/CI/p-values, cluster order, preserved chart context, and no duplicate table or interpretation strip');
 delete globalThis.__studyEvidence; delete globalThis.__studyTab;
 console.log("PASS five page states, all four tabs, actual correlation rendering, gated comparison and retained PCA evidence");

@@ -1,3 +1,9 @@
-.partition-projection { height: 280px; min-width: 0; margin-block: 12px; }
+.partition-projection { height: 320px; min-width: 0; width: 100%; margin-block: 16px; }
 .partition-projection .recharts-wrapper text { font-size: 12px; }
-@media (max-width: 767px) { .partition-projection { height: 260px; } }
+.projection-comparison-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 420px), 1fr)); gap: 24px; align-items: start; }
+.projection-comparison-grid > * { min-width: 0; }
+.projection-method-panel { padding: 20px; border: 1px solid var(--research-border); border-radius: var(--research-control-radius); }
+.projection-method-metadata { margin-top: 16px; overflow-wrap: anywhere; }
+.projection-comparison-note { margin-top: 20px; }
+.projection-comparison-grid .partition-projection { height: 320px; margin-block: 16px; }
+@media (max-width: 767px) { .projection-method-panel { padding: 16px; } }

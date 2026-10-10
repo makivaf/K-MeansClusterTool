@@ -20,7 +20,8 @@
 .pca-silhouette-card > p { margin: 10px 0; font-size: 11px; }
 .pca-silhouette-card dl > div { display: flex; justify-content: space-between; gap: 16px; padding: 3px 0; font-size: 12px; }
 .pca-silhouette-card dt, .pca-silhouette-card small { color: var(--research-muted); }
-.pca-silhouette-card dd { text-align: right; font-variant-numeric: tabular-nums; }
+.pca-silhouette-card dt { flex: 1; min-width: 0; }
+.pca-silhouette-card dd { flex-shrink: 0; white-space: nowrap; text-align: right; font-variant-numeric: tabular-nums; }
 .pca-silhouette-card dl > .pca-silhouette-overall { margin-top: 3px; padding-top: 10px; border-top: 1px solid var(--research-border); font-weight: 600; }
 .pca-silhouette-overall dt { color: inherit; }
 .pca-silhouette-overall dd { color: var(--research-primary); }
@@ -54,7 +55,7 @@
 .sop3-headline { font-size: 30px; line-height: 1.2; font-weight: 600; font-variant-numeric: tabular-nums; }
 .sop3-description { margin-top: 6px; margin-bottom: 20px; }
 .sop3-chart-title { margin-top: auto; }
-.sop3-chart { height: 240px; min-width: 0; margin-top: 12px; }
+.sop3-chart { height: 280px; min-width: 0; margin-top: 12px; }
 .sop3-chart-unavailable { display: flex; align-items: center; justify-content: center; height: 100%; padding: 16px; text-align: center; }
 .sop3-note { margin-top: 16px; }
 .sop-evidence { margin-top: 24px; padding-top: 20px; border-top: 1px solid var(--research-border); }
@@ -73,12 +74,28 @@
 .sop-summary > div { display: flex; justify-content: space-between; gap: 12px; padding: 8px 0; border-bottom: 1px solid var(--research-border); font-size: 12px; }
 .sop-summary dt { color: var(--research-muted); }
 .sop-summary dd { color: var(--research-primary); font-weight: 600; }
-.sop-cluster { margin-top: 20px; }
-.sop-distribution-values { display: flex; justify-content: space-between; gap: 12px; font-size: 13px; }
-.sop-distribution-values small { display: block; margin-top: 4px; color: var(--research-muted); font-size: 12px; }
+.sop-distribution-grid { display: grid; grid-template-columns: minmax(0, 1fr); gap: 20px; align-items: start; }
+.sop-distribution-grid.is-comparison { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.sop-distribution { min-width: 0; }
+.sop-distribution-heading { margin-bottom: 12px; }
+.sop-distribution-heading .card-title { margin-bottom: 0; }
+.sop-distribution-metadata { min-height: 18px; margin-top: 3px; font-size: 12px; color: var(--research-muted); }
+.sop-clusters { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+.sop-distribution-grid.is-comparison .sop-clusters { grid-template-columns: minmax(0, 1fr); }
+.sop-cluster, .sop-distribution-unavailable { min-width: 0; padding: 18px 20px; border: 1px solid var(--research-border); border-radius: var(--research-control-radius); background: var(--research-canvas); overflow-wrap: anywhere; }
+.sop-cluster h4 { font-size: 14px; font-weight: 600; }
+.sop-cluster-interpretation { min-height: 18px; font-size: 12px; color: var(--research-muted); }
+.sop-cluster-count { margin-top: 16px; font-size: 30px; line-height: 1.2; font-weight: 600; font-variant-numeric: tabular-nums; }
+.sop-cluster-percentage { margin-top: 6px; font-size: 12px; color: var(--research-muted); font-variant-numeric: tabular-nums; }
 .sop-distribution-track { height: 8px; margin-top: 10px; overflow: hidden; border-radius: 4px; background: #edf1f3; }
 .sop-distribution-track > div { height: 100%; background: var(--research-primary); }
-.sop-distribution-track > .is-light { opacity: .5; }
+.sop-distribution-track > .is-secondary { background: var(--research-comparison); }
+.sop-distribution-unavailable { font-size: 13px; }
+@media (max-width: 767px) {
+  .sop-distribution-grid.is-comparison { grid-template-columns: minmax(0, 1fr); }
+  .sop-cluster, .sop-distribution-unavailable { padding: 16px; }
+}
+@media (max-width: 479px) { .sop-clusters { grid-template-columns: minmax(0, 1fr); } }
 @media (max-width: 767px) { .sop-support-card { padding: 16px; } }
 
 /* SOP 1/2 share the simulation figure presentation on both pages. */

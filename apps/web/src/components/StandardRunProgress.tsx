@@ -2,16 +2,7 @@ import { FileChartColumn, Info } from "lucide-react";
 import type { ResearchProgressStage } from "../../../../packages/shared/src/schema";
 import type { AnalysisRunState } from "../hooks/useStudyFindings";
 import { StudyRunProgressCard } from "./StudyRunProgressCard";
-
-const steps = [
-  ["Preparing Data", "Dataset ready", 0],
-  ["Preprocessing", "Cleaning & standardization", 1],
-  ["Standard Setup", "Feature space ready", 2],
-  ["K-Means", "Random initialization · 30 runs", 3],
-  ["Validation", "Computing metrics & reproducibility evidence", 4],
-  ["Complete", "Results ready", 5]
-] as const;
-
+import { standardProgressSteps } from "./methodProgressSteps";
 // The unchanged API executes one combined pipeline. Do not mistake its
 // enhanced_kmeans stage for the later Standard random-initialization sweep.
 const standardStages: Record<ResearchProgressStage, number> = {
@@ -31,10 +22,10 @@ const standardStages: Record<ResearchProgressStage, number> = {
 };
 
 export const StandardRunProgress = ({ status, stage }: Pick<AnalysisRunState, "status" | "stage">) => {
-  const activeStage = status === "running" && stage && Object.prototype.hasOwnProperty.call(standardStages, stage)
+  const activeStage = status === "complete" ? 5 : status === "running" && stage && Object.prototype.hasOwnProperty.call(standardStages, stage)
     ? standardStages[stage as ResearchProgressStage] : -1;
   return <div className="study-running-view">
-    <StudyRunProgressCard method="Standard" steps={steps} activeStage={activeStage}
+    <StudyRunProgressCard method="Standard" steps={standardProgressSteps} activeStage={activeStage}
       statusMessage={activeStage < 0 ? status === "queued" ? "Waiting for analysis to start." : status === "submitting" ? "Submitting analysis request." : "Checking analysis status and results." : undefined} />
     <section className="study-next-card" aria-labelledby="study-next-title">
       <Info size={22} aria-hidden="true" />

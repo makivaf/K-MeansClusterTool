@@ -10,6 +10,13 @@ type Evidence = {
   indices: readonly { index: string; status: string; recommendedK?: number | null }[];
 };
 
+export const StandardSelectionSummary = ({ selectedK }: { selectedK: number }) => <>
+  <h3 className="card-title simulation-compact-title">Selection Summary</h3>
+  <dl className="simulation-detail-list nbclust-vote-summary">
+    <div><dt>Selected k</dt><dd>{selectedK}</dd></div>
+  </dl>
+</>;
+
 export const NbClustSummary = ({ candidateK, selectedK, usableIndices, votes }: Evidence) => {
   const chartVotes = candidateK.map(k => ({ k, count: votes.find(vote => vote.k === k)?.count }));
   const complete = chartVotes.length > 0 && chartVotes.every(vote => vote.count !== undefined);

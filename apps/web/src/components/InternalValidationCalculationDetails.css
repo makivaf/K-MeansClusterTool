@@ -5,7 +5,8 @@
 .internal-calculation-fields p { margin-bottom: 10px; font-size: 11px; }
 .internal-calculation-card dl > div { display: flex; justify-content: space-between; gap: 12px; padding: 3px 0; font-size: 12px; }
 .internal-calculation-fields dt, .internal-calculation-card small { color: var(--research-muted); }
-.internal-calculation-card dd { text-align: right; font-variant-numeric: tabular-nums; }
+.internal-calculation-card dt { flex: 1; min-width: 0; }
+.internal-calculation-card dd { flex-shrink: 0; white-space: nowrap; text-align: right; font-variant-numeric: tabular-nums; }
 .internal-calculation-total { margin-top: 3px; padding-top: 8px; border-top: 1px solid var(--research-border); font-weight: 600; }
 .internal-calculation-total dd { color: var(--research-primary); }
 .internal-calculation-card small { display: block; margin-top: 3px; font-size: 11px; }
