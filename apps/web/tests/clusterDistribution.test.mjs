@@ -51,5 +51,5 @@ for (const [method, sizes, participants] of [
   }
   if (method === 'Standard') assert.ok(panel.includes(`Seed ${selected.seed}`));
 }
-assert.match(html, /Cluster labels are method-specific/);
+assert.doesNotMatch(html, /Cluster labels are method-specific|PC1 and PC2 are used only|Standard: mean of/);
 console.log('PASS shared distribution cards, dynamic counts/percentages/bars, optional interpretations, unavailable state, and saved comparison result/seed bindings');

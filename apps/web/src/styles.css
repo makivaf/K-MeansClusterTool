@@ -64,6 +64,9 @@ input:focus-visible {
 .research-page .research-table thead { background: transparent; border-top: 0; font-size: 12px; text-transform: none; letter-spacing: normal; }
 .research-page .research-table th { font-weight: 400; padding: 12px; }
 .research-page .research-table td { padding: 16px 12px; vertical-align: middle; }
+/* Opt in only tables whose row-heading cells need the same dividers as data cells. */
+.research-row-dividers > tbody > tr > :is(th, td) { border-bottom: 1px solid var(--research-border); }
+.research-row-dividers > tbody > tr:last-child > :is(th, td) { border-bottom: 0; }
 .research-primary-button, .research-secondary-button { display: inline-flex; min-height: 42px; align-items: center; justify-content: center; gap: 10px; border-radius: var(--research-control-radius); padding: 10px 20px; font-size: 14px; font-weight: 600; transition: background-color 150ms; }
 .research-primary-button { background: var(--research-primary); color: white; }
 .research-primary-button:hover { background: var(--research-primary-hover); }

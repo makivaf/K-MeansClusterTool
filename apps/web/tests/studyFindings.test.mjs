@@ -167,7 +167,7 @@ for (const enhancedStatus of ['ready', 'completed']) {
 console.log('PASS Study Findings Standard summary follows unavailable evidence in Standard-only and comparison states');
 for (const tab of ["sop1", "sop2", "sop3", "final"]) {
   html = render("completed", "ready", tab); assert.match(html, /Standard K-Means Results/); assert.match(html, /Run Enhanced K-Means/);
-  assert.doesNotMatch(html, /Method Comparison Overview|Principal Component Analysis|DPC Initialization Evidence|Final Cluster Profiles|Relative Change/);
+  assert.doesNotMatch(html, /Method Comparison Overview|Principal Component Analysis<\/h3>|DPC Initialization Evidence|Final Cluster Profiles|Relative Change/);
   assert.match(html, new RegExp(`id="study-panel-${tab}"`));
   html = render("completed", "running", tab); assert.match(html, /Standard K-Means Results/); assert.doesNotMatch(html, /Method Comparison Overview/);
   assert.match(html, /Run Enhanced K-Means/);
@@ -219,7 +219,7 @@ assert.equal(beforeEnhanced.node.props.run, duringEnhanced.node.props.run);
 assert.equal(beforeEnhanced.node.props.standardRun, duringEnhanced.node.props.standardRun);
 console.log("PASS Enhanced card, eight unreported stages pending, preserved Standard tabs/component/result identity, gated comparison");
 html = render("completed", "ready"); assert.match(html, /Pre-PCA correlation heatmap/);
-html = render("completed", "completed"); assert.match(html, /Principal Component Analysis/); assert.match(html, /Controlled PCA Contribution/);
+html = render("completed", "completed"); assert.match(html, /Principal Component Analysis<\/h3>/); assert.match(html, /Controlled PCA Contribution/);
 assert.match(html, /Principal Components \u2014 Loading Matrix/);
 assert.match(html, /Loading values will appear when PCA loading data is available/);
 const placeholderMatrix = html.match(/<table class="pca-loading-table">[\s\S]*?<\/table>/)?.[0];
@@ -246,9 +246,11 @@ assert.ok(completedCard);
 assert.match(completedCard, /Standard K-Means complete/);
 assert.match(completedCard, /Enhanced K-Means complete/);
 assert.match(completedCard, /study-comparison-ready/);
-assert.match(completedCard, /Both analyses completed successfully\./);
-assert.match(completedCard, /Comparative Study Findings are now available below\./);
-assert.ok(html.indexOf("Both analyses completed successfully.") < html.indexOf("Method Comparison Overview"));
+assert.doesNotMatch(html, /study-completion-message|Both analyses completed successfully|Comparative Study Findings are now available below|Validated Study Results|study-cohort/);
+assert.ok(html.indexOf("Study Findings</h1>") < html.indexOf('aria-label="Analysis Runs"'));
+assert.ok(html.indexOf('aria-label="Analysis Runs"') < html.indexOf("Method Comparison Overview"));
+assert.ok(html.indexOf("Method Comparison Overview") < html.indexOf('aria-label="Study findings sections"'));
+assert.ok(html.indexOf('aria-label="Study findings sections"') < html.indexOf('role="tabpanel"'));
 for (const [standard, enhanced] of [["idle", "locked"], ["running", "locked"], ["completed", "ready"], ["completed", "running"], ["completed", "error"], ["error", "completed"]]) {
   assert.doesNotMatch(render(standard, enhanced), /study-runs is-completed|Comparison Ready|Both analyses completed successfully/);
 }
@@ -283,6 +285,29 @@ globalThis.__studyEvidence = { ...originalEvidence, status: "ready",
   defenseGeometry: JSON.parse(readFileSync(new URL("../../api/artifacts/defense_geometry.json", import.meta.url))) };
 assert.doesNotMatch(distributionHtml(), /distribution unavailable/);
 globalThis.__studyEvidence = originalEvidence;
+// SOP 3 must not treat reference-seed ARI, PCA random-control statistics, or
+// the historical three DPC checks as the revised modal-partition experiment.
+globalThis.__studyEvidence = { ...originalEvidence, status: "ready", dpcStatus: "ready",
+  studyEvidence: { ...originalEvidence.studyEvidence, standardAriBySeed: [{ seed: 0, adjustedRandIndex: 1 }] } };
+let initialization = render("completed", "completed", "sop3");
+assert.match(initialization, /SOP 3 · Initialization/);
+assert.match(initialization, /Unavailable — verified final-partition frequencies/);
+assert.match(initialization, /Verified Standard modal-partition ARI is not supplied/);
+assert.match(initialization, /verified modal-partition ARI is not supplied/);
+assert.match(initialization, /<details class="sop3-metrics sop3-disclosure">/);
+assert.match(initialization, /<details class="sop3-disclosure"><summary>DPC Center-Selection Details/);
+globalThis.__studyEvidence = { ...originalEvidence, status: "provenance-rejected", dpcStatus: "provenance-rejected",
+  studyEvidence: null, defenseGeometry: null, evaluation: null,
+  error: "Frozen-study evaluation unavailable: required shared provenance is missing or mismatched." };
+initialization = render("completed", "completed", "sop3");
+assert.match(initialization, /required shared provenance is missing or mismatched/);
+assert.match(initialization, /DPC reproducibility evidence was rejected/);
+assert.match(initialization, /Executions<\/th><td>Unavailable<\/td><td>Unavailable/);
+assert.match(initialization, /<p class="section-subtitle mb-4">Evaluates the consistency of clustering results across repeated executions using random initialization and deterministic Density Peaks Clustering \(DPC\) initialization\.<\/p>/);
+assert.doesNotMatch(initialization, /sop3-methodology|Standard executions:|Enhanced executions:/);
+assert.doesNotMatch(initialization, /reference-equivalent partition|3 \/ 3|30 \/ 30/);
+globalThis.__studyEvidence = originalEvidence;
+console.log("PASS SOP 3 frozen evidence, missing modal fields, collapsed disclosures, and provenance rejection");
 console.log("PASS unavailable/loading/valid/restored Standard distribution, independent Enhanced counts and percentages, and aligned method panels");
 // Exercise the LME card with two distinct result objects so display values
 // cannot silently be replaced with the mockup's example numbers.
@@ -312,7 +337,7 @@ for (const values of [
   assert.doesNotMatch(lme, /<table|<svg|interpretation banner|Cluster 1 shows a greater annual increase/);
   assert.doesNotMatch(final, /LME results table/);
   assert.match(final, /ADAS-Cog13 Longitudinal Progression/);
-  assert.match(final, /Observed means by elapsed-year bin; bars describe available observations, not fitted model predictions/);
+  assert.doesNotMatch(final, /Observed means by elapsed-year bin; bars describe available observations, not fitted model predictions|PC1 and PC2 are visualization only|Standard: mean of|Cluster labels are method-specific|SMD: standardized mean difference/);
 }
 console.log('PASS dynamic LME metadata/slopes/effect/CI/p-values, cluster order, preserved chart context, and no duplicate table or interpretation strip');
 delete globalThis.__studyEvidence; delete globalThis.__studyTab;

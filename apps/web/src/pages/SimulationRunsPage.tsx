@@ -2,11 +2,13 @@ import { NbClustComparison, StandardSelectionSummary } from "../components/NbClu
 import { ComparisonRunProgress } from "../components/ComparisonRunProgress";
 import { PcaLoadingMatrix } from "../components/PcaLoadingMatrix";
 import { readPcaLoadings } from "../utils/pcaLoadings";
-import { formatContinuous, formatPercent, formatInteger } from "../utils/numberFormatting";
-import { PartitionProjection } from "../components/charts/PartitionProjection";
-import { PcaChart, SilhouetteChart } from "../components/SopFigures";
+import { formatContinuous, formatInteger } from "../utils/numberFormatting";
+import { PartitionProjection, projectionTick } from "../components/charts/PartitionProjection";
+import { SilhouetteChart } from "../components/SopFigures";
+import { FeatureRepresentationComparison } from "../components/FeatureRepresentationComparison";
 import { DpcCenterTable } from "../components/DpcCenterTable";
 import { InitializationComparison } from "../components/InitializationComparison";
+import { sopText } from "../utils/sopText";
 import { InternalValidationCalculationDetails } from "../components/InternalValidationCalculationDetails";
 import { MetricComparisonTable, formatMetric } from "../components/MetricComparisonTable";
 ﻿import { useEffect, useState } from "react";
@@ -20,22 +22,38 @@ import { useSimulationCapabilities } from "../hooks/useSimulationCapabilities";
 import { API_BASE_URL } from "../config/api";
 import "./SimulationRunsPage.css";
 import { CorrelationHeatmap } from "../components/charts/FinalFindingsCharts";
-import { MethodCard, SopComparison, VariableChips, VarianceSummary, PcaContribution, ClusterDistribution } from "../components/SopComparison";
+import { MethodCard, VarianceSummary, PcaContribution, ClusterDistribution } from "../components/SopComparison";
 
-const axisNumber = (value: number) => formatContinuous(value);
 const displayCoordinate = (value: number) => formatContinuous(value);
 type Analysis = NonNullable<SimulationRunState["result"]>["analysis"];
-const percent = (value: number) => formatPercent(100 * value);
 
 export const SimulationProgress = ({ stage, interrupted }: { stage: number; interrupted: boolean }) => (
   <ComparisonRunProgress stage={stage} interrupted={interrupted} />
 );
 
 const CorrelationChart = ({ analysis }: { analysis: Analysis }) => analysis.correlation
-  ? <CorrelationHeatmap correlation={{ features: analysis.enhanced.retainedVariables, matrix: analysis.correlation }} compact showKey={false}
-      caption={`Pearson r (-1 to +1) of this sample's standardized retained features. n = ${formatInteger(analysis.existing.participantCount)}. Constant-feature correlations are unavailable.`} />
+  ? <CorrelationHeatmap correlation={{ features: analysis.enhanced.retainedVariables, matrix: analysis.correlation }} compact showKey={false} />
   : <p className="simulation-unavailable">Correlation unavailable for this historical run.</p>;
-const DecisionGraph = ({ enhanced }: { enhanced: Analysis["enhanced"] }) => enhanced.dpc.decisionGraph ? <div className="simulation-chart-plot" role="img" aria-label="DPC rho delta decision graph; selected centers highlighted"><ResponsiveContainer width="100%" height="100%"><ScatterChart><CartesianGrid strokeDasharray="3 3" /><XAxis type="number" dataKey="rho" name="rho" allowDecimals={false} /><YAxis type="number" dataKey="delta" name="delta" tickFormatter={axisNumber} width={65} /><Tooltip formatter={(value: number, name: string) => [name === "rho" ? (Number.isInteger(value) ? formatInteger(value) : formatContinuous(value)) : displayCoordinate(value), name]} cursor={{ strokeDasharray: "3 3" }} /><Scatter name="Participants" data={enhanced.dpc.decisionGraph.filter(point => !point.selected)} fill="#b7d9d5" isAnimationActive={false} /><Scatter name="DPC centers" data={enhanced.dpc.decisionGraph.filter(point => point.selected)} fill="#e49b35" shape="diamond" isAnimationActive={false} /></ScatterChart></ResponsiveContainer></div> : <p className="simulation-unavailable">Decision graph unavailable for this historical run.</p>;
+const DecisionGraph = ({ enhanced }: { enhanced: Analysis["enhanced"] }) => enhanced.dpc.decisionGraph ? <figure>
+  <div className="simulation-chart-plot" role="img" aria-label="DPC rho delta decision graph; selected centers highlighted">
+    <ResponsiveContainer width="100%" height="100%"><ScatterChart margin={{ top: 12, right: 24, bottom: 16, left: 20 }}>
+      <CartesianGrid stroke="var(--research-border)" strokeDasharray="3 3" />
+      <XAxis type="number" dataKey="rho" name="rho" allowDecimals={false} tickCount={5} minTickGap={24} tickFormatter={projectionTick} height={50} tickMargin={8}
+        tick={{ fontSize: 12, fill: "var(--research-muted)" }} axisLine={{ stroke: "var(--research-border)" }} tickLine={false}
+        label={{ value: "ρ (Local density)", position: "insideBottom", offset: 0, fontSize: 12, fill: "var(--research-muted)" }} />
+      <YAxis type="number" dataKey="delta" name="delta" tickCount={5} minTickGap={16} tickFormatter={projectionTick} width={64} tickMargin={8}
+        tick={{ fontSize: 12, fill: "var(--research-muted)" }} axisLine={{ stroke: "var(--research-border)" }} tickLine={false}
+        label={{ value: "δ (Distance)", angle: -90, position: "left", offset: 12, style: { textAnchor: "middle" }, fontSize: 12, fill: "var(--research-muted)" }} />
+      <Tooltip formatter={(value: number, name: string) => [name === "rho" ? (Number.isInteger(value) ? formatInteger(value) : formatContinuous(value)) : displayCoordinate(value), name]} cursor={{ strokeDasharray: "3 3" }} />
+      <Scatter name="Participants" data={enhanced.dpc.decisionGraph.filter(point => !point.selected)} fill="#b7d9d5" isAnimationActive={false} />
+      <Scatter name="DPC centers" data={enhanced.dpc.decisionGraph.filter(point => point.selected)} fill="#e49b35" shape="diamond" isAnimationActive={false} />
+    </ScatterChart></ResponsiveContainer>
+  </div>
+  <ul className="projection-legend" aria-label="DPC decision graph legend">
+    <li><span className="projection-legend-dot" style={{ backgroundColor: "#b7d9d5" }} aria-hidden="true" />Participants</li>
+    <li><span className="projection-legend-diamond" style={{ backgroundColor: "#e49b35" }} aria-hidden="true" />Selected DPC centers</li>
+  </ul>
+</figure> : <p className="simulation-unavailable">Decision graph unavailable for this historical run.</p>;
 const ProjectionChart = ({ analysis, method }: { analysis: Analysis; method: "standard" | "enhanced" }) => {
   const projection = analysis.projection;
   if (!projection) return <p className="simulation-unavailable">Projection unavailable for this historical run.</p>;
@@ -52,16 +70,9 @@ export const SimulationResults = ({ result }: { result: NonNullable<SimulationRu
   const usableIndices = enhanced.nbclust.indices.filter(index => index.status === "success").length;
   return <>
     <section className="simulation-surface simulation-results-section">
-      <div className="simulation-section-heading"><h2 className="simulation-section-title">SOP 1 · Feature Representation</h2><p>How each method represents the input feature space before clustering.</p></div>
-      <SopComparison simulation figures standard={<MethodCard simulation title="Original Feature Representation">
-        <p className="simulation-compact-note">{enhanced.retainedVariables.length} standardized input variables</p>
-        <CorrelationChart analysis={result.analysis} />
-        <VariableChips variables={enhanced.retainedVariables} />
-      </MethodCard>} enhanced={<MethodCard simulation enhanced title="Principal Component Analysis">
-        <p className="simulation-compact-note">{enhanced.retainedVariables.length} variables → {enhanced.pcaComponents} PCs · Cumulative variance = {percent(enhanced.cumulativeExplainedVariance)}</p>
-        <PcaChart enhanced={enhanced} />
-        <dl className="simulation-detail-list sop-summary"><div><dt>Input variables</dt><dd>{enhanced.retainedVariables.length}</dd></div><div><dt>Components retained</dt><dd>{enhanced.pcaComponents}</dd></div><div><dt>Cumulative variance</dt><dd>{percent(enhanced.cumulativeExplainedVariance)}</dd></div><div><dt>Variance threshold</dt><dd>≥ 85.00%</dd></div></dl>
-      </MethodCard>}>
+      <div className="simulation-section-heading"><h2 className="simulation-section-title">{sopText.sop1.heading}</h2><p>{sopText.sop1.description}</p></div>
+      <FeatureRepresentationComparison standardVariables={enhanced.retainedVariables} enhancedVariables={enhanced.retainedVariables}
+        standardFigure={<CorrelationChart analysis={result.analysis} />} enhanced={enhanced}>
         <VarianceSummary retained={enhanced.pcaComponents} loadingData={pcaLoadings} rows={enhanced.pcaVariance.map(row => ({ component: row.component, eigenvalue: row.eigenvalue, cumulativeVariance: row.cumulativeExplainedVariance }))} />
         <PcaLoadingMatrix variables={pcaLoadings?.variables ?? enhanced.retainedVariables}
             components={Array.from({ length: enhanced.pcaComponents }, (_, index) => `PC${index + 1}`)} values={pcaLoadings?.values} />
@@ -70,19 +81,22 @@ export const SimulationResults = ({ result }: { result: NonNullable<SimulationRu
           calculations={{ existing: result.analysis.calculations?.standard, enhanced: result.analysis.calculations?.pca }} runCount={result.analysis.pcaContribution?.runCount}
           existing={result.analysis.pcaContribution?.existing} enhanced={result.analysis.pcaContribution?.enhanced}
           relativeChange={result.analysis.pcaContribution ? Object.fromEntries(Object.entries(result.analysis.pcaContribution.relativeChange).filter(([, value]) => value !== null)) : undefined}
-          note={result.analysis.pcaContribution ? `Held constant: k = ${result.analysis.pcaContribution.k}, Lloyd algorithm, random initialization, ${result.analysis.pcaContribution.runCount} seeds, n = ${formatInteger(existing.participantCount)}.` : "Controlled PCA-only metrics are unavailable for this simulation. The overall method comparison below includes all enhancements."} />
-      </SopComparison>
+          note={result.analysis.pcaContribution ? `Held constant: k = ${result.analysis.pcaContribution.k}, Lloyd algorithm, random initialization, ${result.analysis.pcaContribution.runCount} seeds, n = ${formatInteger(existing.participantCount)}.` : "Controlled PCA-only metrics are unavailable. The overall comparison includes all enhancements."} />
+      </FeatureRepresentationComparison>
     </section>
     <section className="simulation-surface simulation-results-section">
-      <div className="simulation-section-heading"><h2 className="simulation-section-title">SOP 2 · Cluster Number Selection</h2><p>How each method determines the number of clusters (k).</p></div>
+      <div className="simulation-section-heading"><h2 className="simulation-section-title">{sopText.sop2.heading}</h2><p>{sopText.sop2.description}</p></div>
       {exploratory && <p className="simulation-preview-note">Exploratory Standard manual k = {existing.selectedK}. The canonical study baseline uses Silhouette selection over k = 2–10; this sample's Silhouette choice is {existing.silhouetteSelectedK}. Enhanced remains automatic.</p>}
       <NbClustComparison standard={
-        <MethodCard simulation title="Silhouette-Based Selection"><p className="simulation-compact-note">Single-index criterion · k with highest average Silhouette selected</p><dl className="simulation-detail-list"><div><dt>Selection method</dt><dd>{exploratory ? "Exploratory manual k" : "Silhouette Coefficient"}</dd></div><div><dt>Candidate k</dt><dd>2–10</dd></div></dl><h3 className="card-title">Silhouette by k</h3>{existing.silhouetteByK ? <SilhouetteChart candidates={existing.silhouetteByK} /> : <p className="simulation-unavailable">Candidate-k scores unavailable for this historical run.</p>}<StandardSelectionSummary selectedK={existing.selectedK} /></MethodCard>} candidateK={Array.from({ length: 9 }, (_, i) => i + 2)} selectedK={enhanced.selectedK}
+        <MethodCard simulation title="Silhouette-Based Selection"><p className="simulation-compact-note">Selects k with the highest mean Silhouette.</p><dl className="simulation-detail-list"><div><dt>Selection method</dt><dd>{exploratory ? "Exploratory manual k" : "Silhouette Coefficient"}</dd></div><div><dt>Candidate k</dt><dd>2–10</dd></div></dl><h3 className="card-title">Silhouette by k</h3>{existing.silhouetteByK ? <SilhouetteChart candidates={existing.silhouetteByK} /> : <p className="simulation-unavailable">Candidate-k scores unavailable for this historical run.</p>}<StandardSelectionSummary selectedK={existing.selectedK} /></MethodCard>} candidateK={Array.from({ length: 9 }, (_, i) => i + 2)} selectedK={enhanced.selectedK}
           usableIndices={usableIndices} votes={enhanced.nbclust.votes} indices={enhanced.nbclust.indices} />
     </section>
     <section className="simulation-surface simulation-results-section">
-      <div className="simulation-section-heading"><h2 className="simulation-section-title">SOP 3 · Initialization &amp; Reproducibility</h2></div>
-      <InitializationComparison simulation randomRuns={existing.ariBySeed} dpcRuns={enhanced.dpc.ariByRun} selectedCenters={enhanced.dpc.centroidCount}
+      <div className="simulation-section-heading"><h2 className="simulation-section-title">{sopText.sop3.heading}</h2><p>{sopText.sop3.description}</p></div>
+      {/* Current-run reference-seed ARI and historical DPC checks are not
+          modal-partition evidence. Only supplied execution counts are shown. */}
+      <InitializationComparison simulation standard={{ executions: existing.runs.length }}
+        selectedCenters={enhanced.dpc.centroidCount}
         centerTable={<DpcCenterTable centers={enhanced.dpc.centers.map((center, index) => ({ ...center, center: index + 1 }))} />}
         decisionGraph={<>
           <DecisionGraph enhanced={enhanced} />
@@ -94,19 +108,18 @@ export const SimulationResults = ({ result }: { result: NonNullable<SimulationRu
         </>} />
     </section>
     <section className="simulation-surface simulation-results-section">
-      <div className="simulation-section-heading"><h2 className="simulation-section-title">Standard vs Enhanced Comparison</h2><p>Internal validation and cluster distributions for the actual run: n = {formatInteger(existing.participantCount)}.</p></div>
-      <section className="simulation-chart"><h3 className="card-title">Scatter Plot Comparison (PCA Space)</h3><div className="projection-comparison-grid">{(["Standard K-Means", "Enhanced K-Means"] as const).map((name, index) => <div key={name} className="projection-method-panel"><h4>{name}</h4><ProjectionChart analysis={result.analysis} method={index ? "enhanced" : "standard"} /><p className="simulation-compact-note projection-method-metadata">Initialization: {index ? "DPC (Deterministic)" : "Random"} · {index ? enhanced.iterations : selectedRun.iterations} iterations · Converged: {(index ? enhanced.convergedBeforeMaxIter : selectedRun.convergedBeforeMaxIter) ? "Yes" : "No"}{!index && " · Seed 0"}</p></div>)}</div><p className="simulation-compact-note projection-comparison-note">PC1 and PC2 are used only for 2D visualization. Both plots share coordinates and axes; diamonds mark projected cluster means. Cluster numbers are method-specific.</p></section>
+      <div className="simulation-section-heading"><h2 className="simulation-section-title">Standard vs Enhanced Comparison</h2><p>n = {formatInteger(existing.participantCount)}</p></div>
+      <section className="simulation-chart"><h3 className="card-title">Scatter Plot Comparison (PCA Space)</h3><div className="projection-comparison-grid">{(["Standard K-Means", "Enhanced K-Means"] as const).map((name, index) => <div key={name} className="projection-method-panel"><h4>{name}</h4><ProjectionChart analysis={result.analysis} method={index ? "enhanced" : "standard"} /><p className="simulation-compact-note projection-method-metadata">Initialization: {index ? "DPC (Deterministic)" : "Random"} · {index ? enhanced.iterations : selectedRun.iterations} iterations · Converged: {(index ? enhanced.convergedBeforeMaxIter : selectedRun.convergedBeforeMaxIter) ? "Yes" : "No"}{!index && " · Seed 0"}</p></div>)}</div></section>
       <section className="simulation-chart">
         {exploratory && <p className="simulation-preview-note">These relative changes compare an exploratory Standard k override with automatic Enhanced clustering. They are not the canonical enhancement comparison.</p>}
         <MetricComparisonTable existing={Object.fromEntries(result.comparison.map(row => [row.metric, row.existing]))}
           enhanced={Object.fromEntries(result.comparison.map(row => [row.metric, row.enhanced]))}
           relativeChange={Object.fromEntries(result.comparison.map(row => [row.metric, row.relativeImprovementPercent]))}
-          changeConvention="direction-aware"
-          footerNote={`Standard: mean of ${existing.runs.length} random-initialization runs. Enhanced: deterministic result. Relative metric change, not statistical significance. Scatter and distribution show seed 0.`} />
+          changeConvention="direction-aware" />
         <InternalValidationCalculationDetails
-          standard={{ n: existing.participantCount, k: existing.selectedK, runCount: existing.runs.length, calculation: result.analysis.calculations?.standard,
+          standard={{ n: existing.participantCount, k: existing.selectedK, representation: `${enhanced.retainedVariables.length} standardized features`, runCount: existing.runs.length, calculation: result.analysis.calculations?.standard,
             metrics: Object.fromEntries(result.comparison.map(row => [row.metric, row.existing])) }}
-          enhanced={{ n: enhanced.participantCount, k: enhanced.selectedK, calculation: result.analysis.calculations?.enhanced,
+          enhanced={{ n: enhanced.participantCount, k: enhanced.selectedK, representation: `${enhanced.pcaComponents} principal components`, calculation: result.analysis.calculations?.enhanced,
             metrics: Object.fromEntries(result.comparison.map(row => [row.metric, row.enhanced])) }}
           formatValue={value => formatMetric(value, true)} />
       </section>

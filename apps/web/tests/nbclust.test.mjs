@@ -14,9 +14,9 @@ const props = { candidateK: [2,3,4], selectedK: 3, usableIndices: 7, votes: [{k:
 const render = p => renderToStaticMarkup(React.createElement(NbClustComparison,p));
 const snapshot = JSON.stringify(props.votes);
 const html = render(props);
-for (const text of ["Standard silhouette evidence", "Candidate k", "NbClust Votes", "supported k = 3", "Vote Summary", "Highest vote count", "Selected k", "View NbClust Index Details", "Hide NbClust Index Details", "What it assesses", "Favorable / selection rule", "Suggested k", "Reference unavailable"]) assert.ok(html.includes(text),text);
-assert.ok(html.indexOf("NbClust Votes") < html.indexOf("supported k = 3"));
-assert.ok(html.indexOf("supported k = 3") < html.indexOf("Vote Summary"));
+for (const text of ["Standard silhouette evidence", "Candidate k", "NbClust Votes", "Vote Summary", "Highest vote count", "Selected k", "View NbClust Index Details", "Hide NbClust Index Details", "What it assesses", "Favorable / selection rule", "Suggested k", "Reference unavailable"]) assert.ok(html.includes(text),text);
+assert.ok(html.indexOf("NbClust Votes") < html.indexOf("Vote Summary"));
+assert.doesNotMatch(html, /nbclust-interpretation|largest number of usable/);
 assert.ok(html.indexOf("Selected k") < html.indexOf("<details"));
 assert.match(html, /<details class="nbclust-index-details">/); // Native keyboard-accessible, initially collapsed.
 assert.match(render({...props,votes:[{k:2,count:4},{k:3,count:4},{k:4,count:0}]}), /tied across k = 2, 3/);

@@ -54,6 +54,6 @@ for (const values of [
   assert.doesNotMatch(lme, /<table|<svg|Cluster 1 shows a greater annual increase/);
   assert.doesNotMatch(html, /LME results table/);
   assert.match(html, /ADAS-Cog13 Longitudinal Progression/);
-  assert.match(html, /Observed means by elapsed-year bin; bars describe available observations, not fitted model predictions/);
+  assert.doesNotMatch(html, /Observed means by elapsed-year bin; bars describe available observations, not fitted model predictions/);
 }
 console.log('PASS dynamic LME metadata, slopes, effect, CI and both p-value formats; ordered cards; preserved chart context; no duplicate table or info strip');

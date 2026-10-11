@@ -16,14 +16,14 @@ export const MethodCard = ({ title, enhanced = false, children, simulation = fal
   {children}
 </section>;
 
-export const SopComparison = ({ standard, enhanced, children, simulation = false, figures = false, standardOnly = false }: {
-  standard: ReactNode; enhanced: ReactNode; children?: ReactNode; simulation?: boolean; figures?: boolean; standardOnly?: boolean;
+export const SopComparison = ({ standard, enhanced, children, simulation = false, figures = false, standardOnly = false, className = "" }: {
+  standard: ReactNode; enhanced: ReactNode; children?: ReactNode; simulation?: boolean; figures?: boolean; standardOnly?: boolean; className?: string;
 }) => {
   const content = <>
     <div className={standardOnly ? "study-single-method" : simulation ? "simulation-two-column" : "study-method-grid"}>{standard}{!standardOnly && enhanced}</div>
     {!standardOnly && children}
   </>;
-  return figures ? <div className="sop-figures">{content}</div> : content;
+  return figures ? <div className={`sop-figures${className ? ` ${className}` : ""}`}>{content}</div> : content;
 };
 
 export const VariableChips = ({ variables }: { variables: readonly string[] }) =>

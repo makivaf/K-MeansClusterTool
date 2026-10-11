@@ -1,8 +1,10 @@
 import { NbClustComparison, StandardSelectionSummary } from "../components/NbClustComparison";
 import { formatContinuous, formatPercent, formatInteger } from "../utils/numberFormatting";
-import { PcaChart, SilhouetteChart } from "../components/SopFigures";
+import { SilhouetteChart } from "../components/SopFigures";
+import { FeatureRepresentationComparison } from "../components/FeatureRepresentationComparison";
 import { DpcCenterTable } from "../components/DpcCenterTable";
 import { InitializationComparison } from "../components/InitializationComparison";
+import { sopText } from "../utils/sopText";
 import { memo, useState } from "react";
 import { CorrelationHeatmap } from "../components/charts/FinalFindingsCharts";
 import { LongitudinalProgressionChart } from "../components/charts/LongitudinalProgressionChart";
@@ -20,7 +22,7 @@ import { PartitionProjection } from "../components/charts/PartitionProjection";
 import type { DefensePanel } from "../../../../packages/shared/src/schema";
 import "./StudyFindingsPage.css";
 import { PageHeading } from "./PageHeading";
-import { MethodCard, SopComparison, VariableChips, VarianceSummary, PcaContribution, ClusterDistribution } from "../components/SopComparison";
+import { MethodCard, VarianceSummary, PcaContribution, ClusterDistribution } from "../components/SopComparison";
 import { getMeasureLabel } from "../utils/measureLabels";
 import { StandardRunProgress } from "../components/StandardRunProgress";
 import { EnhancedRunProgress } from "../components/StudyRunProgressCard";
@@ -76,10 +78,6 @@ export const StudyFindingsPage = ({ analysis, dataset }: { analysis: AnalysisRun
             ? <button type="button" className="research-primary-button" onClick={() => void analysis.startEnhanced()}>{enhanced.status === "error" ? "Retry Enhanced K-Means" : "Run Enhanced K-Means"}</button>
             : standard.status === "error" && (ready || analysis.jobId) ? <button type="button" className="research-primary-button" onClick={() => void analysis.resume()}>Retry Standard K-Means</button> : null}
         </div>
-        {comparison && <div className="study-completion-message" role="status">
-          <span className="research-status-icon" aria-hidden="true"><Check size={18} strokeWidth={2.5} /></span>
-          <div><p className="font-semibold">Both analyses completed successfully.</p><p className="mt-1 text-xs text-muted">Comparative Study Findings are now available below.</p></div>
-        </div>}
         <span className="sr-only" role="status">{analysis.locked ? `Standard analysis ${analysis.stage?.replace(/_/g, " ") ?? analysis.status}` : enhanced.status === "running" ? "Loading and verifying Enhanced K-Means results" : comparison ? "Comparison ready" : standard.status === "error" ? "Standard analysis failed" : "Standard results ready"}</span>
       </section>}
       {(analysis.error || enhanced.error) && <p role="alert" className="study-run-error text-sm text-red-700">{analysis.error || enhanced.error}</p>}
@@ -116,8 +114,7 @@ const StudyResults = memo(function StudyResults({ run, standardRun, comparison }
   return <div className={comparison ? "study-results" : "study-results study-standard-results"}>
     {!comparison && <header className="study-result-heading"><div><h2 className="text-base font-semibold">Standard K-Means Results</h2><p className="mt-1 text-sm text-muted">Full validated cohort · n = {formatInteger(standardRun.cohort.parentN)}</p></div><span className="research-badge is-valid">Completed</span></header>}
     <div className="study-results-sections">
-      {comparison && <Panel title="Method Comparison Overview" variant="surface" className="study-overview-card" action={<span className="research-badge is-valid">Validated Study Results</span>}>
-        <p className="study-cohort text-sm text-muted">Full validated cohort · n = {formatInteger(run.cohort.parentN)}</p>
+      {comparison && <Panel title="Method Comparison Overview" variant="surface" className="study-overview-card">
         <div className="overflow-x-auto"><table className="research-table study-overview">
           <thead><tr><th scope="col"><span className="sr-only">Methodology</span></th><th scope="col">Standard K-Means</th><th scope="col">Enhanced K-Means</th></tr></thead>
           <tbody>
@@ -130,9 +127,9 @@ const StudyResults = memo(function StudyResults({ run, standardRun, comparison }
       </Panel>}
       <div className="study-sop-tabs" role="tablist" aria-label="Study findings sections">
         {[
-          ["sop1", "SOP 1", "Feature Representation"],
-          ["sop2", "SOP 2", "Cluster Number Selection"],
-          ["sop3", "SOP 3", "Initialization & Reproducibility"],
+          ["sop1", "SOP 1", sopText.sop1.title],
+          ["sop2", "SOP 2", sopText.sop2.title],
+          ["sop3", "SOP 3", sopText.sop3.title],
           ["final", "Final Results", comparison ? "Final Enhanced Clustering Results" : "Standard Clustering Results"]
         ].map(([id, label, title], index, tabs) => <button key={id} id={`study-tab-${id}`} type="button" role="tab"
           aria-selected={activeTab === id} aria-controls={`study-panel-${id}`} tabIndex={activeTab === id ? 0 : -1}
@@ -142,17 +139,12 @@ const StudyResults = memo(function StudyResults({ run, standardRun, comparison }
           }}><span>{label}</span><strong>{title}</strong></button>)}
       </div>
       <div id={`study-panel-${activeTab}`} role="tabpanel" aria-labelledby={`study-tab-${activeTab}`} tabIndex={0} className="study-tab-content space-y-6">
-      {activeTab === "sop1" && <Panel title="SOP 1 · Feature Representation" variant="surface">
-        <p className="section-subtitle mb-4">How the input feature space is represented before clustering.</p>
-        <SopComparison standardOnly={!comparison} simulation figures standard={<MethodCard simulation title="Original Feature Representation">
-          <p className="simulation-compact-note">{standardRun.preprocessing.retainedFeatures.length} standardized input variables</p>
-          {studyEvidence ? <CorrelationHeatmap correlation={studyEvidence.correlation} compact showKey={false} /> : <p className="text-sm text-muted">{sopError ?? "Loading validated correlation matrix…"}</p>}
-          <VariableChips variables={standardRun.preprocessing.retainedFeatures} />
-        </MethodCard>} enhanced={<MethodCard simulation title="Principal Component Analysis" enhanced>
-          <p className="simulation-compact-note">{run.preprocessing.retainedFeatures.length} variables → {run.pca.components} PCs · Cumulative variance = {variance}</p>
-          <PcaChart showAllComponents enhanced={{ pcaComponents: run.pca.components, cumulativeExplainedVariance: run.pca.cumulativeExplainedVariance, pcaVariance: run.pca.scree.map(row => ({ component: row.component, cumulativeExplainedVariance: row.cumulativeVariance })) }} />
-          <dl className="simulation-detail-list sop-summary"><div><dt>Input variables</dt><dd>{run.preprocessing.retainedFeatures.length}</dd></div><div><dt>Components retained</dt><dd>{run.pca.components}</dd></div><div><dt>Cumulative variance</dt><dd>{variance}</dd></div><div><dt>Variance threshold</dt><dd>≥ 85.00%</dd></div></dl>
-        </MethodCard>}>
+      {activeTab === "sop1" && <Panel title={sopText.sop1.heading} variant="surface">
+        <p className="section-subtitle mb-4">{sopText.sop1.description}</p>
+        <FeatureRepresentationComparison standardOnly={!comparison}
+          standardVariables={standardRun.preprocessing.retainedFeatures} enhancedVariables={run.preprocessing.retainedFeatures}
+          standardFigure={studyEvidence ? <CorrelationHeatmap correlation={studyEvidence.correlation} compact showKey={false} /> : <p className="text-sm text-muted">{sopError ?? "Loading validated correlation matrix…"}</p>}
+          enhanced={{ pcaComponents: run.pca.components, cumulativeExplainedVariance: run.pca.cumulativeExplainedVariance, pcaVariance: run.pca.scree.map(row => ({ component: row.component, cumulativeExplainedVariance: row.cumulativeVariance })) }}>
           <VarianceSummary rows={run.pca.scree} retained={run.pca.components} loadingData={pcaLoadings} />
           <PcaLoadingMatrix variables={pcaLoadings?.variables ?? run.preprocessing.retainedFeatures}
             components={Array.from({ length: run.pca.components }, (_, index) => `PC${index + 1}`)} values={pcaLoadings?.values} />
@@ -164,12 +156,12 @@ const StudyResults = memo(function StudyResults({ run, standardRun, comparison }
             enhanced={ablation ? Object.fromEntries(metricDefinitions.map(({ key }) => [key, ablation.conditions[1].metrics[key].mean])) : undefined}
             relativeChange={ablation ? Object.fromEntries(metricDefinitions.map(({ key }) => [key, ablation.metricChanges[key].relativeMeanChangePercent])) : undefined}
             note={ablation ? `Held constant: k = ${ablation.settings.k}, Lloyd algorithm, random initialization, ${ablation.settings.seeds.length} seeds, n = ${formatInteger(ablation.settings.cohortN)}.` : sopError ?? "Loading validated PCA contribution…"} />
-        </SopComparison>
+        </FeatureRepresentationComparison>
       </Panel>}
-      {activeTab === "sop2" && <Panel title="SOP 2 · Cluster Number Selection" variant="surface">
-        <p className="section-subtitle mb-4">How each method determines the number of clusters (k).</p>
+      {activeTab === "sop2" && <Panel title={sopText.sop2.heading} variant="surface">
+        <p className="section-subtitle mb-4">{sopText.sop2.description}</p>
         <NbClustComparison standardOnly={!comparison} standard={<MethodCard simulation title="Silhouette-Based Selection">
-          <p className="simulation-compact-note">Single-index criterion · k with highest average Silhouette selected</p>
+          <p className="simulation-compact-note">Selects k with the highest mean Silhouette.</p>
           <dl className="simulation-detail-list"><div><dt>Selection method</dt><dd>Silhouette Coefficient</dd></div><div><dt>Candidate k</dt><dd>{candidateRange}</dd></div></dl><h3 className="card-title">Silhouette by k</h3>
           {baselineSweep ? <SilhouetteChart candidates={baselineSweep.candidates} /> : <p className="text-sm text-muted">{sopError ?? "Loading validated baseline sweep…"}</p>}
           <StandardSelectionSummary selectedK={baseline.selectedK} />
@@ -177,10 +169,13 @@ const StudyResults = memo(function StudyResults({ run, standardRun, comparison }
           usableIndices={run.kSelection.usableVotes} votes={run.kSelection.voteDistribution.map(row => ({ k: row.k, count: row.votes }))}
           indices={run.kSelection.indexResults} />
       </Panel>}
-      {activeTab === "sop3" && <Panel title="Initialization & Reproducibility" variant="surface">
-        <InitializationComparison standardOnly={!comparison} randomRuns={studyEvidence?.standardAriBySeed} dpcRuns={defenseGeometry ? studyEvidence?.dpcAriByRun : undefined}
+      {activeTab === "sop3" && <Panel title={sopText.sop3.heading} variant="surface">
+        {/* Frozen reference-seed ARI and three historical DPC checks cannot
+            supply modal-partition ARI or the revised execution evidence. */}
+        <InitializationComparison standardOnly={!comparison}
+          standard={sopStatus === "ready" ? { executions: standardRun.baselineComparison.baselineMethod.runCount } : undefined}
           dpcUnavailable={dpcUnavailable}
-          randomUnavailable={sopError ?? (studyEvidence ? "Standard ARI unavailable: verified baseline assignment evidence is not supplied." : "Loading validated Standard initialization evidence...")}
+          randomUnavailable={sopError ?? "Verified Standard modal-partition ARI is not supplied."}
           selectedCenters={run.initialization.selectedCentroids.length}
           centerTable={<DpcCenterTable centers={run.initialization.selectedCentroids.map(center => ({ ...center, center: center.rank,
             rid: defenseGeometry ? studyEvidence?.dpcCenters?.find(row => row.center === center.rank && row.rho === center.rho &&
@@ -197,11 +192,9 @@ const StudyResults = memo(function StudyResults({ run, standardRun, comparison }
             <StudyProjection panel={defenseGeometry?.sop3.dpc[0]} label="Enhanced K-Means" />
           </MethodCard>}
         </div>
-        <p className="mt-4 text-xs text-muted">PC1 and PC2 are visualization only. Diamonds mark projected cluster means. Cluster labels are method-specific. Standard plot: seed {defenseGeometry?.sop1.seed ?? "—"}.</p>
         <section className="mt-6 border-t border-line pt-5" aria-label="Internal Validation">
-          <MetricComparisonTable standardOnly={!comparison} existing={existing} enhanced={enhanced} relativeChange={relativeChange}
-            footerNote={`Standard: mean of ${baseline.runCount} random-initialization runs.${comparison ? " Enhanced: validated deterministic result. Relative metric change, not statistical significance." : ""}`} />
-          {comparison && <InternalValidationCalculationDetails standard={{ n: run.cohort.parentN, k: baseline.selectedK, metrics: existing, runCount: baseline.runCount, calculation: defenseGeometry ? studyEvidence?.calculations?.standard : undefined }} enhanced={{ n: run.cohort.parentN, k: run.kSelection.selectedK,
+          <MetricComparisonTable standardOnly={!comparison} existing={existing} enhanced={enhanced} relativeChange={relativeChange} />
+          {comparison && <InternalValidationCalculationDetails standard={{ n: run.cohort.parentN, k: baseline.selectedK, representation: baseline.representation, metrics: existing, runCount: baseline.runCount, calculation: defenseGeometry ? studyEvidence?.calculations?.standard : undefined }} enhanced={{ n: run.cohort.parentN, k: run.kSelection.selectedK, representation: run.baselineComparison.enhancedMethod?.representation,
             metrics: enhanced, calculation: defenseGeometry ? studyEvidence?.calculations?.enhanced : undefined }} />}
         </section>
       </Panel>
@@ -217,11 +210,10 @@ const StudyResults = memo(function StudyResults({ run, standardRun, comparison }
             interpretations={["Lower impairment", "Higher impairment"]}
             sizes={[...run.enhancedClustering.clusterSizes].sort((a, b) => a.clusterId - b.clusterId).map(cluster => cluster.nMembers)} />}
         </div>
-        {comparison && <p className="mt-3 text-xs text-muted">Cluster labels are method-specific.</p>}
       </Panel>
       {comparison && <><Panel title="Final Cluster Profiles" variant="surface">
         <div className="overflow-x-auto" role="region" aria-label="Final cluster profile table" tabIndex={0}>
-          <table className="research-table min-w-[560px]">
+          <table className="research-table research-row-dividers min-w-[560px]">
             <caption className="pb-4 text-left text-sm text-muted">Aggregate means · {run.clusterProfiles.scale}</caption>
             <thead><tr><th scope="col">Measure</th><th scope="col" className="text-right">Cluster 0 mean</th><th scope="col" className="text-right">Cluster 1 mean</th><th scope="col" className="text-right">SMD (1 − 0)</th></tr></thead>
             <tbody>{run.clusterProfiles.smdRanking.map((row) => <tr key={row.variable}>
@@ -232,12 +224,10 @@ const StudyResults = memo(function StudyResults({ run, standardRun, comparison }
             </tr>)}</tbody>
           </table>
         </div>
-        <p className="mt-3 text-xs text-muted">SMD: standardized mean difference, Cluster 1 minus Cluster 0. Profiles describe groups, not clinical diagnoses.</p>
       </Panel>
       <Panel title="ADAS-Cog13 Longitudinal Progression" variant="surface">
         <p className="mb-4 text-sm text-muted">ADAS-Cog13: higher score = greater impairment. Original cluster assignments remain fixed.</p>
         <ProgressionChart data={run.longitudinal.timeSeries} />
-        <p className="mt-2 text-xs text-muted">Observed means by elapsed-year bin; bars describe available observations, not fitted model predictions.</p>
       </Panel>
       <Panel title="Linear Mixed-Effects Model (LME)" variant="surface" className="study-lme">
         <p className="mb-5 text-xs text-muted">{formatInteger(model.participantCount)} eligible participants · {formatInteger(model.observationCount)} repeated ADAS-Cog13 observations · {model.estimationMethod?.replace("; random", " · Random")}</p>

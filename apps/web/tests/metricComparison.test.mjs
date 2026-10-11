@@ -24,6 +24,9 @@ assert.equal(formatImprovement(-0, "lower", "direction-aware"), "0.00%");
 assert.equal(formatImprovement(null, "lower"), "Unavailable");
 assert.equal(formatImprovement(undefined, "higher"), "Unavailable");
 const signed = render(MetricComparisonTable, { existing: values, enhanced: values, relativeChange: changes });
+assert.doesNotMatch(signed, /internal-validation-helper|Index comparison/);
+assert.match(signed, /Higher is better/);
+assert.match(signed, /Lower is better/);
 const directional = render(MetricComparisonTable, { existing: values, enhanced: values, relativeChange: { ...changes, davies_bouldin: 12.09 }, changeConvention: "direction-aware" });
 assert.equal(signed, directional, "Both API conventions render identical signed changes");
 assert.equal((signed.match(/scope="row"/g) ?? []).length, 3);
@@ -34,6 +37,12 @@ assert.equal((signed.match(/internal-validation-enhanced font-semibold/g) ?? [])
 assert.match(signed, />Standard<\/th>/); assert.match(signed, />Enhanced<\/th>/); assert.match(signed, />Improvement<\/th>/);
 const adverse = render(MetricComparisonTable, { relativeChange: { silhouette: -2, davies_bouldin: 2, calinski_harabasz: -2 } });
 assert.equal((adverse.match(/internal-validation-enhanced font-semibold/g) ?? []).length, 3, "Only Enhanced metric cells are emphasized for adverse changes");
+assert.equal((adverse.match(/-2\.00%<span aria-hidden="true"> ↓<\/span>/g) ?? []).length, 2);
+assert.match(adverse, /\+2\.00%<span aria-hidden="true"> ↑<\/span>/);
+const zero = render(MetricComparisonTable, { relativeChange: { silhouette: 0, davies_bouldin: -0, calinski_harabasz: 0 } });
+assert.equal((zero.match(/>0\.00%<\/td>/g) ?? []).length, 3);
+assert.doesNotMatch(zero, /<span aria-hidden="true">/);
+assert.doesNotMatch(render(MetricComparisonTable, {}), /<span aria-hidden="true">/);
 const pca = render(PcaContribution, { dimensions: 13, components: 6, existing: values, enhanced: values, relativeChange: changes, note: "Controlled random starts" });
 assert.equal((pca.match(/scope="row"/g) ?? []).length, 1);
 assert.doesNotMatch(pca, /Davies|Calinski/);
@@ -60,8 +69,10 @@ for (const props of [{ standard: method, enhanced: method }, { enhanced: method 
   const html = render(InternalValidationCalculationDetails, props);
   for (const label of [...descriptiveSilhouette, ...descriptiveIndices]) assert.ok(html.includes(label), label);
   assert.doesNotMatch(html, /<dt>(RID|a\(i\)|b\(i\)|s\(i\)|σ0|σ1|d\(c0,c1\)|SSB|SSW|N|K)<\/dt>/);
-  assert.deepEqual([...html.matchAll(/<dd>(.*?)<\/dd>/g)].map(match => match[1]), [
-    '6839', '4.329275', '6.459013', '0.329731', '0.329681',
+  assert.doesNotMatch(html, /6839|4\.329275|6\.459013|0\.329731/);
+  assert.match(html, /Representative values cannot populate this table/);
+  assert.deepEqual([...html.matchAll(/<dd>(.*?)<\/dd>/g)].map(match => match[1]).slice(-10), [
+    '0.329681',
     '1.234567', '2.345678', '3.456789', '1.238391',
     '1,234.567890', '2,345.678901', '100', '2', '1,123.992000'
   ], 'descriptive labels leave all evidence values and six-decimal precision unchanged');
@@ -70,7 +81,8 @@ const pcaEvidence = render(PcaContribution, { dimensions: 13, components: 6, exi
   relativeChange: changes, note: 'Controlled random starts', n: 100, k: 2,
   calculations: { existing: calculation, enhanced: calculation } });
 for (const label of descriptiveSilhouette) assert.ok(pcaEvidence.includes(label), label);
-assert.match(pcaEvidence, /<dd>6839<\/dd>/); assert.match(pcaEvidence, /<dd>4\.329275<\/dd>/);
-assert.match(pcaEvidence, /<dd>6\.459013<\/dd>/); assert.match(pcaEvidence, /<dd>0\.329731<\/dd>/);
+assert.match(pcaEvidence, /Representative values cannot populate this table/);
+assert.match(pcaEvidence, /<dd>0\.329681<\/dd>/);
+assert.doesNotMatch(pcaEvidence, /6839|4\.329275|6\.459013|0\.329731/);
 assert.doesNotMatch(pcaEvidence, /<dt>(RID|a\(i\)|b\(i\)|s\(i\))<\/dt>/);
-console.log('PASS descriptive Standard/Enhanced/PCA calculation labels, unchanged evidence values and precision, and no bare-symbol row labels');
+console.log('PASS shared Standard/Enhanced/PCA calculation columns, unavailable full evidence, retained aggregate and other index values, and no fabricated representative rows');

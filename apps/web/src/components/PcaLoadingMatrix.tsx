@@ -24,7 +24,6 @@ export const PcaLoadingMatrix = ({ variables, components, values, topCount = 3, 
   if (variables.length === 0 || retainedComponents < 1) return null;
   return <section className="sop-support-card pca-loading-card">
     <h3 className="card-title mb-2">Principal Components — Loading Matrix</h3>
-    <p className="text-sm text-muted">Contribution of the {variables.length} standardized cognitive variables to the {retainedComponents} retained principal components.</p>
     <p className="pca-loading-summary">{variables.length} variables × {retainedComponents} retained PCs</p>
     <details className="pca-loading-disclosure" open={defaultExpanded}>
       <summary className="research-text-action"><span className="pca-loading-show">Show Loading Matrix</span><span className="pca-loading-hide">Hide Loading Matrix</span><ChevronDown size={14} aria-hidden="true" /></summary>
@@ -48,8 +47,8 @@ export const PcaLoadingMatrix = ({ variables, components, values, topCount = 3, 
           </table>
         </div>
         {matrix ? <><div className="pca-loading-legend"><span>Strong negative</span><span className="pca-loading-swatches" aria-hidden="true">{[-65, -25, 0, 25, 65].map(value => <i key={value} style={{ backgroundColor: `color-mix(in srgb, var(${value < 0 ? "--research-comparison" : "--research-primary"}) ${Math.abs(value)}%, white)` }} />)}</span><span>← 0 → Strong positive</span></div>
-        <p className="text-xs text-muted">Highlighted cells indicate the {topCount === 3 ? "three" : topCount} largest absolute loadings within each retained component.</p>
-        <p className="mt-2 text-xs text-muted">Color shows loading direction and magnitude; negative loadings are not unfavorable. Ties follow variable order.</p></> : <p className="mt-3 text-xs text-muted" role="status">Loading values will appear when PCA loading data is available.</p>}
+        <p className="text-xs text-muted">Cell colors indicate loading direction and magnitude. Outlined cells identify the {topCount === 3 ? "three" : topCount} largest absolute loadings per component. Negative loadings indicate direction, not unfavorable performance.</p>
+        <p className="mt-2 text-xs text-muted">Ties follow variable order.</p></> : <p className="mt-3 text-xs text-muted" role="status">Loading values will appear when PCA loading data is available.</p>}
       </>
     </details>
   </section>;

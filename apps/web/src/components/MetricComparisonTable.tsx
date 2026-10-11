@@ -29,8 +29,7 @@ export const MetricComparisonTable = ({ existing = {}, enhanced = {}, relativeCh
   footerNote?: string;
 }) => <div className="internal-validation">
   <h3 className="card-title">Internal Validation</h3>
-  <p className="internal-validation-helper">{standardOnly ? "Clustering metrics for Standard K-Means." : metrics?.length === 1 && metrics[0] === "silhouette" ? "Silhouette Coefficient comparison." : "Silhouette Coefficient, Davies-Bouldin Index, and Calinski-Harabasz Index comparison."}</p>
-  <div className="overflow-x-auto"><table className="internal-validation-table">
+  <div className="overflow-x-auto" role="region" aria-label="Internal validation metrics" tabIndex={0}><table className={`internal-validation-table${standardOnly ? " is-standard-only" : ""}`}>
     <thead><tr><th scope="col">Metric</th><th scope="col">{existingLabel}</th>{!standardOnly && <><th scope="col" className="internal-validation-enhanced">{enhancedLabel}</th><th scope="col" className="internal-validation-enhanced">Improvement</th></>}</tr></thead>
     <tbody>{metricDefinitions.filter(({ key }) => !metrics || metrics.includes(key)).map(({ key, label, direction }) => {
       const change = relativeChange?.[key];
@@ -40,7 +39,7 @@ export const MetricComparisonTable = ({ existing = {}, enhanced = {}, relativeCh
         <th scope="row"><span className="font-semibold">{label} <span className="internal-validation-direction" aria-label={direction === "higher" ? "Higher is better" : "Lower is better"}>{direction === "higher" ? "\u2191" : "\u2193"}</span></span><span className="internal-validation-hint">{direction === "higher" ? "Higher is better" : "Lower is better"}</span></th>
         <td className="tabular-nums">{formatMetric(existing[key])}</td>
         {!standardOnly && <><td className="internal-validation-enhanced font-semibold tabular-nums">{formatMetric(enhanced[key])}</td>
-          <td className={`tabular-nums ${favorable ? "internal-validation-enhanced font-semibold" : ""}`}>{formatImprovement(change, direction, changeConvention)}{change != null && <span aria-hidden="true"> {direction === "higher" ? "\u2191" : "\u2193"}</span>}</td></>}
+          <td className={`tabular-nums ${favorable ? "internal-validation-enhanced font-semibold" : ""}`}>{formatImprovement(change, direction, changeConvention)}{signed !== undefined && signed !== 0 && <span aria-hidden="true"> {signed > 0 ? "\u2191" : "\u2193"}</span>}</td></>}
       </tr>;
     })}</tbody>
   </table></div>
