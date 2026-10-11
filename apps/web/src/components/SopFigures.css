@@ -20,3 +20,8 @@
 .nbclust-index-details table.simulation-comparison-table tbody td:last-child { color: var(--research-primary); font-weight: 600; }
 .nbclust-interpretation { margin: 12px 0 16px; }
 .nbclust-vote-summary dd { color: var(--research-primary); font-weight: 600; }
+
+.pca-retention-annotation { display: flex; flex-wrap: wrap; align-items: baseline; gap: 8px 16px; margin-top: 16px; color: var(--research-primary); font-size: 13px; font-variant-numeric: tabular-nums; }
+.pca-retention-annotation strong { font-weight: 600; }
+.pca-threshold-annotation { display: flex; align-items: center; gap: 8px; font-size: 12px; line-height: 1.6; color: var(--research-muted); }
+.pca-threshold-annotation > span { width: 28px; flex-shrink: 0; border-top: 2px dashed #e49b35; }

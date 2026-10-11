@@ -56,8 +56,28 @@
 .sop3-description { margin-top: 6px; margin-bottom: 20px; }
 .sop3-chart-title { margin-top: auto; }
 .sop3-chart { height: 280px; min-width: 0; margin-top: 12px; }
-.sop3-chart-unavailable { display: flex; align-items: center; justify-content: center; height: 100%; padding: 16px; text-align: center; }
+.sop3-chart.is-unavailable { display: flex; flex: 1; height: auto; min-height: 96px; }
+.sop3-chart-unavailable { display: flex; align-items: center; justify-content: center; width: 100%; padding: 16px; text-align: center; }
 .sop3-note { margin-top: 16px; }
+.sop3-section + .sop3-section { margin-top: 24px; }
+.sop3-summary { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+.sop3-summary > div { min-width: 0; text-align: center; }
+.sop3-summary > div + div { border-left: 1px solid var(--research-border); padding-left: 12px; }
+.sop3-summary dt { font-size: 11px; color: var(--research-muted); }
+.sop3-summary dd { margin-top: 10px; font-size: 20px; font-weight: 600; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+.sop3-summary .sop3-unavailable { font-size: 14px; }
+.is-enhanced .sop3-summary dd { color: var(--research-primary); }
+.sop3-metrics { margin-top: 24px; }
+.sop3-disclosure > summary { cursor: pointer; padding: 10px 12px; color: var(--research-primary); background: var(--research-selected-bg, #eef8f7); border: 1px solid var(--research-selected-border); border-radius: 6px; font-size: 12px; }
+.sop3-disclosure[open] > summary { margin-bottom: 12px; }
+.sop3-metrics .research-table { font-size: 12px; }
+.sop3-metrics .research-table th { font-weight: 400; text-transform: none; letter-spacing: normal; }
+.sop3-metrics .research-table :is(th, td) { padding: 10px 12px; font-variant-numeric: tabular-nums; }
+.sop3-metrics .research-table :is(th, td):nth-child(3) { color: var(--research-primary); }
+@media (max-width: 479px) {
+  .sop3-summary { grid-template-columns: minmax(0, 1fr); }
+  .sop3-summary > div + div { border-left: 0; border-top: 1px solid var(--research-border); padding: 12px 0 0; }
+}
 .sop-evidence { margin-top: 24px; padding-top: 20px; border-top: 1px solid var(--research-border); }
 .sop-evidence > details { margin-top: 16px; }
 .sop-evidence table.dpc-center-table { min-width: 480px; table-layout: fixed; border-collapse: collapse; font-size: 13px; }
@@ -117,4 +137,18 @@
 @media (max-width: 767px) {
   .sop-figures .simulation-chart { padding: 16px; }
   .sop-figures .simulation-chart-plot { height: 260px; }
+}
+
+/* SOP 1 uses the same presentation on both pages, independently of data source. */
+.sop-feature-representation .sop-method-card { padding: 32px; }
+.sop-feature-representation .sop-method-card > .card-title { margin-top: 20px; margin-bottom: 16px; }
+.sop-feature-representation .sop-method-card > .simulation-compact-note { margin-bottom: 24px; }
+.sop-feature-representation .sop-method-card > .sop-variable-chips { margin-top: 24px; gap: 8px; }
+.sop-feature-representation .sop-method-card > .simulation-detail-list.sop-summary { margin-top: auto; padding-top: 24px; }
+.sop-feature-representation .sop-support-card { margin-top: 24px; padding: 24px; }
+.sop-feature-representation .sop-support-card .pca-variance-table :is(th, td) { padding: 10px 12px; }
+.sop-feature-representation .pca-variance-chart-plot { height: 360px; min-height: 360px; margin-block: 20px; }
+@media (max-width: 767px) {
+  .sop-feature-representation .sop-method-card { padding: 24px; }
+  .sop-feature-representation .sop-support-card { padding: 20px; }
 }

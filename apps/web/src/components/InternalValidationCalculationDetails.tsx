@@ -2,6 +2,7 @@ import { formatContinuous, formatInteger } from "../utils/numberFormatting";
 import { useState, type ReactNode } from "react";
 import { ChevronDown } from "lucide-react";
 import { formatMetric, type MetricKey } from "./MetricComparisonTable";
+import { SilhouetteCalculationCard, type SilhouetteParticipant } from "./SilhouetteCalculationCard";
 import "./SopComparison.css";
 import "./InternalValidationCalculationDetails.css";
 import type { CalculationEvidence } from "../../../../packages/shared/src/calculationEvidence";
@@ -12,6 +13,8 @@ type MethodDetails = {
   metrics: Partial<Record<MetricKey, number>>;
   calculation?: CalculationEvidence;
   runCount?: number;
+  representation?: string;
+  participants?: readonly SilhouetteParticipant[];
 };
 const intermediate = (value?: number) => value === undefined ? "—" : formatContinuous(value);
 const Row = ({ label, value }: { label: string; value: ReactNode }) => <div><dt>{label}</dt><dd>{value}</dd></div>;
@@ -40,24 +43,14 @@ export const InternalValidationCalculationDetails = ({ standard, enhanced, forma
           {key === "standard" ? "Standard K-Means" : "Enhanced K-Means"}
         </button>)}
       </div>}
-      <div className="pca-calculation-metadata">
-        <span>Participants (N): <strong>{formatInteger(method.n)}</strong></span>
-        <span>Clusters (K): <strong>{method.k}</strong></span>
-      </div>
       {method.runCount && <p className="text-xs text-muted mt-3">Overall metrics are means of {method.runCount} runs.{calculation && ` Intermediate calculations describe stored seed ${calculation.seed}; they do not reproduce the aggregate means.`}</p>}
       {calculation && <p className="text-xs text-muted mt-3">Representation: {calculation.representation}.{method.k > 2 && " DBI fields below describe cluster pair 0 and 1; the overall index uses all clusters."}</p>}
       {!calculation && <p className="text-xs text-muted mt-3">Participant-level calculation unavailable for this cached run.</p>}
       <div className="internal-calculation-grid">
-        <MetricCard title="Silhouette Coefficient" totalLabel="Overall Silhouette Coefficient"
-          value={formatValue(method.metrics.silhouette)} direction="Higher">
-          {calculation && <><p>Example Participant Calculation{calculation.seed !== undefined ? ` - Seed ${calculation.seed}` : ""}</p>
-          <dl>
-            <Row label="Participant ID (RID)" value={calculation?.exampleParticipant?.rid ?? "—"} />
-            <Row label="Mean intra-cluster distance, a(i)" value={intermediate(calculation?.exampleParticipant?.a)} />
-            <Row label="Mean nearest-cluster distance, b(i)" value={intermediate(calculation?.exampleParticipant?.b)} />
-            <Row label="Participant Silhouette value, s(i)" value={intermediate(calculation?.exampleParticipant?.s)} />
-          </dl></>}
-        </MetricCard>
+        <SilhouetteCalculationCard key={standard && selected === "standard" ? "standard" : "enhanced"}
+          n={method.n} k={method.k} method={standard && selected === "standard" ? "Standard K-Means" : "Enhanced K-Means"}
+          representation={method.representation} calculation={calculation} participants={method.participants}
+          runCount={method.runCount} value={formatValue(method.metrics.silhouette)} />
         <MetricCard title="Davies-Bouldin Index" value={formatValue(method.metrics.davies_bouldin)} direction="Lower">
           {calculation && <dl>
             <Row label="Cluster 0 average within-cluster scatter, σ0" value={intermediate(calculation?.daviesBouldin?.sigma0)} />

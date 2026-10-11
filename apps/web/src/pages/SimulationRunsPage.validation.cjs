@@ -256,7 +256,7 @@ async function validateStudyEvidence() {
     for (const row of saved[0].result.comparison) {
       for (const value of [row.existing, row.enhanced]) assert.ok(completedHtml.includes(value.toLocaleString('en-US', {minimumFractionDigits: 6, maximumFractionDigits: 6})));
     }
-    assert.match(completedHtml, /PC1 and PC2 are used only for 2D visualization/);
+    assert.doesNotMatch(completedHtml, /PC1 and PC2 are used only for 2D visualization|Standard: mean of/);
     assert.doesNotMatch(completedHtml, /no supplied ARI series|Eigenvalues are not supplied|Controlled PCA-only metrics are unavailable/);
     assert.ok(completedHtml.includes('Participant-level calculation unavailable for this cached run.'));
     assert.match(completedHtml, /3 \/ 3/);

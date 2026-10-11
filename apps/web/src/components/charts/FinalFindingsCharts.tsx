@@ -9,12 +9,13 @@ const slate = chartPalette.neutral;
 const tick = { fontSize: 14, fill: chartPalette.text };
 const percent = (value: number) => `${(value * 100).toFixed(2)}%`;
 
-export const CorrelationHeatmap = ({ correlation, compact = false, showKey = true, caption }: {
-  correlation: { features: string[]; matrix: (number | null)[][] }; compact?: boolean; showKey?: boolean; caption?: string;
+export const CorrelationHeatmap = ({ correlation, compact = false, showKey = true }: {
+  correlation: { features: string[]; matrix: (number | null)[][] }; compact?: boolean; showKey?: boolean;
 }) => <figure>
+  <h3 className="card-title simulation-compact-title">Feature Correlation Matrix</h3>
   <div className="overflow-x-auto" role="region" aria-label="Pre-PCA correlation heatmap" tabIndex={0}>
-    <table className={`research-table ${compact ? "study-correlation-table" : "min-w-[900px]"}`}>
-      <thead><tr><th>Variable</th>{correlation.features.map((feature, i) => <th key={feature} className="text-center" title={getMeasureLabel(feature)}>{i + 1}</th>)}</tr></thead>
+    <table className={`research-table research-row-dividers ${compact ? "study-correlation-table" : "min-w-[900px]"}`}>
+      <thead><tr><th scope="col" title="Variable index">{compact ? "#" : "Variable"}</th>{correlation.features.map((feature, i) => <th scope="col" key={feature} className="text-center" title={getMeasureLabel(feature)}>{i + 1}</th>)}</tr></thead>
       <tbody>{correlation.matrix.map((row, i) => <tr key={correlation.features[i]}>
         <th scope="row" className="whitespace-nowrap text-left" title={getMeasureLabel(correlation.features[i])}>{compact ? i + 1 : `${i + 1}. ${getMeasureLabel(correlation.features[i])}`}</th>
         {row.map((value, j) => <td key={j} className="text-center tabular-nums" title={`${correlation.features[i]} / ${correlation.features[j]}: ${value === null ? "Undefined (constant feature)" : formatContinuous(value)}`}
@@ -23,7 +24,7 @@ export const CorrelationHeatmap = ({ correlation, compact = false, showKey = tru
     </table>
   </div>
   {compact && showKey && <ol className="study-correlation-key">{correlation.features.map((feature, i) => <li key={feature} title={getMeasureLabel(feature)}>{i + 1}. {feature.replace(/_/g, " ")}</li>)}</ol>}
-  <figcaption className="mt-3 text-xs text-muted">{caption ?? "Pearson r (−1 to +1), 13 retained variables before PCA · n = 2,437. Correlated original features provide evidence of redundancy."}</figcaption>
+  {correlation.matrix.some(row => row.some(value => value === null)) && <figcaption className="mt-3 text-xs text-muted">Constant-feature correlations are unavailable.</figcaption>}
 </figure>;
 
 export const SilhouetteByKFigure = ({ sweep }: { sweep: BaselineCandidateSweep }) => {

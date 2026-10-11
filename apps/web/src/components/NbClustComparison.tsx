@@ -31,11 +31,10 @@ export const NbClustSummary = ({ candidateK, selectedK, usableIndices, votes }: 
       <div><dt>Usable indices</dt><dd>{usableIndices}</dd></div>
     </dl>
     <NbClustChart selectedK={selectedK} votes={chartVotes} usableIndices={usableIndices} supportingIndices={votes.find(vote => vote.k === selectedK)?.count} />
-    <p className="simulation-compact-note nbclust-interpretation">{highest === undefined
+    {(highest === undefined || highest === 0 || leaders.length > 1) && <p className="simulation-compact-note nbclust-interpretation">{highest === undefined
       ? "The full vote distribution is unavailable. Missing vote counts are unavailable, not zero."
       : highest === 0 ? "No votes were reported for the candidate k values."
-      : leaders.length > 1 ? `The highest vote count was tied across k = ${leaders.join(", ")}.`
-      : `The largest number of usable NbClust indices supported k = ${leaders[0]}.`}</p>
+      : `The highest vote count was tied across k = ${leaders.join(", ")}.`}</p>}
     <h3 className="card-title simulation-compact-title">Vote Summary</h3>
     <dl className="simulation-detail-list nbclust-vote-summary">
       <div><dt>Highest vote count</dt><dd>{highest ?? "Unavailable"}</dd></div>

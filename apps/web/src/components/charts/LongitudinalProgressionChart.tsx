@@ -31,12 +31,14 @@ export const LongitudinalProgressionChart = ({ data }: { defense?: boolean; data
     }
     return [...result.values()].sort((a, b) => a.start - b.start);
   }, [data]);
-  return <div className="overflow-x-auto"><div className="h-80 min-w-[560px] w-full" role="img" aria-label="Observed mean ADAS-Cog13 by elapsed-year bin. Cluster 0: lower impairment; Cluster 1: higher impairment.">
+  return <div className="min-w-0"><div className="h-80 min-w-0 w-full" role="img" aria-label="Observed mean ADAS-Cog13 by elapsed-year bin. Cluster 0: lower impairment; Cluster 1: higher impairment.">
     <ResponsiveContainer>
-      <BarChart data={bins} margin={{ top: 15, right: 15, left: 15, bottom: 25 }}>
+      <BarChart data={bins} margin={{ top: 15, right: 15, left: 40, bottom: 25 }}>
         <CartesianGrid vertical={false} stroke={chartPalette.grid} />
         <XAxis dataKey="label" label={{ value: "Elapsed years (bin)", position: "bottom" }} />
-        <YAxis tickFormatter={(value: number) => formatContinuous(value)} label={{ value: "Mean ADAS-Cog13", angle: -90, position: "insideLeft" }} />
+        <YAxis width={104} tickMargin={8} tickFormatter={(value: number) => formatContinuous(value)}
+          label={{ value: "Mean ADAS-Cog13", angle: -90, position: "left", offset: 20,
+            style: { textAnchor: "middle" } }} />
         <Tooltip content={<SupportTooltip />} />
         <Legend verticalAlign="top" height={40} />
         <Bar dataKey="cluster0" name="Cluster 0 · lower impairment" fill={chartPalette.primary} isAnimationActive={false} />
