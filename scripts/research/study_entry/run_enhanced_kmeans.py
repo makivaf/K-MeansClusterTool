@@ -176,7 +176,7 @@ def load_locked_inputs() -> tuple[list[str], list[str], np.ndarray, int, np.ndar
 def run_enhanced_kmeans(
     X_pca: np.ndarray,
     initial_centroids: np.ndarray,
-    k: int, *, expected_shape: tuple[int, int] = EXPECTED_SHAPE,
+    k: int, *, expected_shape: tuple[int, int] = EXPECTED_SHAPE, evaluate=None,
 ) -> EnhancedRun:
     """Fit the enhanced path with fixed DPC seeds and standard Lloyd updates."""
     if X_pca.shape != expected_shape:
@@ -202,9 +202,12 @@ def run_enhanced_kmeans(
     if set(labels.tolist()) != set(range(k)):
         raise AssertionError(f"Expected exactly cluster labels 0..{k - 1}")
 
-    silhouette = float(silhouette_score(X_pca, labels, metric="euclidean"))
-    davies_bouldin = float(davies_bouldin_score(X_pca, labels))
-    calinski_harabasz = float(calinski_harabasz_score(X_pca, labels))
+    if evaluate is None:
+        silhouette = float(silhouette_score(X_pca, labels, metric="euclidean"))
+        davies_bouldin = float(davies_bouldin_score(X_pca, labels))
+        calinski_harabasz = float(calinski_harabasz_score(X_pca, labels))
+    else:
+        silhouette, davies_bouldin, calinski_harabasz = evaluate(labels)
     metrics = np.asarray([silhouette, davies_bouldin, calinski_harabasz])
     _require_finite("Internal validation metrics", metrics)
 

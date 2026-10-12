@@ -1,0 +1,102 @@
+﻿[
+    {
+        "test":  "calculationArithmetic.test.mjs",
+        "passed":  true,
+        "seconds":  0.43
+    },
+    {
+        "test":  "calculationRows.test.mjs",
+        "passed":  true,
+        "seconds":  6.72
+    },
+    {
+        "test":  "clusterDistribution.test.mjs",
+        "passed":  true,
+        "seconds":  1.82
+    },
+    {
+        "test":  "datasetSetup.test.mjs",
+        "passed":  true,
+        "seconds":  0.78
+    },
+    {
+        "test":  "expandPanel.test.mjs",
+        "passed":  true,
+        "seconds":  0.91
+    },
+    {
+        "test":  "finalPresentation.test.mjs",
+        "passed":  true,
+        "seconds":  2.17
+    },
+    {
+        "test":  "finalUiPass.test.mjs",
+        "passed":  true,
+        "seconds":  2.26
+    },
+    {
+        "test":  "formatNumber.test.mjs",
+        "passed":  true,
+        "seconds":  0.94
+    },
+    {
+        "test":  "independentJobs.test.mjs",
+        "passed":  true,
+        "seconds":  1.11
+    },
+    {
+        "test":  "initializationComparison.test.mjs",
+        "passed":  true,
+        "seconds":  1.3
+    },
+    {
+        "test":  "lmeCard.test.mjs",
+        "passed":  true,
+        "seconds":  1.3
+    },
+    {
+        "test":  "marielBackendIntegration.test.mjs",
+        "passed":  true,
+        "seconds":  1.68
+    },
+    {
+        "test":  "metricComparison.test.mjs",
+        "passed":  true,
+        "seconds":  0.44
+    },
+    {
+        "test":  "nbclust.test.mjs",
+        "passed":  true,
+        "seconds":  1.19
+    },
+    {
+        "test":  "partitionProjection.test.mjs",
+        "passed":  true,
+        "seconds":  1.01
+    },
+    {
+        "test":  "pcaLoadingMatrix.test.mjs",
+        "passed":  true,
+        "seconds":  1.21
+    },
+    {
+        "test":  "runProgress.test.mjs",
+        "passed":  true,
+        "seconds":  0.43
+    },
+    {
+        "test":  "silhouetteCalculation.test.mjs",
+        "passed":  true,
+        "seconds":  0.33
+    },
+    {
+        "test":  "studyFindings.test.mjs",
+        "passed":  true,
+        "seconds":  2.93
+    },
+    {
+        "test":  "varianceSummary.test.mjs",
+        "passed":  true,
+        "seconds":  0.46
+    }
+]

@@ -2,11 +2,11 @@ import { lazy, Suspense, useEffect, useState } from "react";
 import { Navigate, Route, Routes, useLocation } from "react-router-dom";
 import type { UploadResponse } from "../../../packages/shared/src";
 import { AppShell } from "./components/layout/AppShell";
-import { useStudyFindings } from "./hooks/useStudyFindings";
+import { useStudyExecution } from "./hooks/useMethodJobs";
 import { DATASETS, readValidatedDataset, readValidatedFilenames, saveValidatedDataset, saveValidatedFilenames } from "./utils/validatedDataset";
 
 const DatasetSetup = lazy(() => import("./pages/UploadAndCluster").then((module) => ({ default: module.UploadAndCluster })));
-const StudyFindings = lazy(() => import("./pages/StudyFindingsPage").then((module) => ({ default: module.StudyFindingsPage })));
+const StudyFindings = lazy(() => import("./pages/StudyFindingsPage").then((module) => ({ default: module.StudyExecutionPage })));
 const SimulationRuns = lazy(() => import("./pages/SimulationRunsPage").then((module) => ({ default: module.SimulationRunsPage })));
 
 export default function App() {
@@ -22,10 +22,12 @@ export default function App() {
   const [files, setFiles] = useState<Record<string, File>>({});
   const [invalidFiles, setInvalidFiles] = useState<string[]>([]);
   const [datasetRevision, setDatasetRevision] = useState(0);
-  const analysis = useStudyFindings(dataset);
+  const analysis = useStudyExecution(dataset);
   const onValidated = (value: UploadResponse | null) => {
-    analysis.reset();
-    setDatasetRevision(revision => revision + 1);
+    if (value?.upload_ref !== dataset?.upload_ref) {
+      analysis.reset();
+      setDatasetRevision(revision => revision + 1);
+    }
     setDataset(value);
     const filenames = value ? Object.fromEntries(DATASETS.map(([, name]) => [name, files[name]?.name ?? name])) : {};
     if (value) setValidatedFiles(filenames);
@@ -43,7 +45,7 @@ export default function App() {
       <Routes>
         <Route path="/" element={<Navigate to="/dataset-setup" replace />} />
         <Route path="/dataset-setup" element={null} />
-        <Route path="/study-findings" element={<StudyFindings analysis={analysis} dataset={dataset} />} />
+        <Route path="/study-findings" element={<StudyFindings jobs={analysis} dataset={dataset} />} />
         <Route path="/simulation-runs" element={null} />
         <Route path="/upload-run" element={<Navigate to="/dataset-setup" replace />} />
         <Route path="/run-history" element={<Navigate to="/simulation-runs" replace />} />

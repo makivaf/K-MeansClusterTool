@@ -4,6 +4,7 @@ import path from "node:path";
 import express, { type Request } from "express";
 import multer from "multer";
 import { UploadResponseSchema } from "../../../../packages/shared/src/schema";
+import { studyPreparationStore } from '../services/studyPreparation';
 import { AnalysisInputError, validateAnalysisInputManifest } from "../services/analysisInputManifest";
 import {
   createUploadDirectory,
@@ -122,7 +123,10 @@ clusterRouter.post("/api/upload", (request: UploadRequest, response) => {
     return;
   }
 
-  const payload = UploadResponseSchema.parse({ upload_ref: request.uploadBatchId, filenames: files.map((file) => file.originalname), file_count: files.length });
+  let preparation;
+  try {preparation=studyPreparationStore.start(request.uploadBatchId);}
+  catch {preparation={status:'error',stage:'error',error:'Unable to start preparation. Retry preparation.'};}
+  const payload = UploadResponseSchema.parse({ upload_ref: request.uploadBatchId, filenames: files.map((file) => file.originalname), file_count: files.length, preparation });
 
   response.status(201).json(payload);
 });

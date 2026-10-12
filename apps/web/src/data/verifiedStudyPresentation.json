@@ -1,0 +1,382 @@
+{
+  "sourceReport": "docs/PIPELINE_VERIFICATION_OCT12.md",
+  "metricSource": "docs/verification/common_space_metrics.json",
+  "longitudinalSource": "docs/verification/longitudinal.json",
+  "spaces": {
+    "13D": {
+      "dimensions": 13,
+      "conditions": {
+        "standard": {
+          "silhouette": {
+            "mean": 0.33187500971522443,
+            "SD": 0.00023426851518026072,
+            "min": 0.33173611492709715,
+            "max": 0.3322569703825748
+          },
+          "davies_bouldin": {
+            "mean": 1.224116077400517,
+            "SD": 0.00042412698636581795,
+            "min": 1.2234245639607837,
+            "max": 1.2243675368331475
+          },
+          "calinski_harabasz": {
+            "mean": 1442.0231320417008,
+            "SD": 0.013837712047196485,
+            "min": 1442.0005704878185,
+            "max": 1442.0313362431125
+          }
+        },
+        "pcaRandom": {
+          "silhouette": {
+            "mean": 0.33177164109866975,
+            "SD": 0.00011883949608348201,
+            "min": 0.3316974260290499,
+            "max": 0.33204144008469716
+          },
+          "davies_bouldin": {
+            "mean": 1.2244811619807836,
+            "SD": 0.00038102223648262765,
+            "min": 1.2238192760159268,
+            "max": 1.224725784715548
+          },
+          "calinski_harabasz": {
+            "mean": 1442.0161723378565,
+            "SD": 0.006410313394216417,
+            "min": 1441.9934579685207,
+            "max": 1442.0188070991449
+          }
+        },
+        "enhanced": {
+          "silhouette": {
+            "mean": 0.3316974260290499,
+            "SD": null,
+            "min": 0.3316974260290499,
+            "max": 0.3316974260290499
+          },
+          "davies_bouldin": {
+            "mean": 1.224725784715548,
+            "SD": null,
+            "min": 1.224725784715548,
+            "max": 1.224725784715548
+          },
+          "calinski_harabasz": {
+            "mean": 1442.0188070991449,
+            "SD": null,
+            "min": 1442.0188070991449,
+            "max": 1442.0188070991449
+          }
+        }
+      },
+      "differences": {
+        "silhouette": {
+          "enhancedMinusStandardMean": -0.0001775836861745428,
+          "enhancedWithinStandardRange": false
+        },
+        "davies_bouldin": {
+          "enhancedMinusStandardMean": 0.0006097073150308496,
+          "enhancedWithinStandardRange": false
+        },
+        "calinski_harabasz": {
+          "enhancedMinusStandardMean": -0.004324942555967937,
+          "enhancedWithinStandardRange": true
+        }
+      },
+      "matrixSource": "data/interim/clustering_features_standardized.csv",
+      "SDConvention": "sample SD, ddof=1",
+      "matrixHash": "1060dfea48d5440f7ada04b853baa92f8cb2ead482983ce7f112c0d9cfc30b0c"
+    },
+    "6-PC": {
+      "dimensions": 6,
+      "conditions": {
+        "standard": {
+          "silhouette": {
+            "mean": 0.3728564136309997,
+            "SD": 0.00020288410973425905,
+            "min": 0.3727361262530126,
+            "max": 0.373187203920464
+          },
+          "davies_bouldin": {
+            "mean": 1.075296074923131,
+            "SD": 0.000422364251675884,
+            "min": 1.0746074355158641,
+            "max": 1.0755464892530462
+          },
+          "calinski_harabasz": {
+            "mean": 1799.9744191896839,
+            "SD": 0.04949805382268379,
+            "min": 1799.893715601939,
+            "max": 1800.0037659488635
+          }
+        },
+        "pcaRandom": {
+          "silhouette": {
+            "mean": 0.3727704309093196,
+            "SD": 0.0001112424417146646,
+            "min": 0.3727004724250328,
+            "max": 0.37301323144314236
+          },
+          "davies_bouldin": {
+            "mean": 1.075643860715465,
+            "SD": 0.00037606647915655795,
+            "min": 1.0749732416051911,
+            "max": 1.0758850311620256
+          },
+          "calinski_harabasz": {
+            "mean": 1800.0166092714585,
+            "SD": 0.01456083530566413,
+            "min": 1799.9749087140083,
+            "max": 1800.0249578026044
+          }
+        },
+        "enhanced": {
+          "silhouette": {
+            "mean": 0.3727004724250328,
+            "SD": null,
+            "min": 0.3727004724250328,
+            "max": 0.3727004724250328
+          },
+          "davies_bouldin": {
+            "mean": 1.0758850311620256,
+            "SD": null,
+            "min": 1.0758850311620256,
+            "max": 1.0758850311620256
+          },
+          "calinski_harabasz": {
+            "mean": 1800.0249578026044,
+            "SD": null,
+            "min": 1800.0249578026044,
+            "max": 1800.0249578026044
+          }
+        }
+      },
+      "differences": {
+        "silhouette": {
+          "enhancedMinusStandardMean": -0.00015594120596690297,
+          "enhancedWithinStandardRange": false
+        },
+        "davies_bouldin": {
+          "enhancedMinusStandardMean": 0.0005889562388945446,
+          "enhancedWithinStandardRange": false
+        },
+        "calinski_harabasz": {
+          "enhancedMinusStandardMean": 0.05053861292049078,
+          "enhancedWithinStandardRange": false
+        }
+      },
+      "matrixSource": "data/interim/clustering_pca_scores.csv",
+      "SDConvention": "sample SD, ddof=1",
+      "matrixHash": "7bc39ddefa62007d1fd611a517fe23b0ab7d94cf59dac45ee58f95926ab63c72"
+    }
+  },
+  "longitudinal": {
+    "sources": {
+      "input": "apps/api/private/longitudinal-refresh/4b3dca3d-b435-4485-ac2b-18a0e442a624/data/interim/unified_longitudinal_cohort.csv",
+      "assignments": "apps/api/private/longitudinal-refresh/4b3dca3d-b435-4485-ac2b-18a0e442a624/data/interim/unified_cluster_assignments.csv",
+      "reference": "apps/api/private/longitudinal-refresh/4b3dca3d-b435-4485-ac2b-18a0e442a624/data/interim/unified_longitudinal_mixed_model.json",
+      "implementation": "scripts/research/longitudinal/fit_longitudinal_mixed_model.py"
+    },
+    "participants": 1845,
+    "observations": 11111,
+    "randomIntercept": {
+      "formula": "adas13 ~ time_years * original_cluster",
+      "randomFormula": "1",
+      "estimation": "ML",
+      "optimizerAttempts": [
+        {
+          "optimizer": "lbfgs",
+          "converged": true,
+          "warnings": []
+        }
+      ],
+      "converged": true,
+      "fixedEffects": {
+        "Intercept": {
+          "estimate": 9.825986909002848,
+          "standardError": 0.20381568727734725,
+          "ci95": [
+            9.426515502454968,
+            10.225458315550728
+          ],
+          "pValue": 0
+        },
+        "original_cluster[T.1]": {
+          "estimate": 15.631531063571277,
+          "standardError": 0.3561269922118994,
+          "ci95": [
+            14.933534984913377,
+            16.329527142229175
+          ],
+          "pValue": 0
+        },
+        "time_years": {
+          "estimate": 0.5664670365343818,
+          "standardError": 0.018359577086906963,
+          "ci95": [
+            0.5304829266726574,
+            0.6024511463961062
+          ],
+          "pValue": 4.94529058701535e-209
+        },
+        "time_years:original_cluster[T.1]": {
+          "estimate": 1.469680563857217,
+          "standardError": 0.05388845953594618,
+          "ci95": [
+            1.3640611239844185,
+            1.5753000037300156
+          ],
+          "pValue": 8.95749142204344e-164
+        }
+      },
+      "randomCovariance": [
+        [
+          43.1858484803195
+        ]
+      ],
+      "randomVariances": [
+        43.1858484803195
+      ],
+      "randomCorrelation": null,
+      "covarianceEigenvalues": [
+        43.1858484803195
+      ],
+      "singularFit": false,
+      "singularCriterion": "minimum covariance eigenvalue <= 1e-8; diagnostic, not a changed fitting threshold",
+      "residualVariance": 24.922172916636928,
+      "logLikelihood": -35803.152020878784,
+      "AIC": 71618.30404175757,
+      "BIC": 71662.19818708308,
+      "parameterCountIncludingResidual": 6
+    },
+    "randomSlope": {
+      "formula": "adas13 ~ time_years * original_cluster",
+      "randomFormula": "1 + time_years",
+      "estimation": "ML",
+      "optimizerAttempts": [
+        {
+          "optimizer": "lbfgs",
+          "converged": true,
+          "warnings": []
+        }
+      ],
+      "converged": true,
+      "fixedEffects": {
+        "Intercept": {
+          "estimate": 9.608008717683543,
+          "standardError": 0.1582810961666171,
+          "ci95": [
+            9.297783469763452,
+            9.918233965603633
+          ],
+          "pValue": 0
+        },
+        "original_cluster[T.1]": {
+          "estimate": 14.173381583073422,
+          "standardError": 0.2771655236444209,
+          "ci95": [
+            13.630147138974172,
+            14.716616027172671
+          ],
+          "pValue": 0
+        },
+        "time_years": {
+          "estimate": 0.7109715501954836,
+          "standardError": 0.058683803604645646,
+          "ci95": [
+            0.5959534086545564,
+            0.8259896917364109
+          ],
+          "pValue": 8.764897505860768e-34
+        },
+        "time_years:original_cluster[T.1]": {
+          "estimate": 3.101252696180754,
+          "standardError": 0.11679627919834198,
+          "ci95": [
+            2.872336195423719,
+            3.330169196937789
+          ],
+          "pValue": 2.3923948273600814e-155
+        }
+      },
+      "randomCovariance": [
+        [
+          25.907423812192107,
+          3.59001293047234
+        ],
+        [
+          3.59001293047234,
+          3.39548688604665
+        ]
+      ],
+      "randomVariances": [
+        25.907423812192107,
+        3.39548688604665
+      ],
+      "randomCorrelation": 0.3827655730297242,
+      "covarianceEigenvalues": [
+        2.8368449500141057,
+        26.46606574822465
+      ],
+      "singularFit": false,
+      "singularCriterion": "minimum covariance eigenvalue <= 1e-8; diagnostic, not a changed fitting threshold",
+      "residualVariance": 11.76380130261413,
+      "logLikelihood": -33542.67730360669,
+      "AIC": 67101.35460721338,
+      "BIC": 67159.88013431405,
+      "parameterCountIncludingResidual": 8
+    },
+    "referenceErrors": {
+      "intercept": {
+        "estimate": 0,
+        "standardError": 0,
+        "pValue": 0
+      },
+      "time": {
+        "estimate": 0,
+        "standardError": 0,
+        "pValue": 0
+      },
+      "cluster": {
+        "estimate": 0,
+        "standardError": 0,
+        "pValue": 0
+      },
+      "time_x_cluster": {
+        "estimate": 0,
+        "standardError": 0,
+        "pValue": 0
+      }
+    },
+    "referenceMaxAbsoluteError": 0,
+    "referenceMatchesAt1e8": true,
+    "likelihoodRatio": {
+      "statistic": 4520.949434544193,
+      "nominalDegreesFreedom": 2,
+      "nominalChiSquareP": 0,
+      "note": "Nominal chi-square only: zero slope variance is on the boundary and intercept–slope correlation is unidentified under the null. Ordinary chi-square calibration is not exact; no calibrated bootstrap or mixture test was performed.",
+      "nominalLogP": -2260.4747172720963
+    },
+    "referenceConfidenceIntervalErrors": {
+      "intercept": [
+        0,
+        0
+      ],
+      "time": [
+        0,
+        0
+      ],
+      "cluster": [
+        0,
+        0
+      ],
+      "time_x_cluster": [
+        0,
+        0
+      ]
+    }
+  },
+  "discrepancyNote": "On the same validated stored longitudinal cohort, the random-intercept ML model estimates the Time × Cluster interaction at 1.46968056386, while allowing correlated participant-specific intercepts and time slopes estimates it at 3.10125269618. The discrepancy arises under different random-effect specifications on the same fixed assignments and observations. The sensitivity model changes the covariance/weighting assumptions and is a separate analysis; it does not replace or revise the pre-specified random-intercept reference. Convergence and covariance diagnostics are reported above; the comparison does not establish that either specification should replace the reference.\r",
+  "verifiedEnhanced": {
+    "participantsHash": "9140587ae2d0efc412bbb5fcd53fbb020736f6d2b9564909985fb10316001cc7",
+    "labelsHash": "6c862247bae61f5a2a1aede47d8a90fb4435be6498c839b6c0134c7255be99a9"
+  }
+}

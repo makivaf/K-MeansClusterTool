@@ -11,15 +11,18 @@ export const DATASETS = [
 ] as const;
 
 const DATASET_KEY = "ad-clustering.validated-dataset";
-export const isDatasetReady = (dataset: UploadResponse | null): dataset is UploadResponse =>
+export const isDatasetValidated = (dataset: UploadResponse | null): dataset is UploadResponse =>
   dataset !== null && dataset.file_count === DATASETS.length && dataset.filenames.length === DATASETS.length &&
   DATASETS.every(([, name]) => dataset.filenames.includes(name));
+export const isDatasetReady = (dataset: UploadResponse | null): dataset is UploadResponse & {preparation: NonNullable<UploadResponse['preparation']> & {status:'ready'}} =>
+  isDatasetValidated(dataset) && dataset.preparation?.status === 'ready';
 
 // Store validation metadata only; the CSVs remain in the API's upload store.
 export const readValidatedDataset = (): UploadResponse | null => {
   try {
     const parsed = UploadResponseSchema.safeParse(JSON.parse(sessionStorage.getItem(DATASET_KEY) ?? "null"));
-    return parsed.success && isDatasetReady(parsed.data) ? parsed.data : null;
+    // Reverify persisted readiness with the API after every reload.
+    return parsed.success && isDatasetValidated(parsed.data) ? {...parsed.data, preparation:{status:'preparing',stage:'verifying',error:null}} : null;
   } catch { return null; }
 };
 

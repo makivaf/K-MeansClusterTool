@@ -1,0 +1,93 @@
+{
+  "current": {
+    "cohortSource": "data/interim/study_entry_cohort_unimputed.csv",
+    "cohortSHA256": "b9983abfd068c4c00006750c2d08e547bc0c7b2769b60080ae9733b4841c04eb",
+    "participants": 2437,
+    "features": [
+      "MMSE",
+      "ADAS13",
+      "LMI",
+      "LMD",
+      "TMT_A",
+      "TMT_B",
+      "CATEGORY_FLUENCY_ANIMALS",
+      "RAVLT_IMMEDIATE",
+      "RAVLT_DELAYED",
+      "RAVLT_FORGETTING",
+      "CDRSB",
+      "FAQ",
+      "GDS"
+    ],
+    "featureCount": 13,
+    "imputation": "per-variable median; verified against saved unimputed/imputed matrices",
+    "standardization": "z-score using recorded scaler mean/scale",
+    "seeds": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9,
+      10,
+      11,
+      12,
+      13,
+      14,
+      15,
+      16,
+      17,
+      18,
+      19,
+      20,
+      21,
+      22,
+      23,
+      24,
+      25,
+      26,
+      27,
+      28,
+      29
+    ],
+    "n_init": [
+      1
+    ],
+    "evaluationSpace": "standardized original features",
+    "DBI": 1.224116077400517,
+    "CH": 1442.0231320417008,
+    "medianImputationMaxAbsError": 0.0,
+    "standardizationMaxAbsError": 1.3322676295501878e-15,
+    "entryPhaseCounts": {
+      "ADNI1": 819,
+      "ADNI2": 789,
+      "ADNI3": 699,
+      "ADNIGO": 130
+    },
+    "fullSourcePhaseCounts": {
+      "ADNI1": 819,
+      "ADNI2": 789,
+      "ADNI3": 699,
+      "ADNI4": 536,
+      "ADNIGO": 130,
+      "TEAM": 26
+    },
+    "sourceCohortRows": 2999,
+    "sourceSelectedFeatureMaxAbsError": 3.552713678800501e-15,
+    "storedRunMetricMeanErrors": {
+      "silhouette": -5.551115123125783e-17,
+      "davies_bouldin": -4.440892098500626e-16,
+      "calinski_harabasz": 0.0
+    }
+  },
+  "earlier": {
+    "provenance": "Undeterminable: occurrences in reachable history are an explicit unresolved-value note, not a producing artifact. No evidence establishes 15 versus 13 variables, cohort, imputation, seeds/n_init, or evaluation space.",
+    "DBIText": "1.225676",
+    "CHText": "1443.226233",
+    "historicalNote": "1ec34facd437aa2e94f5d8d953393839eeb991c4:docs/INDEPENDENT_KMEANS_EXECUTION.md",
+    "nearMatchExplanation": "Broad-prefix search also found an unrelated simulation Standard DBI 1.22567316495 with CH 60.6982757198 in `apps/api/private/simulation-runs/simulation-1-00229fed-bc14-41e7-a357-b6698fec96b3/data/interim/baseline_kmeans_summary.csv`. This is not the earlier pair and does not identify its provenance."
+  }
+}

@@ -1,0 +1,277 @@
+{
+  "standard": {
+    "origin": "stored runs",
+    "runs": [
+      {
+        "seed": 0,
+        "iterations": 11
+      },
+      {
+        "seed": 1,
+        "iterations": 8
+      },
+      {
+        "seed": 2,
+        "iterations": 9
+      },
+      {
+        "seed": 3,
+        "iterations": 11
+      },
+      {
+        "seed": 4,
+        "iterations": 6
+      },
+      {
+        "seed": 5,
+        "iterations": 8
+      },
+      {
+        "seed": 6,
+        "iterations": 12
+      },
+      {
+        "seed": 7,
+        "iterations": 12
+      },
+      {
+        "seed": 8,
+        "iterations": 10
+      },
+      {
+        "seed": 9,
+        "iterations": 10
+      },
+      {
+        "seed": 10,
+        "iterations": 12
+      },
+      {
+        "seed": 11,
+        "iterations": 12
+      },
+      {
+        "seed": 12,
+        "iterations": 10
+      },
+      {
+        "seed": 13,
+        "iterations": 9
+      },
+      {
+        "seed": 14,
+        "iterations": 11
+      },
+      {
+        "seed": 15,
+        "iterations": 12
+      },
+      {
+        "seed": 16,
+        "iterations": 9
+      },
+      {
+        "seed": 17,
+        "iterations": 11
+      },
+      {
+        "seed": 18,
+        "iterations": 8
+      },
+      {
+        "seed": 19,
+        "iterations": 10
+      },
+      {
+        "seed": 20,
+        "iterations": 10
+      },
+      {
+        "seed": 21,
+        "iterations": 11
+      },
+      {
+        "seed": 22,
+        "iterations": 9
+      },
+      {
+        "seed": 23,
+        "iterations": 10
+      },
+      {
+        "seed": 24,
+        "iterations": 11
+      },
+      {
+        "seed": 25,
+        "iterations": 10
+      },
+      {
+        "seed": 26,
+        "iterations": 11
+      },
+      {
+        "seed": 27,
+        "iterations": 11
+      },
+      {
+        "seed": 28,
+        "iterations": 12
+      },
+      {
+        "seed": 29,
+        "iterations": 13
+      }
+    ],
+    "summary": {
+      "min": 6,
+      "median": 10.5,
+      "max": 13,
+      "mean": 10.3
+    }
+  },
+  "enhanced": {
+    "origin": "Lloyd-only replay with stored initial DPC centroids",
+    "runs": [
+      {
+        "run": 1,
+        "iterations": 12
+      },
+      {
+        "run": 2,
+        "iterations": 12
+      },
+      {
+        "run": 3,
+        "iterations": 12
+      },
+      {
+        "run": 4,
+        "iterations": 12
+      },
+      {
+        "run": 5,
+        "iterations": 12
+      },
+      {
+        "run": 6,
+        "iterations": 12
+      },
+      {
+        "run": 7,
+        "iterations": 12
+      },
+      {
+        "run": 8,
+        "iterations": 12
+      },
+      {
+        "run": 9,
+        "iterations": 12
+      },
+      {
+        "run": 10,
+        "iterations": 12
+      },
+      {
+        "run": 11,
+        "iterations": 12
+      },
+      {
+        "run": 12,
+        "iterations": 12
+      },
+      {
+        "run": 13,
+        "iterations": 12
+      },
+      {
+        "run": 14,
+        "iterations": 12
+      },
+      {
+        "run": 15,
+        "iterations": 12
+      },
+      {
+        "run": 16,
+        "iterations": 12
+      },
+      {
+        "run": 17,
+        "iterations": 12
+      },
+      {
+        "run": 18,
+        "iterations": 12
+      },
+      {
+        "run": 19,
+        "iterations": 12
+      },
+      {
+        "run": 20,
+        "iterations": 12
+      },
+      {
+        "run": 21,
+        "iterations": 12
+      },
+      {
+        "run": 22,
+        "iterations": 12
+      },
+      {
+        "run": 23,
+        "iterations": 12
+      },
+      {
+        "run": 24,
+        "iterations": 12
+      },
+      {
+        "run": 25,
+        "iterations": 12
+      },
+      {
+        "run": 26,
+        "iterations": 12
+      },
+      {
+        "run": 27,
+        "iterations": 12
+      },
+      {
+        "run": 28,
+        "iterations": 12
+      },
+      {
+        "run": 29,
+        "iterations": 12
+      },
+      {
+        "run": 30,
+        "iterations": 12
+      }
+    ],
+    "summary": {
+      "min": 12,
+      "median": 12.0,
+      "max": 12,
+      "mean": 12.0
+    },
+    "exactAssignmentParityForAllRuns": true
+  },
+  "sources": {
+    "data/interim/baseline_kmeans_runs.csv": "453e1a161f7a23f58fab251ed62d4ef1aafb019da384410e44e8eb5cfacc135b",
+    "apps/api/private/final-ui-evidence/enhanced-30-partitions.npz": "01c7b35b437786f7744b7b49f20c7bf004d2e083823b88152a14d445f1f429b9",
+    "apps/api/private/final-ui-evidence/enhanced-30-report.json": "c53b3507f6a6099453d8b2f0be9cdf0118af7dda37cd22068ebebf9fbf73012b",
+    "data/interim/clustering_dpc_selected_centroids.csv": "1636d89d719f369e9ba3a576aa9eaefa2aff6fbb5ef7d3cdd7ed9479d3c7e39c",
+    "data/interim/clustering_pca_scores.csv": "abf2c7a98c65f7d0b609bd14389b20be930d5850bc8a4f213d383a8eb432f4b0",
+    "data/interim/clustering_selected_k.csv": "3bee43b1454424c3346b161e7acb99e58298b67335652854fadb84f26d5ac8d6",
+    "data/interim/unified_cluster_assignments.csv": "a98289c9f4548d26daf40060f13f07e18d9254f74e0f232d02cea016302090c5",
+    "data/interim/enhanced_kmeans_metrics.csv": "ed89860e62d3fed1ff761576b905f4d81d7e51c19d2b4d8b21335def6561aa8b",
+    "scripts/research/study_entry/run_enhanced_kmeans.py": "3b3f86045cd86d8cef0df66658515b521720db7a8103e2aae10234fe251591a0"
+  },
+  "sourceArtifactsUnchanged": true
+}

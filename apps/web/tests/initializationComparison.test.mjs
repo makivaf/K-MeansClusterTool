@@ -31,7 +31,7 @@ assert.match(html, /ARI by DPC Execution/);
 assert.doesNotMatch(html, /Pairwise ARI summarizes agreement|The charts separately compare/);
 assert.match(html, /<details class="sop3-metrics sop3-disclosure">/);
 assert.doesNotMatch(html, /<details[^>]*\bopen\b/);
-assert.match(html, /candidate-A/); assert.match(html, /2\.123457/); assert.match(html, /25\.481480/);
+assert.match(html, /candidate-A/); assert.match(html, /2\.1235/); assert.match(html, /25\.48/);
 assert.match(html, /Existing DPC calculation details/);
 for (const metric of ["Executions", "Pairwise ARI Comparisons", "Unique Final Partitions", "Modal Partition Frequency", "Minimum Pairwise ARI", "Mean Pairwise ARI", "Maximum Differing Participants", "Distinct Initial Centroid Sets"]) assert.ok(html.includes(metric));
 // Synthetic presentation fixtures test formatting, including legitimate zero,
@@ -51,7 +51,7 @@ for (const rows of [undefined, []]) {
   assert.match(renderToStaticMarkup(React.createElement(PartitionFrequencyChart, { rows })), /sop3-chart is-unavailable/);
   assert.match(renderToStaticMarkup(React.createElement(AriChart, { runs: rows, axisLabel: "Execution", minimum: 0.85 })), /sop3-chart is-unavailable/);
 }
-assert.match(html, /5 \/ 7/); assert.match(html, /0\.812346/); assert.match(html, /0\.923457/);
+assert.match(html, /5 \/ 7/); assert.match(html, /0\.8123/); assert.match(html, /0\.9235/);
 assert.match(html, /Maximum Differing Participants<\/th><td>0<\/td><td>Unavailable/);
 assert.equal(JSON.stringify(evidence), snapshot);
 assert.match(render({ ...props, standard: { modalPartitionFrequency: 5 } }), /Modal Partition Frequency<\/th><td>Unavailable/);
@@ -89,7 +89,9 @@ assert.match(sop3, /<\/h2><p>Evaluates the consistency of clustering results acr
 assert.doesNotMatch(sop3, /sop3-methodology|Standard executions:|Enhanced executions:/);
 assert.match(sop3, /verified modal-partition ARI is not supplied/);
 assert.match(sop3, /verified final-partition frequencies are not supplied/);
-assert.match(sop3, /9876/); assert.match(sop3, /2\.123457/);
+assert.match(sop3, /9876/); assert.match(sop3, /2\.1235/);
 assert.doesNotMatch(sop3, /3 \/ 3|reference-equivalent partition/);
-assert.doesNotMatch(render({ ...props, standardOnly: true }), /Enhanced K-Means|DPC Initialization Evidence/);
+assert.match(render({ ...props, standardOnly: true }), /Enhanced K-Means/);
+assert.match(render({ ...props, standardOnly: true }), /Not run yet/);
+assert.doesNotMatch(render({ ...props, standardOnly: true }), /DPC Initialization Evidence/);
 console.log("PASS SOP 3 order, formatting, missing fields, exact chart bindings, independent current-run evidence, legacy exclusion, and Standard-only behavior");

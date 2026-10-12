@@ -1,8 +1,8 @@
 /* Shared heading roles; layout, chart labels and table text stay independent. */
 :root {
   --research-page-title-size: 30px;
-  --research-section-title-size: 22px;
-  --research-card-title-size: 16px;
+  --research-section-title-size: 20px;
+  --research-card-title-size: 15px;
 }
 
 .page-title {
@@ -15,7 +15,7 @@
 }
 .page-eyebrow, .simulation-eyebrow {
   margin-bottom: 8px;
-  font-size: 11px;
+  font-size: var(--research-caption-size);
   line-height: 1.5;
   font-weight: 600;
   letter-spacing: .12em;
@@ -24,7 +24,7 @@
 }
 .page-subtitle {
   margin-top: 8px;
-  font-size: 14px;
+  font-size: var(--research-body-size);
   line-height: 1.5;
   font-weight: 400;
   color: var(--research-muted);
@@ -38,14 +38,14 @@
   overflow-wrap: break-word;
 }
 .section-subtitle, .simulation-section-heading > p {
-  font-size: 14px;
+  font-size: var(--research-body-size);
   line-height: 1.5;
   font-weight: 400;
   color: var(--research-muted);
 }
 .research-page .research-panel-body:has(> .section-subtitle),
 .research-page .research-panel-body:has(> .sop3-comparison > .section-subtitle) {
-  padding-top: 4px;
+  padding-top: var(--research-space-1);
 }
 .card-title {
   font-size: var(--research-card-title-size);

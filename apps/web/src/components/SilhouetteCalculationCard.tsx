@@ -5,11 +5,11 @@ import "./SilhouetteCalculationCard.css";
 
 export type SilhouetteParticipant = { rid: string; cluster: number; a: number; b: number; s: number };
 const columns = [
-  { key: "rid", label: "Participant ID (RID)" },
+  { key: "rid", label: "RID" },
   { key: "cluster", label: "Cluster" },
-  { key: "a", label: "Mean intra-cluster distance, a(i)" },
-  { key: "b", label: "Mean nearest-cluster distance, b(i)" },
-  { key: "s", label: "Participant Silhouette value, s(i)" }
+  { key: "a", label: "a(i)" },
+  { key: "b", label: "b(i)" },
+  { key: "s", label: "s(i)" }
 ] as const;
 const ridOrder = new Intl.Collator("en", { numeric: true });
 
@@ -41,7 +41,7 @@ export const SilhouetteParticipantTable = ({ rows, n }: { rows: readonly Silhoue
       </table>
     </div>
     <div className="silhouette-pagination">
-      <p aria-live="polite">Showing {formatInteger(start + 1)}–{formatInteger(Math.min(start + 10, n))} of {formatInteger(n)} participants</p>
+      <p aria-live="polite">Rows {formatInteger(start + 1)} to {formatInteger(Math.min(start + 10, n))} of {formatInteger(n)}</p>
       <div role="group" aria-label="Participant table pages">
         <button type="button" disabled={current === 1} onClick={() => setPage(current - 1)}>Previous</button>
         <button type="button" aria-current={current === 1 ? "page" : undefined} onClick={() => setPage(1)}>1</button>

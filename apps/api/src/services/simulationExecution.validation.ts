@@ -107,7 +107,8 @@ try {
       ...(method === "POST" ? { headers: { "Content-Type": "application/json" }, body: JSON.stringify(configuration) } : {}) });
     assert.equal(response.status, 200);
     assert.equal(response.headers.get("cache-control"), "no-store");
-    assert.deepEqual(SimulationRunStateSchema.parse(await response.json()), state);
+    // JSON transport omits absent optional fields; compare the wire representation.
+    assert.deepEqual(SimulationRunStateSchema.parse(await response.json()), SimulationRunStateSchema.parse(JSON.parse(JSON.stringify(state))));
   }
   const automaticResponse = await fetch(base + "?sampleMode=custom&sampleCount=100");
   assert.equal(automaticResponse.status, 200);

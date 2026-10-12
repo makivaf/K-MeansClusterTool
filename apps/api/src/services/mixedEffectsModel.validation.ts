@@ -2,10 +2,13 @@ import crypto from "node:crypto";
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { UnifiedMixedEffectsModelSchema } from "../../../../packages/shared/src/schema";
+import { UnifiedMixedEffectsModelSchema, FrozenUnifiedStudyResultSchema } from "../../../../packages/shared/src/schema";
 
 const repositoryRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../../../..");
-const artifactDirectory = path.join(repositoryRoot, "data", "interim");
+// Validate an existing isolated snapshot without copying or modifying frozen
+// artifacts. All original scientific, privacy and input-hash checks still run.
+const validationRoot = process.env.MIXED_MODEL_VALIDATION_ROOT ? path.resolve(process.env.MIXED_MODEL_VALIDATION_ROOT) : repositoryRoot;
+const artifactDirectory = path.join(validationRoot, "data", "interim");
 const modelPath = path.join(artifactDirectory, "unified_longitudinal_mixed_model.json");
 const coefficientPath = path.join(artifactDirectory, "unified_longitudinal_mixed_model.csv");
 const model = UnifiedMixedEffectsModelSchema.parse(JSON.parse(fs.readFileSync(modelPath, "utf8")));
@@ -17,8 +20,8 @@ if (!model.converged || !model.diagnostics.timeClusterEstimable || model.primary
 if (model.provenance.longitudinalClusteringInvoked || !model.provenance.originalAssignmentsFixed) throw new Error("Mixed-model provenance violates fixed-assignment/no-clustering requirements");
 
 for (const [reportedPath, expectedHash] of Object.entries(model.provenance.inputSha256)) {
-  const absolutePath = path.resolve(repositoryRoot, reportedPath);
-  if (!absolutePath.startsWith(`${repositoryRoot}${path.sep}`) || !fs.existsSync(absolutePath)) throw new Error("Mixed-model input provenance path is invalid");
+  const absolutePath = path.resolve(validationRoot, reportedPath);
+  if (!absolutePath.startsWith(`${validationRoot}${path.sep}`) || !fs.existsSync(absolutePath)) throw new Error("Mixed-model input provenance path is invalid");
   const actualHash = crypto.createHash("sha256").update(fs.readFileSync(absolutePath)).digest("hex");
   if (actualHash !== expectedHash) throw new Error(`Mixed-model input provenance hash mismatch: ${reportedPath}`);
 }
@@ -38,3 +41,13 @@ missingInteraction.fixedEffects.pop();
 if (UnifiedMixedEffectsModelSchema.safeParse(missingInteraction).success) throw new Error("A mixed model without Time × Cluster was accepted");
 
 console.log("PASS mixed-effects model: exact cohort, fixed assignments, convergence, coefficient structure, aggregate privacy, and input hashes validated");
+
+if (validationRoot !== repositoryRoot) {
+  const history = path.join(repositoryRoot, "data/processed/run-history");
+  const verified = fs.readdirSync(history).filter(file => file.endsWith('.json')).map(file =>
+    FrozenUnifiedStudyResultSchema.safeParse(JSON.parse(fs.readFileSync(path.join(history, file), 'utf8'))))
+    .filter(parsed => parsed.success);
+  if (!verified.length || verified.some(parsed => parsed.success && JSON.stringify(parsed.data.longitudinal.mixedEffects) !== JSON.stringify(model)))
+    throw new Error("Historical model differs from the validated snapshot.");
+  console.log(`PASS historical model equality: ${verified.length} frozen saved runs match the hash-validated snapshot exactly`);
+}
