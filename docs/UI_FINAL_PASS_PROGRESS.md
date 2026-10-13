@@ -1,6 +1,6 @@
 # Final UI pass progress
 
-Branch: `integration/final-mariel-backend-oct11`. All work remains uncommitted.
+Branch: `final/system-oct12`. All work remains uncommitted.
 Existing uncommitted changes must be preserved. Page 03 is excluded.
 
 | Item | Status | Files touched |
@@ -38,3 +38,52 @@ Final report: `docs/UI_FINAL_PASS_REPORT.md`. Stopped for visual review.
 | Follow-up final checks | Complete: workspace typecheck, all 20 web test files, shared contracts, and production build passed. Same branch; nothing staged, committed, stashed or reset. | verification/followup_web_tests.json |
 | ARI calculation addendum | Complete; new Python test (4 cases), web typecheck, affected finalUiPass test and build passed. Standard seeds 0/4, cells [[0,1554],[878,5]], ARI 0.991758; Enhanced runs 1/2. Optional records only; cohort hashes match and existing stored values preserved. Nothing staged, committed, stashed or reset. | derive_partition_evidence.py; partitionEvidence.ts; SopPanels.tsx; finalUiEvidence.json; test_ari_calculation.py; finalUiPass.test.mjs |
 | Small fix pass | Complete: NbClust chart margin, labels and fixed vote axis; SOP 3 bar/stat/matrix order and single calculation disclosure; display-only maximum-overlap contingency columns; comparable quality title and Enhanced-only integer-axis scatter. Web typecheck, affected finalUiPass test and build passed. No computed results or artifacts changed; nothing staged, committed, stashed or reset. | SopPanels.tsx; FinalResults.tsx; finalUiPass.test.mjs |
+
+## Revision pass � final/system-oct12
+
+| Item | Status | Files touched |
+| --- | --- | --- |
+| 1 | Diagnosed: Enhanced stores only three runs and no job-local evidence; optional private external 30-run files cannot serve a fresh checkout. | run_method.py; methodExecution.ts; derive_partition_evidence.py (inspection) |
+| 2 | Implemented: once-only NbClust, 30 DPC + Lloyd repetitions, exact job-partition assertion, per-job aggregate/ARI evidence. Existing comparison scoring retains its first three identical Enhanced repetitions. Runtime pending end-to-end verification. | run_method.py; derive_partition_evidence.py |
+| 3 | Implemented independent full-width method switch and per-method Final Results; comparison remains gated by compatible completions. | StudyResults.tsx; SopPanels.tsx; FinalResults.tsx |
+| 4 | Implemented: Restored native-space Internal validation primary table, signed computed improvement and footnote; both same-space plots collapsed; reliability tiles retained. Artifact verification/tests pending. | components/final/*.tsx |
+| 5 | Implemented: Restored SOP 1 native-space PCA contribution table, computed improvement, footnote and collapsed same-space checks. Artifact verification/tests pending. | components/final/*.tsx |
+| 6 | Implemented: SOP 3 quality comparison uses both conditions in retained PCs. Artifact verification/tests pending. | components/final/*.tsx |
+| 7 | Implemented: Plain-language ARI labels with symbols and chance-correction explanation; Enhanced uses Run. Artifact verification/tests pending. | components/final/*.tsx |
+| 8 | Implemented: Updated exact top-three absolute-loadings legend. Artifact verification/tests pending. | components/final/*.tsx |
+
+Revision verification: items 4/5 match the saved full-study artifacts to six decimals; no mismatches. Final: Standard 0.331875 / 1.224116 / 1,442.023132; Enhanced 0.372700 / 1.075885 / 1,800.024958; improvements +12.30% / -12.11% / +24.83%. SOP 1 PCA + random: 0.372770 / 1.075644 / 1,800.016609; improvements +12.32% / -12.13% / +24.83%. Exact artifact paths and rendered values are recorded in `docs/verification/revision_pass.json`.
+
+Items 3–8: affected final UI, independent jobs, Study Findings, final presentation, and number-format tests passed. Python evidence tests (6 cases), shared contracts and build passed; final UI text corrections are undergoing the final build. Item 2 Enhanced full-study job is running; runtime and actual SOP 3 rendering pending.
+
+Item 2 integration correction: the legacy DPC validator requires exactly three inputs. Apply existing DPC/Lloyd validators to each group of three and retain the exact all-30 job-partition assertion. First integration attempt failed before Lloyd and published no result; retrying after this correction.
+
+Item 2 publication correction: all 30 partitions passed equality and evidence derivation, but the legacy Enhanced metadata contract permits exactly three ariByRun entries. Preserve that original three-entry field unchanged; the job-local initializationEvidence, partitions and fit evidence carry all 30 repetitions. Retrying full execution/publication after this contract correction.
+
+Item 2 correction applied and checked at the worker source: the previous metadata replacement did not match CRLF, leaving the three-entry contract failure in place. The exact ariByRun expression now uses runs[:3]; full 30-run evidence remains unchanged.
+
+| Revision item | Final status |
+| --- | --- |
+| 1 | Complete: no job-local evidence, three historical repetitions and dependence on optional private external evidence caused the fresh-checkout gap. |
+| 2 | Complete: published full-study Enhanced job 65eb2ae8-5baf-440f-8548-4aad19945328; NbClust once; all 30 exact partitions identical, 435 ARI pairs at 1, zero differing participants; own evidence rendered by SOP 3 and independently re-derived from hash-verified run partitions. Wall 261.08s; added 27 DPC + Lloyd repetitions 42.12s; evidence 2.82s. Legacy Enhanced result fields and partition equal the previous artifact exactly. Preserve three-entry metadata; all 30 live in job evidence. |
+| 3 | Complete: independent method switch, full-width per-method sections and Final Results; compatible completed-method comparison gate. |
+| 4 | Complete: requested native-space primary table, all expected values verified, signed improvements, one-line footnote, collapsed two-space checks and unchanged reliability tiles. |
+| 5 | Complete: requested PCA contribution primary table and footnote, all expected values verified, collapsed two-space checks. |
+| 6 | Complete: PCA + random versus DPC quality display uses their shared retained-PC space. |
+| 7 | Complete: six requested plain-text term labels, Seed/Run naming and chance-correction explanation. |
+| 8 | Complete: exact loadings legend. |
+| Final checks | Passed: web typecheck, five affected web test files, six Python evidence tests (including all-30 assertion rejection cases), shared contracts, build, full-study Enhanced executor/publication and actual SOP 3 component render with own evidence. No mismatches or unresolved issues. Three failed unpublished integration attempts are documented above; corrected execution passed. No commit/push. |
+
+Changed files:
+- `scripts/research/simulation/run_method.py`
+- `scripts/research/validation/derive_partition_evidence.py`
+- `apps/web/src/components/final/StudyResults.tsx`
+- `apps/web/src/components/final/FinalResults.tsx`
+- `apps/web/src/components/final/RangeCards.tsx`
+- `apps/web/src/components/final/SopPanels.tsx`
+- `apps/web/tests/finalUiPass.test.mjs`
+- `scripts/research/validation/test_ari_calculation.py`
+- `docs/UI_FINAL_PASS_PROGRESS.md`
+- `docs/verification/revision_pass.json`
+
+Aggregate verification and source paths: `docs/verification/revision_pass.json`. Existing untracked `docs/figma-make-export/` preserved. Temporary revision scripts removed. Stopped.

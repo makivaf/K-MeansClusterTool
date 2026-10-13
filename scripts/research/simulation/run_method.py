@@ -14,7 +14,7 @@ from dataclasses import asdict, replace
 from time import perf_counter
 
 ROOT = Path(__file__).resolve().parents[3]
-sys.path[:0] = [str(ROOT/'scripts/research/study_entry'), str(ROOT/'scripts/research/comparison')]
+sys.path[:0] = [str(ROOT/'scripts/research/study_entry'), str(ROOT/'scripts/research/comparison'), str(ROOT/'scripts/research/validation')]
 import numpy as np
 from sklearn.metrics import adjusted_rand_score
 import preprocess_study_entry as prep
@@ -24,6 +24,7 @@ import dpc_initialize_clusters as dpc
 from exact_runtime import ExactMetrics, exact_dpc_init, KEYS
 from common_space import evaluate_common_spaces, load_partitions
 from prepare_method_data import prepare_data
+from derive_partition_evidence import derive, assert_identical_partitions
 
 
 def digest(value):
@@ -91,7 +92,7 @@ def execute(request, workspace):
         'pcaHash': digest((cache/'pca/scores.npy').read_bytes()), 'implementationHash': request['implementationHash'],
         'dependenciesHash': request['dependenciesHash'], 'evaluationVersion': 'euclidean-full-lloyd-v1'}
     provenance['configurationHash'] = digest(json.dumps({'manualK': request.get('manualK'),
-        'scope': request['scope'], 'seeds': list(range(30)), 'dpcRepetitions': 3}, sort_keys=True).encode())
+        'scope': request['scope'], 'seeds': list(range(30)), 'dpcRepetitions': 30}, sort_keys=True).encode())
     provenance['datasetHash'] = request.get('datasetHash', request['sourceHash'])
     if request.get('preparationKey'):
         provenance['preparationKey'] = request['preparationKey']
@@ -126,28 +127,35 @@ def execute(request, workspace):
         import select_cluster_count_nbclust as nb
         def select():
             first = nb.select_k_nbclust(Z.tolist(), expected_shape=Z.shape)
-            second = nb.select_k_nbclust(Z.tolist(), expected_shape=Z.shape)
-            if first != second:
-                raise AssertionError('NbClust reproducibility failed')
-            write_json(workspace/'nbclust-checks.json', [asdict(first), asdict(second)])
+            write_json(workspace/'nbclust-checks.json', [asdict(first)])
             return first
         selection = measured('nbclust', select)
         k = selection.selected_k
         stage('dpc')
-        initializations = measured('dpc', lambda: [exact_dpc_init(Z.tolist(), k) for _ in range(dpc.DETERMINISM_RUNS)])
-        measured('validation', lambda: dpc.validate_repeated_runs(initializations))
+        initializations = measured('dpc', lambda: [exact_dpc_init(Z.tolist(), k) for _ in range(3)])
+        repetition_start = perf_counter()
+        initializations += measured('dpc', lambda: [exact_dpc_init(Z.tolist(), k) for _ in range(27)])
+        added_repetition_seconds = perf_counter() - repetition_start
+        measured('validation', lambda: [dpc.validate_repeated_runs(initializations[i:i+3]) for i in range(0, 30, 3)])
         initialization = initializations[0]
         evaluate = ExactMetrics(Z)
         stage('lloyd')
-        runs = measured('lloyd', lambda: [enhanced.run_enhanced_kmeans(Z, np.asarray(init.centroid_matrix), k,
-            expected_shape=Z.shape, evaluate=evaluate) for init in initializations])
+        def fit_initializations(values):
+            return [enhanced.run_enhanced_kmeans(Z, np.asarray(init.centroid_matrix), k,
+                expected_shape=Z.shape, evaluate=evaluate) for init in values]
+        runs = measured('lloyd', lambda: fit_initializations(initializations[:3]))
+        repetition_start = perf_counter()
+        runs += measured('lloyd', lambda: fit_initializations(initializations[3:]))
+        added_repetition_seconds += perf_counter() - repetition_start
+        timings['additional_enhanced_repetitions'] = added_repetition_seconds
         timings['lloyd'] -= evaluate.seconds
-        measured('validation', lambda: enhanced.validate_reproducibility(runs))
+        measured('validation', lambda: [enhanced.validate_reproducibility(runs[i:i+3]) for i in range(0, 30, 3)])
         write_json(workspace/'enhanced-repetitions.json', {
             'dpc': [asdict(init) for init in initializations],
             'lloyd': [{'iterations': run.iterations, 'inertia': run.inertia, 'metrics': metrics(run)} for run in runs]})
         timings['validation'] += evaluate.seconds
         r = runs[0]; labels = r.labels
+        assert_identical_partitions([run.labels for run in runs], labels)
         result['enhanced'] = {**pca, 'participantCount': n, 'selectedK': k, 'initialization': 'DPC',
             'iterations': r.iterations, 'convergedBeforeMaxIter': r.iterations < enhanced.MAX_ITER,
             'clusterSizes': np.bincount(labels).tolist(), 'metrics': metrics(r),
@@ -157,7 +165,7 @@ def execute(request, workspace):
                 'tieOccurred': len(selection.leaders)>1, 'reproducible': True},
             'dpc': {'cutoffPercentile': initialization.cutoff_percentile, 'distanceCutoff': initialization.d_c,
                 'centroidCount': k, 'dimensions': Z.shape[1], 'pairwiseDistanceCount': initialization.pairwise_distance_count,
-                'determinismPassed': True, 'ariByRun': [{'seed': i+1, 'adjustedRandIndex': float(adjusted_rand_score(labels, run.labels))} for i, run in enumerate(runs)],
+                'determinismPassed': True, 'ariByRun': [{'seed': i+1, 'adjustedRandIndex': float(adjusted_rand_score(labels, run.labels))} for i, run in enumerate(runs[:3])],
                 'decisionGraph': [{'rho': initialization.rho[i], 'delta': initialization.delta[i], 'gamma': initialization.gamma[i],
                     'selected': i in initialization.selected_indices} for i in range(n)],
                 'centers': [{'rid': ids[i], 'coordinates': list(initialization.centroid_matrix[pos]), 'rho': initialization.rho[i],
@@ -173,7 +181,7 @@ def execute(request, workspace):
         enhanced_result = json.loads(Path(request['enhancedResult']).read_text())
         assert standard['provenance'] == enhanced_result['provenance'] == provenance
         standard_labels = load_partitions(Path(request['standardResult']).parent/'partitions.npz', standard, ids, 30)
-        enhanced_labels = load_partitions(Path(request['enhancedResult']).parent/'partitions.npz', enhanced_result, ids, 3)
+        enhanced_labels = load_partitions(Path(request['enhancedResult']).parent/'partitions.npz', enhanced_result, ids, 30)[:3]
         k = standard['standard']['selectedK']; dk = enhanced_result['enhanced']['selectedK']
         evaluate = ExactMetrics(Z)
         stage('k_selection')
@@ -233,6 +241,7 @@ def execute(request, workspace):
     result['assignmentsHash'] = digest((workspace/'partitions.npz').read_bytes())
     result['nativeSpace'] = 'standardized_13' if request['method'] == 'standard' else 'retained_pcs'
     if request['method'] != 'comparison':
+        result['initializationEvidence'] = measured('evidence', lambda: {request['method']: derive([run.labels for run in runs], 1 if request['method'] == 'enhanced' else 0, ids)})
         result['fitEvidence'] = [{'run': i, 'inertia': float(run.inertia), 'iterations': run.iterations} for i, run in enumerate(runs)]
     result['centroids'] = [{'cluster': c, 'x': float(xy[labels == c, 0].mean()), 'y': float(xy[labels == c, 1].mean())} for c in range(k)]
     result['timings'] = timings

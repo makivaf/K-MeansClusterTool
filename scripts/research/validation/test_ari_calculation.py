@@ -1,7 +1,7 @@
 """Small known ARI example, precision agreement, and ordered-cohort rejection."""
 import unittest
 
-from derive_partition_evidence import ari_calculation, ari_from_contingency, six_decimal_match
+from derive_partition_evidence import ari_calculation, ari_from_contingency, six_decimal_match, derive, assert_identical_partitions
 
 
 class AriCalculationTests(unittest.TestCase):
@@ -35,6 +35,27 @@ class AriCalculationTests(unittest.TestCase):
         self.assertEqual(result['pair'], dict(kind='run', first=1, second=2))
         self.assertEqual(result['ariRecalculated'], 1)
         self.assertEqual(ari_from_contingency([[4, 0], [0, 0]])['ariRecalculated'], 1)
+
+    def test_own_thirty_run_evidence(self):
+        labels = [[0, 0, 1, 1]] * 30
+        assert_identical_partitions(labels, labels[0])
+        record = derive(labels, 1, ['a', 'b', 'c', 'd'])
+        self.assertEqual(record['executions'], 30)
+        self.assertEqual(record['pairwiseComparisons'], 435)
+        self.assertEqual(record['modalPartitionFrequency'], 30)
+        self.assertEqual(record['minimumPairwiseAri'], 1)
+        self.assertEqual(record['maximumDifferingParticipants'], 0)
+        self.assertEqual(record['ariCalculation']['pair']['kind'], 'run')
+        self.assertEqual(len(record['pairwiseAriMatrix']), 30)
+
+    def test_enhanced_changed_partition_fails(self):
+        labels = [[0, 0, 1, 1]] * 29 + [[0, 1, 0, 1]]
+        with self.assertRaisesRegex(AssertionError, 'job partition'):
+            assert_identical_partitions(labels, labels[0])
+        with self.assertRaises(AssertionError):
+            assert_identical_partitions(labels[:3], labels[0])
+        with self.assertRaises(AssertionError):
+            assert_identical_partitions([[1, 1, 0, 0]] * 30, labels[0])
 
     def test_order_mismatch_fails(self):
         with self.assertRaisesRegex(ValueError, 'order mismatch'):

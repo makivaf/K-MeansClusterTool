@@ -4,7 +4,7 @@ import { API_BASE_URL } from "../../config/api";
 import { formatNumber } from "../../utils/formatNumber";
 import { Dialog } from "./ui";
 import type { SilhouetteParticipant } from "../SilhouetteCalculationCard";
-type Condition = NonNullable<MethodResult["commonSpace"]>["spaces"][number]["conditions"]["standard"];
+type Calculation = MethodResult["calculation"];
 const f = (n?: number) => formatNumber(n, "calculation", "Not available");
 export function ParticipantRows({ rows, all = false }: { rows: readonly SilhouetteParticipant[]; all?: boolean }) {
   const [query, setQuery] = useState("");
@@ -23,14 +23,12 @@ export function ParticipantRows({ rows, all = false }: { rows: readonly Silhouet
     {all && <div><p>{formatNumber(filtered.length, "count")} participants · Page {formatNumber(Math.floor(offset / size) + 1, "count")}</p><button type="button" disabled={offset === 0} onClick={() => setPage(page - 1)}>Previous</button> <button type="button" disabled={offset + size >= filtered.length} onClick={() => setPage(page + 1)}>Next</button></div>}
   </div>;
 }
-export function CalculationDetails({ before, after, beforeLabel, afterLabel }: { before: Condition; after: Condition; beforeLabel: string; afterLabel: string }) {
-  const [opened, setOpened] = useState(false), [selected, setSelected] = useState("before"), [dialog, setDialog] = useState(false);
+function CalculationColumn({ calculation: calc, label, workedLabel, opened, silhouetteOnly }: { calculation?: Calculation; label: string; workedLabel: string; opened: boolean; silhouetteOnly: boolean }) {
+  const [dialog, setDialog] = useState(false);
   const [loaded, setLoaded] = useState<{ url: string; rows: SilhouetteParticipant[] } | null>(null), [error, setError] = useState(false);
-  const current = selected === "before" ? before : after;
-  const name = selected === "before" ? beforeLabel : afterLabel;
-  const calc = current.calculation, ref = calc.participantSidecar;
+  const ref = calc?.participantSidecar;
   useEffect(() => {
-    if (!opened || !ref) return;
+    if (!opened || !ref || !calc) return;
     const controller = new AbortController(); setLoaded(null); setError(false);
     void fetch(API_BASE_URL + ref.url, { cache: "no-store", signal: controller.signal }).then(async response => {
       if (!response.ok) throw Error(); const data = await response.json() as { rows: SilhouetteParticipant[] };
@@ -46,23 +44,25 @@ export function CalculationDetails({ before, after, beforeLabel, afterLabel }: {
     return () => controller.abort();
   }, [opened, ref?.url, ref?.sha256, calc]);
   const rows = loaded?.url === ref?.url ? loaded?.rows : undefined;
-  const first = rows?.[0], db = calc.daviesBouldin, ch = calc.calinskiHarabasz;
-  return <details onToggle={event => setOpened(event.currentTarget.open)}><summary>Calculation details</summary>
-    <p className="final-caption">{formatNumber(calc.n, "count")} participants · k = {formatNumber(calc.k, "count")} · 13 standardized variables · stored {name === "Enhanced" ? "Enhanced partition" : "seed 0"}</p>
-    <div className="final-segment" role="group" aria-label="Calculation run">{[["before", beforeLabel], ["after", afterLabel]].map(([key, label]) => <button key={key} type="button" aria-pressed={selected === key} onClick={() => { setSelected(key); setDialog(false); }}>{label === "Enhanced" ? label : `${label} (seed 0)`}</button>)}</div>
-    <section className="final-card" style={{ marginTop: 16 }}><h4>Silhouette Coefficient</h4><p>s(i) = (b(i) − a(i)) / max(a(i), b(i))</p>
-      {first ? <p>RID {first.rid}: ({f(first.b)} − {f(first.a)}) / max({f(first.a)}, {f(first.b)}) = {f(first.s)}{first.s === 0 && first.a === 0 ? " (singleton convention: s(i) = 0)" : ""}</p> : <p role="status">Not available{error ? " — sidecar rows failed validation" : ref ? " — loading sidecar rows" : " — no participant sidecar"}</p>}
-      {rows && <><ParticipantRows rows={rows} /><button type="button" onClick={() => setDialog(true)}>View all {formatNumber(calc.n, "count")} participants</button></>}
-      <p>Overall = mean of {formatNumber(calc.n, "count")} s(i) values = {f(calc.metrics.silhouette)}</p>
-      <p className="final-caption">Stored run range: {formatNumber(current.minimum.silhouette)} to {formatNumber(current.maximum.silhouette)}</p>
+  const first = rows?.[0], db = calc?.daviesBouldin, ch = calc?.calinskiHarabasz;
+  return <section className="final-stack"><header><h4>{label}</h4><small className="final-caption">{workedLabel}</small></header>
+    <section className="final-card" style={{ padding: 16 }}><h5>Silhouette Coefficient</h5><p>s(i) = (b(i) − a(i)) / max(a(i), b(i))</p>
+      {first ? <><ParticipantRows rows={[first]} /><p>({f(first.b)} − {f(first.a)}) / max({f(first.a)}, {f(first.b)}) = {f(first.s)}{first.s === 0 && first.a === 0 ? " (singleton convention: s(i) = 0)" : ""}</p></> : <p role="status">Not available{error ? " — sidecar rows failed validation" : ref ? " — loading sidecar rows" : " — no participant sidecar"}</p>}
+      {rows && <><ParticipantRows rows={rows} /><button type="button" onClick={() => setDialog(true)}>View all {formatNumber(calc?.n, "count")} participants</button></>}
+      <p><strong>Overall Silhouette = mean of s(i) = {f(calc?.metrics.silhouette)}</strong></p>
     </section>
-    <div className="final-grid" style={{ marginTop: 16 }}><section className="final-card"><h4>Davies-Bouldin Index</h4><p>DB = (σ₀ + σ₁) / d(c₀,c₁)</p>
-      {calc.k === 2 && db ? <p>({f(db.sigma0)} + {f(db.sigma1)}) / {f(db.centroidDistance)} = {f(calc.metrics.davies_bouldin)}</p> : <p>Not available</p>}
-      <p className="final-caption">Range: {formatNumber(current.minimum.davies_bouldin)} to {formatNumber(current.maximum.davies_bouldin)}</p></section>
-      <section className="final-card"><h4>Calinski-Harabasz Index</h4><p>CH = (SSB / (K − 1)) / (SSW / (N − K))</p>
-        {ch ? <p>({f(ch.ssb)} / ({formatNumber(calc.k, "count")} − 1)) / ({f(ch.ssw)} / ({formatNumber(calc.n, "count")} − {formatNumber(calc.k, "count")})) = {f(calc.metrics.calinski_harabasz)}</p> : <p>Not available</p>}
-        <p className="final-caption">Range: {formatNumber(current.minimum.calinski_harabasz)} to {formatNumber(current.maximum.calinski_harabasz)}</p></section></div>
-    {dialog && rows && <Dialog title={`All ${formatNumber(calc.n, "count")} participants`} close={() => setDialog(false)}><ParticipantRows rows={rows} all /></Dialog>}
-    <p className="final-caption">Range bands use stored repetitions. The worked arithmetic describes the selected stored run.</p>
-  </details>;
+    {!silhouetteOnly && <><section className="final-card" style={{ padding: 16 }}><h5>Davies-Bouldin Index</h5><p>DB = (σ₀ + σ₁) / d(c₀, c₁)</p>
+      {calc?.k === 2 && db ? <><dl><div><dt>Cluster 0 mean distance (σ₀)</dt><dd>{f(db.sigma0)}</dd></div><div><dt>Cluster 1 mean distance (σ₁)</dt><dd>{f(db.sigma1)}</dd></div><div><dt>Distance between centroids</dt><dd>{f(db.centroidDistance)}</dd></div></dl><p>({f(db.sigma0)} + {f(db.sigma1)}) / {f(db.centroidDistance)}</p><p><strong>Davies-Bouldin = {f(calc.metrics.davies_bouldin)}</strong></p></> : <p>Not available</p>}
+    </section><section className="final-card" style={{ padding: 16 }}><h5>Calinski-Harabasz Index</h5><p>CH = (SSB / (K − 1)) / (SSW / (N − K))</p>
+      {calc && ch ? <><dl><div><dt>Between-cluster sum of squares (SSB)</dt><dd>{f(ch.ssb)}</dd></div><div><dt>Within-cluster sum of squares (SSW)</dt><dd>{f(ch.ssw)}</dd></div><div><dt>Clusters (K)</dt><dd>{formatNumber(calc.k, "count")}</dd></div><div><dt>Participants (N)</dt><dd>{formatNumber(calc.n, "count")}</dd></div></dl><p>({f(ch.ssb)} / ({formatNumber(calc.k, "count")} − 1)) / ({f(ch.ssw)} / ({formatNumber(calc.n, "count")} − {formatNumber(calc.k, "count")}))</p><p><strong>Calinski-Harabasz = {f(calc.metrics.calinski_harabasz)}</strong></p></> : <p>Not available</p>}
+    </section></>}
+    {dialog && rows && <Dialog title={label + " — All " + formatNumber(calc?.n, "count") + " participants"} close={() => setDialog(false)}><ParticipantRows rows={rows} all /></Dialog>}
+  </section>;
+}
+export function CalculationDetails({ before, after, beforeLabel, afterLabel, silhouetteOnly = false }: { before?: Calculation; after?: Calculation; beforeLabel: string; afterLabel: string; silhouetteOnly?: boolean }) {
+  const [opened, setOpened] = useState(false);
+  return <details onToggle={event => setOpened(event.currentTarget.open)}><summary>Calculation details</summary><div className="final-grid" style={{ marginTop: 16 }}>
+    <CalculationColumn calculation={before} label={beforeLabel} workedLabel="Worked example: seed 0 (one of 30 runs)" opened={opened} silhouetteOnly={silhouetteOnly} />
+    <CalculationColumn calculation={after} label={afterLabel} workedLabel={silhouetteOnly ? "Worked example: seed 0 (one of 30 runs)" : "Deterministic run"} opened={opened} silhouetteOnly={silhouetteOnly} />
+  </div></details>;
 }

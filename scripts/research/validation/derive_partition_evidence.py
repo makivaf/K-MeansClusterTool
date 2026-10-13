@@ -17,8 +17,8 @@ def six_decimal_match(*values):
 def ari_from_contingency(table):
     """Exact integer combination terms; floating division only at the end."""
     table = np.asarray(table)
-    if table.shape != (2, 2) or not np.issubdtype(table.dtype, np.integer) or np.any(table < 0):
-        raise ValueError('ARI calculation requires a two-by-two count table')
+    if table.ndim != 2 or min(table.shape) < 1 or not np.issubdtype(table.dtype, np.integer) or np.any(table < 0):
+        raise ValueError('ARI calculation requires a nonempty count table')
     choose2 = lambda n: int(n) * (int(n) - 1) // 2
     rows, columns = table.sum(axis=1), table.sum(axis=0)
     n = int(table.sum())
@@ -65,32 +65,10 @@ def ari_calculation(labels, ids_by_run, first_run=0, stored_matrix=None):
     return calculation
 
 
-def enhanced_repetitions(result, ids, labels):
-    """Use D1 only for the same prepared geometry and stored partition.
-
-    A subset or another dataset retains its own existing repetitions.
-    """
-    root = Path(__file__).resolve().parents[3]
-    folder = root / 'apps/api/private/final-ui-evidence'
-    if not (folder / 'enhanced-30-report.json').exists():
-        return labels
-    report = json.loads((folder / 'enhanced-30-report.json').read_text())
-    artifact = folder / 'enhanced-30-partitions.npz'
-    if digest(artifact) != report['artifactSha256'] or any(digest(root / name) != sha for name, sha in report['sources'].items()):
-        raise ValueError('D1 evidence source drift')
-    with np.load(artifact, allow_pickle=False) as saved:
-        stored_ids, repeated = saved['ids'].tolist(), saved['labels'].copy()
-    if set(ids) != set(stored_ids):
-        return labels
-    import csv
-    with (root / 'data/interim/clustering_pca_scores.csv').open(encoding='utf-8-sig', newline='') as handle:
-        geometry = {row['RID']: [float(row['PC1']), float(row['PC2'])] for row in csv.DictReader(handle)}
-    if not np.allclose(result['common']['xy'], [geometry[rid] for rid in ids], rtol=1e-12, atol=1e-12):
-        return labels
-    ordered = repeated[:, [stored_ids.index(rid) for rid in ids]]
-    if not all(adjusted_rand_score(ordered[0], row) == 1 for row in labels):
-        return labels
-    return ordered
+def assert_identical_partitions(partitions, partition):
+    labels = np.asarray(partitions)
+    if labels.shape != (30, len(partition)) or not all(np.array_equal(row, partition) for row in labels):
+        raise AssertionError('Enhanced 30-run partitions must equal the job partition')
 
 
 def derive(partitions, first_run=0, ids=None):
@@ -155,15 +133,17 @@ def load(folder, key, count, expected_ids=None):
 def evidence(folder, final_ui=False):
     result = json.loads((folder/'result.json').read_text())
     method = result['method']
-    result, ids, labels = load(folder, 'controlLabels' if method == 'comparison' else 'labels', 3 if method == 'enhanced' else 30)
+    result, ids, labels = load(folder, 'controlLabels' if method == 'comparison' else 'labels', 30)
     if method != 'comparison':
         rows = result['standard']['ariBySeed'] if method == 'standard' else result['enhanced']['dpc']['ariByRun']
-        if any(abs(float(adjusted_rand_score(labels[0], row)) - rows[i]['adjustedRandIndex']) > 1e-12 for i, row in enumerate(labels)):
+        if any(abs(float(adjusted_rand_score(labels[0], row)) - rows[i]['adjustedRandIndex']) > 1e-12 for i, row in enumerate(labels[:len(rows)])):
             raise ValueError('Designated reference ARI mismatch')
-        return {method: derive(enhanced_repetitions(result, ids, labels) if method == 'enhanced' and final_ui else labels, 1 if method == 'enhanced' else 0, ids)}
+        if method == 'enhanced':
+            assert_identical_partitions(labels, result['labels'])
+        return {method: derive(labels, 1 if method == 'enhanced' else 0, ids)}
     job = json.loads((folder/'job.json').read_text())
     output = {'pcaRandom': derive(labels, ids=ids)}
-    for name, count in [('standard', 30), ('enhanced', 3)]:
+    for name, count in [('standard', 30), ('enhanced', 30)]:
         source = folder.parent/job[name+'Id']
         other, _, assignments = load(source, 'labels', count, ids)
         hashes = result['comparisonSources'][name]
@@ -178,10 +158,8 @@ def evidence(folder, final_ui=False):
             raise ValueError('Controlled designated reference ARI mismatch')
     for name, derived in output.items():
         pair = result['commonSpace']['pairwise'][name]
-        if derived['pairwiseComparisons'] != pair['pairCount'] or abs(derived['minimumPairwiseAri'] - pair['minimum']) > 1e-12 or abs(derived['meanPairwiseAri'] - pair['mean']) > 1e-12:
+        if name != 'enhanced' and (derived['pairwiseComparisons'] != pair['pairCount'] or abs(derived['minimumPairwiseAri'] - pair['minimum']) > 1e-12 or abs(derived['meanPairwiseAri'] - pair['mean']) > 1e-12):
             raise ValueError('Pairwise reference summary mismatch')
-    if final_ui:
-        output['enhanced'] = derive(enhanced_repetitions(other, ids, assignments), 1, ids)
     return output
 
 

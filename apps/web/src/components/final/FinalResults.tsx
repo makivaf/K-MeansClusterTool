@@ -3,7 +3,8 @@ import { CartesianGrid, Legend, ResponsiveContainer, Scatter, ScatterChart, Tool
 import type { MethodResult } from "../../../../../packages/shared/src/methodExecution";
 import { formatNumber } from "../../utils/formatNumber";
 import { Panel, T } from "./ui";
-import { RangeCards } from "./RangeCards";
+import { NativeMetricTable } from "./RangeCards";
+import { CalculationDetails } from "./CalculationDetails";
 export const assignmentCaption = (count?: number, ari?: number) => count === undefined || ari === undefined ? "Not available" : `${formatNumber(count, "count")} participant${count === 1 ? "" : "s"} assigned differently · ARI ${formatNumber(ari, "ari")}`;
 export const standardDifferenceCaption = (count?: number) => count === undefined ? "Standard seed 0 difference: Not available." : `Standard seed 0 differs by ${formatNumber(count, "count")} participant${count === 1 ? "" : "s"}.`;
 export function integerScatterAxis(values: number[]) {
@@ -30,7 +31,7 @@ function Distribution({ sizes, n, label }: { sizes: number[]; n: number; label: 
 }
 export function FinalResults({ standard, enhanced, comparison, longitudinal }: { standard: MethodResult; enhanced: MethodResult; comparison?: MethodResult; longitudinal?: ReactNode }) {
   const s = standard.standard!, e = enhanced.enhanced!;
-  const stability = comparison?.initializationEvidence ?? { ...standard.initializationEvidence, ...enhanced.initializationEvidence };
+  const stability = { ...standard.initializationEvidence, ...enhanced.initializationEvidence };
   const standardPercent = stability.standard?.modalPartitionPercent, enhancedPercent = stability.enhanced?.modalPartitionPercent;
   const difference = standardPercent !== undefined && enhancedPercent !== undefined ? enhancedPercent - standardPercent : undefined;
   const cross = comparison?.commonSpace?.crossMethod.find(row => row.seed === 0);
@@ -44,9 +45,24 @@ export function FinalResults({ standard, enhanced, comparison, longitudinal }: {
     <tr><th>Maximum differing participants</th><td>{formatNumber(stability.standard?.maximumDifferingParticipants, "count", "Not available")}</td><td>{formatNumber(stability.enhanced?.maximumDifferingParticipants, "count", "Not available")}</td></tr>
     <tr><th>Selected k</th><td>{formatNumber(s.selectedK, "count")}</td><td>{formatNumber(e.selectedK, "count")}</td></tr>
   </tbody></table></Panel>
-  <Panel title="Clustering quality: comparable"><RangeCards comparison={comparison} /></Panel>
+  <Panel title="Internal validation"><NativeMetricTable before={s.metrics} after={e.metrics} dimensions={standard.common.retainedVariables.length} components={enhanced.common.pca.pcaComponents} /><CalculationDetails before={standard.calculation} after={enhanced.calculation} beforeLabel={"Standard K-Means (" + formatNumber(standard.common.retainedVariables.length, "count") + " variables)"} afterLabel={"Enhanced K-Means (" + formatNumber(enhanced.common.pca.pcaComponents, "count") + " PCs)"} /></Panel>
   <Panel title="Cluster distribution"><div className="final-grid"><Distribution label="Standard (seed 0)" sizes={s.runs[0].clusterSizes} n={standard.common.participantCount} /><Distribution label="Enhanced" sizes={e.clusterSizes} n={enhanced.common.participantCount} /></div><p>{assignmentCaption(cross?.disagreementCount, cross?.ari)}</p></Panel>
   {longitudinal ?? <Panel title="Longitudinal observed means"><p>Not available</p></Panel>}
-  <details><summary>Show cluster visualization</summary><Panel title="What the two clusters look like" kind="enhanced"><EnhancedScatter result={enhanced} /><p className="final-caption">{standardDifferenceCaption(cross?.disagreementCount)}</p></Panel></details>
+  <details><summary>Show cluster visualization</summary><Panel title="What the two clusters look like" kind="enhanced"><div className="final-grid"><section><h4>Standard K-Means</h4><EnhancedScatter result={standard} /></section><section><h4>Enhanced K-Means</h4><EnhancedScatter result={enhanced} /></section></div><p className="final-caption">{standardDifferenceCaption(cross?.disagreementCount)}</p></Panel></details>
   </div>;
+}
+
+export function IndividualFinalResults({ result }: { result: MethodResult }) {
+  const standard = result.standard, enhanced = result.enhanced;
+  const metrics = standard?.metrics ?? enhanced!.metrics;
+  const sizes = standard?.runs[0].clusterSizes ?? enhanced!.clusterSizes;
+  const keys = [["silhouette", "Silhouette", "Higher is better"], ["davies_bouldin", "Davies�Bouldin", "Lower is better"], ["calinski_harabasz", "Calinski�Harabasz", "Higher is better"]] as const;
+  return <div className="final-stack"><Panel title={`${standard ? "Standard" : "Enhanced"} K-Means final results`} kind={standard ? "standard" : "enhanced"}>
+    <p>Clustering space: {formatNumber(standard ? result.common.retainedVariables.length : result.common.pca.pcaComponents, "count")} {standard ? "standardized variables" : "retained principal components"}.</p>
+    <table><thead><tr><th>Metric</th><th>{standard ? "Mean (SD) over 30 seeds" : "Value"}</th></tr></thead><tbody>{keys.map(([key, label, direction]) => {
+      const sd = standard ? Math.sqrt(standard.runs.reduce((sum, run) => sum + (run.metrics[key] - metrics[key]) ** 2, 0) / (standard.runs.length - 1)) : undefined;
+      return <tr key={key}><th>{label}<small style={{ display: "block" }}>{direction}</small></th><td>{formatNumber(metrics[key], "calculation")}{sd !== undefined && ` (${formatNumber(sd, "calculation")})`}</td></tr>;
+    })}</tbody></table><Distribution sizes={sizes} n={result.common.participantCount} label={standard ? "Standard (seed 0)" : "Enhanced"} />
+    <h4>PCA scatter</h4><EnhancedScatter result={result} />
+  </Panel></div>;
 }
