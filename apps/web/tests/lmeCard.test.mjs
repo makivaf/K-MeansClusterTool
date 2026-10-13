@@ -47,8 +47,8 @@ for (const values of [
   assert.match(lme, /Annual ADAS-Cog13 Change/);
   assert.ok(lme.indexOf('Cluster 0') < lme.indexOf('Cluster 1'));
   assert.match(lme, /Lower impairment/); assert.match(lme, /Higher impairment/);
-  for (const value of [values.lower, values.higher, values.effect, ...values.ci]) assert.ok(lme.includes(value.toFixed(3)));
-  assert.ok(lme.includes(values.p < 0.001 ? '&lt; 0.001' : values.p.toFixed(3)));
+  for (const value of [values.lower, values.higher, values.effect, ...values.ci]) assert.ok(lme.includes(value.toLocaleString('en-US', {minimumFractionDigits:5, maximumFractionDigits:5})));
+  assert.ok(lme.includes(values.p.toFixed(5)));
   assert.equal((lme.match(/ADAS-Cog13 points\/year/g) ?? []).length, 2);
   assert.equal((lme.match(/study-lme-slope-value/g) ?? []).length, 2);
   assert.doesNotMatch(lme, /<table|<svg|Cluster 1 shows a greater annual increase/);

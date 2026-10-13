@@ -51,16 +51,15 @@ export const InternalValidationCalculationDetails = ({ standard, enhanced, singl
       <h4>{deterministic?"Deterministic run":"Stored seed 0"}</h4>
       {!calc && <p role="status">Stored calculation evidence not available.</p>}
       <section className="internal-calculation-card"><h5>Silhouette Coefficient</h5>
-        <p>s(i) = (b(i) - a(i)) / max(a(i), b(i))</p>
         {rows?.length===method.n?<SilhouetteParticipantTable rows={rows} n={method.n}/>:<p role="status">{rowError?"Stored participant calculation could not be validated.":ref?"Loading stored participant calculations...":"Participant-level calculation unavailable for this cached run."}</p>}
         <p>{deterministic?"Deterministic overall Silhouette":"Seed-0 overall Silhouette"}: <strong>{f(metricResult?.silhouette)}</strong> = mean of s(i).</p>
       </section>
       <section className="internal-calculation-card"><h5>Davies-Bouldin Index</h5>
-        {method.k===2?<><p>DB = (sigma0 + sigma1) / d(c0,c1)</p><dl><div><dt>sigma0</dt><dd>{f(db?.sigma0)}</dd></div><div><dt>sigma1</dt><dd>{f(db?.sigma1)}</dd></div><div><dt>d(c0,c1)</dt><dd>{f(db?.centroidDistance)}</dd></div></dl>
+        {method.k===2?<><dl><div><dt>sigma0</dt><dd>{f(db?.sigma0)}</dd></div><div><dt>sigma1</dt><dd>{f(db?.sigma1)}</dd></div><div><dt>d(c0,c1)</dt><dd>{f(db?.centroidDistance)}</dd></div></dl>
           {db && <p data-formula="db">({f(db.sigma0)} + {f(db.sigma1)}) / {f(db.centroidDistance)} = {f(metricResult?.davies_bouldin)}</p>}</>:<p role="status">The two-cluster substitution is not applicable to this partition.</p>}
       </section>
       <section className="internal-calculation-card"><h5>Calinski-Harabasz Index</h5>
-        <p>CH = (SSB / (K-1)) / (SSW / (N-K))</p><dl><div><dt>SSB</dt><dd>{f(ch?.ssb)}</dd></div><div><dt>SSW</dt><dd>{f(ch?.ssw)}</dd></div><div><dt>N</dt><dd>{formatNumber(method.n,"count")}</dd></div><div><dt>K</dt><dd>{formatNumber(method.k,"count")}</dd></div></dl>
+        <dl><div><dt>SSB</dt><dd>{f(ch?.ssb)}</dd></div><div><dt>SSW</dt><dd>{f(ch?.ssw)}</dd></div><div><dt>N</dt><dd>{formatNumber(method.n,"count")}</dd></div><div><dt>K</dt><dd>{formatNumber(method.k,"count")}</dd></div></dl>
         {ch && <p data-formula="ch">({f(ch.ssb)} / ({formatNumber(method.k,"count")}-1)) / ({f(ch.ssw)} / ({formatNumber(method.n,"count")}-{formatNumber(method.k,"count")})) = {f(metricResult?.calinski_harabasz)}</p>}
       </section>
       {method.summary && method.runCount===30 && <section><h5>30-run summary</h5><table className="research-table"><thead><tr><th>Metric</th><th>Mean</th><th>SD</th><th>Min</th><th>Max</th></tr></thead><tbody>{metricDefinitions.map(({key,label})=><tr key={key}><th>{label}</th>{[method.summary!.mean[key],method.summary!.sd[key],method.summary!.minimum[key],method.summary!.maximum[key]].map((value,i)=><td key={i}>{formatNumber(value,"metric")}</td>)}</tr>)}</tbody></table>{validRange && <p>Stored seed 0 lies within this range</p>}</section>}

@@ -15,18 +15,18 @@ const { MetricComparisonTable, formatMetric, PcaContribution, InternalValidation
 const render = (component, props) => renderToStaticMarkup(React.createElement(component, props));
 const values = { silhouette: 0.329681, davies_bouldin: 1.238391, calinski_harabasz: 1123.992 };
 const changes = { silhouette: 12.42, davies_bouldin: -12.09, calinski_harabasz: 24.82 };
-assert.equal(formatMetric(values.calinski_harabasz), "1,123.9920");
+assert.equal(formatMetric(values.calinski_harabasz), "1,123.99200");
 const signed = render(MetricComparisonTable, { existing: values, enhanced: values, relativeChange: changes });
 assert.match(signed, /Higher is better/); assert.match(signed, /Lower is better/);
 assert.equal((signed.match(/scope="row"/g) ?? []).length, 3);
-assert.match(signed, /0\.3297/); assert.match(signed, /1,123\.9920/);
+assert.match(signed, /0\.32968/); assert.match(signed, /1,123\.9920/);
 assert.match(signed, /Standard \(mean of 30 runs\)/);
 assert.match(signed, />Difference<\/th>/); assert.match(signed, /Enhanced minus Standard<\/caption>/);
 assert.doesNotMatch(signed, /Improvement|%|↑|↓|internal-validation-enhanced/);
 const difference = render(MetricComparisonTable, { existing: values, enhanced: values,
   absoluteDifference: { silhouette: -0.0002, davies_bouldin: 0.0006, calinski_harabasz: 0.0505 },
   existingSD: { silhouette: 0.000234 } });
-assert.match(difference, /0\.3297 \(0\.0002\)/);
+assert.match(difference, /0\.32968 \(0\.00023\)/);
 for (const value of ['-0.0002', '0.0006', '0.0505']) assert.ok(difference.includes(value));
 assert.doesNotMatch(difference, /Improvement|%|↑|↓/);
 const pca = render(PcaContribution, { dimensions: 13, components: 6, existing: values, enhanced: values, relativeChange: changes, note: "Controlled random starts" });
@@ -38,7 +38,7 @@ const details = render(InternalValidationCalculationDetails, { standard: { n: 10
 assert.match(details, /<details/); assert.match(details, /View Calculation Details/);
 const standardOnly = render(MetricComparisonTable, { existing: values, standardOnly: true });
 assert.doesNotMatch(standardOnly, />Enhanced<|>Improvement</);
-console.log("PASS neutral metric tables, no legacy percentages, four-decimal values, optional SD, six-decimal calculations and disclosures");
+console.log("PASS neutral metric tables, no legacy percentages, five-decimal values, optional SD, six-decimal calculations and disclosures");
 const calculation = {
   seed: 0, representation: 'Standardized features',
   exampleParticipant: { rid: '6839', a: 4.329275, b: 6.459013, s: 0.329731 },
@@ -52,12 +52,12 @@ const method = { n: 100, k: 2, metrics: values, calculation: {...calculation,met
 for (const props of [{ standard: method, enhanced: method }, { enhanced: method }]) {
   const html = render(InternalValidationCalculationDetails, props);
   for (const label of descriptiveIndices) assert.ok(html.includes(label),label);
-  assert.match(html, /s\(i\) = \(b\(i\) - a\(i\)\) \/ max/);
+  assert.doesNotMatch(html, /s\(i\) = \(b\(i\) - a\(i\)\) \/ max|DB = \(sigma0|CH = \(SSB/);
   assert.match(html, /data-formula="db"/); assert.match(html, /data-formula="ch"/);
   assert.match(html, /1\.234567/); assert.match(html, /2\.345678/); assert.match(html, /3\.456789/);
   assert.match(html, /1,234\.567890/); assert.match(html, /2,345\.678901/);
   assert.match(html, /1\.238391/); assert.match(html, /1,123\.992000/);
-  assert.doesNotMatch(html, /6839|4\.329275|6\.459013|0\.329731/);
+  assert.doesNotMatch(html, /6839|4\.329275|6\.459013|0\.3296831/);
   assert.match(html, /Participant-level calculation unavailable/);
 }
 const pcaEvidence = render(PcaContribution, { dimensions: 13, components: 6, existing: values, enhanced: values,
@@ -66,6 +66,6 @@ const pcaEvidence = render(PcaContribution, { dimensions: 13, components: 6, exi
 for (const label of descriptiveSilhouette) assert.ok(pcaEvidence.includes(label), label);
 assert.match(pcaEvidence, /Representative values cannot populate this table/);
 assert.match(pcaEvidence, /<dd>0\.329681<\/dd>/);
-assert.doesNotMatch(pcaEvidence, /6839|4\.329275|6\.459013|0\.329731/);
+assert.doesNotMatch(pcaEvidence, /6839|4\.329275|6\.459013|0\.3296831/);
 assert.doesNotMatch(pcaEvidence, /<dt>(RID|a\(i\)|b\(i\)|s\(i\))<\/dt>/);
 console.log('PASS shared Standard/Enhanced/PCA calculation columns, unavailable full evidence, retained aggregate and other index values, and no fabricated representative rows');

@@ -236,7 +236,7 @@ const enhancedWithLoadings = { ...run, pca: { ...run.pca, pcaLoadings: {
 const withLoadings = render("completed", "completed", "sop1", { enhanced: { status: "completed", run: enhancedWithLoadings } });
 assert.match(withLoadings, /Comparison Ready/);
 assert.equal((withLoadings.match(/Principal Components — Loading Matrix/g) ?? []).length, 1);
-assert.match(withLoadings, /\+0\.422/); assert.match(withLoadings, /-0\.438/);
+assert.match(withLoadings, /\+0\.42158/); assert.match(withLoadings, /-0\.43819/);
 assert.ok(withLoadings.indexOf("Principal Components — Variance Summary") < withLoadings.indexOf("Principal Components — Loading Matrix"));
 assert.ok(withLoadings.indexOf("Principal Components — Loading Matrix") < withLoadings.indexOf("PCA Contribution"));
 assert.doesNotMatch(render("completed", "running", "sop1", { enhanced: { status: "running", run: enhancedWithLoadings } }), /Principal Components — Loading Matrix/);
@@ -271,7 +271,7 @@ assert.ok(distributions);
 assert.match(distributions, /Standard distribution unavailable/);
 assert.match(distributions, /required shared provenance is missing or mismatched/);
 assert.match(distributions, /1,553/); assert.match(distributions, /884/);
-assert.match(distributions, /participants · 63.73%/); assert.match(distributions, /participants · 36.27%/);
+assert.match(distributions, /participants · 63.72589%/); assert.match(distributions, /participants · 36.27411%/);
 assert.equal((distributions.match(/class="sop-cluster"/g) ?? []).length, 2, 'unavailable Standard never fabricates counts');
 globalThis.__studyEvidence = { ...originalEvidence, status: "ready",
   defenseGeometry: JSON.parse(readFileSync(new URL("../../api/artifacts/defense_geometry.json", import.meta.url))) };
@@ -330,8 +330,8 @@ for (const values of [
   assert.match(lme, /Random intercept only, maximum likelihood/);
   assert.match(lme, /Annual ADAS-Cog13 Change/);
   assert.ok(lme.indexOf('Cluster 0') < lme.indexOf('Cluster 1'), 'cluster cards keep comparison order');
-  for (const value of [values.lower, values.higher, values.effect, ...values.ci]) assert.ok(lme.includes(value.toFixed(3)));
-  assert.ok(lme.includes(values.p < 0.001 ? '&lt; 0.001' : values.p.toFixed(3)));
+  for (const value of [values.lower, values.higher, values.effect, ...values.ci]) assert.ok(lme.includes(value.toLocaleString('en-US', {minimumFractionDigits:5, maximumFractionDigits:5})));
+  assert.ok(lme.includes(values.p.toFixed(5)));
   assert.equal((lme.match(/ADAS-Cog13 points\/year/g) ?? []).length, 2);
   assert.equal((lme.match(/study-lme-slope-value/g) ?? []).length, 2);
   assert.doesNotMatch(lme, /<table|<svg|interpretation banner|Cluster 1 shows a greater annual increase/);

@@ -41,5 +41,5 @@ export function NativeMetricTable({ before, after, dimensions, components, pca =
       const a = before?.[key], b = after?.[key];
       const change = a === undefined || b === undefined || a === 0 ? undefined : (b - a) / a * 100;
       return <tr key={key}><th>{label}<small style={{ display: "block" }}>{direction === "higher" ? "Higher is better" : "Lower is better"}</small></th><td>{formatNumber(a, "calculation", "Not available")}</td><td>{formatNumber(b, "calculation", "Not available")}</td><td>{change === undefined ? "Not available" : `${change >= 0 ? "+" : ""}${formatNumber(change, "percentage")}`}</td></tr>;
-    })}</tbody></table><p className="final-caption">Each method is scored in the feature space in which it clusters: Standard in the {formatNumber(dimensions, "count")} standardized variables, {pca ? "PCA + random" : "Enhanced"} in the {formatNumber(components, "count")} retained principal components.</p></>;
+    })}</tbody></table></>;
 }

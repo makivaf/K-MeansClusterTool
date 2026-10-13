@@ -114,6 +114,16 @@ def prepare_data(request, workspace, measured, stage, hits):
             seal_cache(directory, pca_key, ['scores.npy', 'pca.json'])
         else:
             hits['pca'] = True
-        return np.load(directory/'scores.npy', allow_pickle=False), json.loads((directory/'pca.json').read_text())
+        saved_pca = json.loads((directory/'pca.json').read_text())
+        # Add a derived companion artifact without changing sealed PCA/scores.
+        eigenvalues = [row['eigenvalue'] for row in saved_pca['pcaVariance']]
+        eigenvalue_summary = {'eigenvalues': eigenvalues, 'totalVariance': float(np.sum(eigenvalues))}
+        summary_path = directory/'eigenvalues.json'
+        if summary_path.exists():
+            if json.loads(summary_path.read_text()) != eigenvalue_summary:
+                raise AssertionError('PCA eigenvalue summary differs from verified PCA artifact')
+        else:
+            write_json(summary_path, eigenvalue_summary)
+        return np.load(directory/'scores.npy', allow_pickle=False), saved_pca
     Z, pca = measured('pca', pca_data)
     return X, Z, info, pca, ids, cache

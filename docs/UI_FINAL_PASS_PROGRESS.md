@@ -39,7 +39,7 @@ Final report: `docs/UI_FINAL_PASS_REPORT.md`. Stopped for visual review.
 | ARI calculation addendum | Complete; new Python test (4 cases), web typecheck, affected finalUiPass test and build passed. Standard seeds 0/4, cells [[0,1554],[878,5]], ARI 0.991758; Enhanced runs 1/2. Optional records only; cohort hashes match and existing stored values preserved. Nothing staged, committed, stashed or reset. | derive_partition_evidence.py; partitionEvidence.ts; SopPanels.tsx; finalUiEvidence.json; test_ari_calculation.py; finalUiPass.test.mjs |
 | Small fix pass | Complete: NbClust chart margin, labels and fixed vote axis; SOP 3 bar/stat/matrix order and single calculation disclosure; display-only maximum-overlap contingency columns; comparable quality title and Enhanced-only integer-axis scatter. Web typecheck, affected finalUiPass test and build passed. No computed results or artifacts changed; nothing staged, committed, stashed or reset. | SopPanels.tsx; FinalResults.tsx; finalUiPass.test.mjs |
 
-## Revision pass � final/system-oct12
+## Revision pass - final/system-oct12
 
 | Item | Status | Files touched |
 | --- | --- | --- |

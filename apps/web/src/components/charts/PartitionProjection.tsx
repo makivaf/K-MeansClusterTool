@@ -4,7 +4,7 @@ import { CartesianGrid, ResponsiveContainer, Scatter, ScatterChart, Tooltip, XAx
 import "./PartitionProjection.css";
 
 const palette = ["var(--research-primary)", "var(--research-comparison)", "var(--research-cluster-3)", "var(--research-cluster-4)", "var(--research-cluster-5)", "var(--research-cluster-6)", "var(--research-cluster-7)", "var(--research-cluster-8)", "var(--research-cluster-9)", "var(--research-cluster-10)"];
-export const projectionTick = (value: number) => formatNumber(value, "axis2");
+export const projectionTick = (value: number) => formatNumber(value, "axisTick2");
 type Point = { x: number; y: number; cluster: number };
 // Display bounds only; supplied scientific coordinates remain unchanged.
 export const projectionDomain = (values: readonly number[]): [number, number] => {

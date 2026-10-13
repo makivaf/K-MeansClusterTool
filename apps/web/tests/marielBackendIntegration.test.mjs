@@ -104,11 +104,11 @@ varied.commonSpace.spaces[0].conditions.standard.mean.silhouette = 0.123456;
 varied.commonSpace.spaces[0].conditions.enhanced.mean.silhouette = 0.234567;
 varied.commonSpace.spaces[0].comparison[0].difference = 0.111111;
 const final = render(FreshStudyResults, { standard, enhanced, comparison: varied, initialTab: 'final' });
-assert.match(final, /0.1235/); assert.match(final, /0.2346/); assert.match(final, /0.1111/);
+assert.match(final, /0.12346/); assert.match(final, /0.23457/); assert.match(final, /0.11111/);
 assert.doesNotMatch(final, /Supplementary native-space metrics|Improvement/);
 const simulation = render(SimulationResults, { result: { metadata: {}, comparison: rows,
   analysis: { existing: standard.standard, enhanced: enhanced.enhanced, calculations: { standard: standard.calculation, enhanced: enhanced.calculation } } }, comparisonEvidence: varied });
-assert.match(simulation, /13D evaluation/); assert.match(simulation, /0.1235/); assert.ok(simulation.includes(standard.calculation.metrics.silhouette.toFixed(6)), "Details show the stored seed result, not the six-decimal run mean");
+assert.match(simulation, /13D evaluation/); assert.match(simulation, /0.12346/); assert.ok(simulation.includes(standard.calculation.metrics.silhouette.toFixed(6)), "Details show the stored seed result, not the six-decimal run mean");
 assert.doesNotMatch(simulation, />Improvement</);
 const app = fs.readFileSync(new URL('../src/App.tsx', import.meta.url), 'utf8');
 assert.match(app, /module.StudyExecutionPage/); assert.doesNotMatch(app, /IndependentStudyPage/);

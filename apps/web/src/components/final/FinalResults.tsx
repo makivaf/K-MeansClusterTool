@@ -56,12 +56,10 @@ export function IndividualFinalResults({ result }: { result: MethodResult }) {
   const standard = result.standard, enhanced = result.enhanced;
   const metrics = standard?.metrics ?? enhanced!.metrics;
   const sizes = standard?.runs[0].clusterSizes ?? enhanced!.clusterSizes;
-  const keys = [["silhouette", "Silhouette", "Higher is better"], ["davies_bouldin", "Davies�Bouldin", "Lower is better"], ["calinski_harabasz", "Calinski�Harabasz", "Higher is better"]] as const;
+  const keys = [["silhouette", "Silhouette", "Higher is better"], ["davies_bouldin", "Davies-Bouldin", "Lower is better"], ["calinski_harabasz", "Calinski-Harabasz", "Higher is better"]] as const;
   return <div className="final-stack"><Panel title={`${standard ? "Standard" : "Enhanced"} K-Means final results`} kind={standard ? "standard" : "enhanced"}>
-    <p>Clustering space: {formatNumber(standard ? result.common.retainedVariables.length : result.common.pca.pcaComponents, "count")} {standard ? "standardized variables" : "retained principal components"}.</p>
-    <table><thead><tr><th>Metric</th><th>{standard ? "Mean (SD) over 30 seeds" : "Value"}</th></tr></thead><tbody>{keys.map(([key, label, direction]) => {
-      const sd = standard ? Math.sqrt(standard.runs.reduce((sum, run) => sum + (run.metrics[key] - metrics[key]) ** 2, 0) / (standard.runs.length - 1)) : undefined;
-      return <tr key={key}><th>{label}<small style={{ display: "block" }}>{direction}</small></th><td>{formatNumber(metrics[key], "calculation")}{sd !== undefined && ` (${formatNumber(sd, "calculation")})`}</td></tr>;
+    <table><thead><tr><th>Metric</th><th>{standard ? "Mean over 30 seeds" : "Value"}</th></tr></thead><tbody>{keys.map(([key, label, direction]) => {
+      return <tr key={key}><th>{label}<small style={{ display: "block" }}>{direction}</small></th><td>{formatNumber(metrics[key], "metric")}</td></tr>;
     })}</tbody></table><Distribution sizes={sizes} n={result.common.participantCount} label={standard ? "Standard (seed 0)" : "Enhanced"} />
     <h4>PCA scatter</h4><EnhancedScatter result={result} />
   </Panel></div>;

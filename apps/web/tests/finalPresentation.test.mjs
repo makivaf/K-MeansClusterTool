@@ -36,8 +36,8 @@ for (const experiment of ['final', 'sop1', 'sop3']) {
   const html = render(CommonSpaceValidation, { comparison: c, standardK: 2, enhancedK: 2, experiment });
   assert.match(html, /13D evaluation/); assert.match(html, /<summary>Evaluated in the 6-PC space<\/summary>/);
   assert.doesNotMatch(html, /<details[^>]* open|Improvement|%|↑|↓|internal-validation-enhanced/);
-  const before = experiment === 'sop3' ? '.2346' : '.1235';
-  const after = experiment === 'sop1' ? '.2346' : '.3457';
+  const before = experiment === 'sop3' ? '.23457' : '.12346';
+  const after = experiment === 'sop1' ? '.23457' : '.34568';
   assert.ok(html.includes(before) && html.includes(after));
 }
 assert.equal(render(ControlledSopEvidence, { standard: s, enhanced: e, comparison: c, sop: 'sop2' }), '');

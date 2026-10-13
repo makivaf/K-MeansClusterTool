@@ -5,6 +5,7 @@ import { formatNumber } from "../../utils/formatNumber";
 import { Dialog } from "./ui";
 import type { SilhouetteParticipant } from "../SilhouetteCalculationCard";
 type Calculation = MethodResult["calculation"];
+const participantLabels = { rid: "Participant identifier (RID)", cluster: "Assigned cluster (Cluster)", a: "Average distance to own cluster (a(i))", b: "Average distance to nearest other cluster (b(i))", s: "Participant silhouette (s(i))" };
 const f = (n?: number) => formatNumber(n, "calculation", "Not available");
 export function ParticipantRows({ rows, all = false }: { rows: readonly SilhouetteParticipant[]; all?: boolean }) {
   const [query, setQuery] = useState("");
@@ -18,7 +19,7 @@ export function ParticipantRows({ rows, all = false }: { rows: readonly Silhouet
   const offset = Math.min(page, Math.max(0, Math.ceil(filtered.length / size) - 1)) * size;
   const display = all ? filtered.slice(offset, offset + size) : rows.slice(0, 5);
   return <div className="final-preview">{all && <div><label>RID search <input value={query} onChange={event => { setQuery(event.target.value); setPage(0); }} /></label> <label>Page size <select value={size} onChange={event => { setSize(Number(event.target.value)); setPage(0); }}>{[10, 25, 50, 100].map(n => <option key={n} value={n}>{formatNumber(n, "count")}</option>)}</select></label></div>}
-    <table><thead><tr>{(["rid", "cluster", "a", "b", "s"] as const).map(key => <th key={key} aria-sort={sort.key === key ? sort.ascending ? "ascending" : "descending" : "none"}><button type="button" onClick={() => { setSort({ key, ascending: sort.key === key ? !sort.ascending : true }); setPage(0); }}>{key === "rid" ? "RID" : key === "cluster" ? "Cluster" : `${key}(i)`}</button></th>)}</tr></thead>
+    <table><thead><tr>{(["rid", "cluster", "a", "b", "s"] as const).map(key => <th key={key} aria-sort={sort.key === key ? sort.ascending ? "ascending" : "descending" : "none"}><button type="button" onClick={() => { setSort({ key, ascending: sort.key === key ? !sort.ascending : true }); setPage(0); }}>{participantLabels[key]}</button></th>)}</tr></thead>
       <tbody>{display.map(row => <tr key={row.rid}><td>{row.rid}</td><td>{formatNumber(row.cluster, "count")}</td><td>{f(row.a)}</td><td>{f(row.b)}</td><td>{f(row.s)}</td></tr>)}</tbody></table>
     {all && <div><p>{formatNumber(filtered.length, "count")} participants · Page {formatNumber(Math.floor(offset / size) + 1, "count")}</p><button type="button" disabled={offset === 0} onClick={() => setPage(page - 1)}>Previous</button> <button type="button" disabled={offset + size >= filtered.length} onClick={() => setPage(page + 1)}>Next</button></div>}
   </div>;
@@ -46,15 +47,15 @@ function CalculationColumn({ calculation: calc, label, workedLabel, opened, silh
   const rows = loaded?.url === ref?.url ? loaded?.rows : undefined;
   const first = rows?.[0], db = calc?.daviesBouldin, ch = calc?.calinskiHarabasz;
   return <section className="final-stack"><header><h4>{label}</h4><small className="final-caption">{workedLabel}</small></header>
-    <section className="final-card" style={{ padding: 16 }}><h5>Silhouette Coefficient</h5><p>s(i) = (b(i) − a(i)) / max(a(i), b(i))</p>
+    <section className="final-card" style={{ padding: 16 }}><h5>Silhouette Coefficient</h5><dl><div><dt>{participantLabels.a}</dt></div><div><dt>{participantLabels.b}</dt></div><div><dt>{participantLabels.s}</dt></div></dl>
       {first ? <><ParticipantRows rows={[first]} /><p>({f(first.b)} − {f(first.a)}) / max({f(first.a)}, {f(first.b)}) = {f(first.s)}{first.s === 0 && first.a === 0 ? " (singleton convention: s(i) = 0)" : ""}</p></> : <p role="status">Not available{error ? " — sidecar rows failed validation" : ref ? " — loading sidecar rows" : " — no participant sidecar"}</p>}
       {rows && <><ParticipantRows rows={rows} /><button type="button" onClick={() => setDialog(true)}>View all {formatNumber(calc?.n, "count")} participants</button></>}
       <p><strong>Overall Silhouette = mean of s(i) = {f(calc?.metrics.silhouette)}</strong></p>
     </section>
-    {!silhouetteOnly && <><section className="final-card" style={{ padding: 16 }}><h5>Davies-Bouldin Index</h5><p>DB = (σ₀ + σ₁) / d(c₀, c₁)</p>
-      {calc?.k === 2 && db ? <><dl><div><dt>Cluster 0 mean distance (σ₀)</dt><dd>{f(db.sigma0)}</dd></div><div><dt>Cluster 1 mean distance (σ₁)</dt><dd>{f(db.sigma1)}</dd></div><div><dt>Distance between centroids</dt><dd>{f(db.centroidDistance)}</dd></div></dl><p>({f(db.sigma0)} + {f(db.sigma1)}) / {f(db.centroidDistance)}</p><p><strong>Davies-Bouldin = {f(calc.metrics.davies_bouldin)}</strong></p></> : <p>Not available</p>}
-    </section><section className="final-card" style={{ padding: 16 }}><h5>Calinski-Harabasz Index</h5><p>CH = (SSB / (K − 1)) / (SSW / (N − K))</p>
-      {calc && ch ? <><dl><div><dt>Between-cluster sum of squares (SSB)</dt><dd>{f(ch.ssb)}</dd></div><div><dt>Within-cluster sum of squares (SSW)</dt><dd>{f(ch.ssw)}</dd></div><div><dt>Clusters (K)</dt><dd>{formatNumber(calc.k, "count")}</dd></div><div><dt>Participants (N)</dt><dd>{formatNumber(calc.n, "count")}</dd></div></dl><p>({f(ch.ssb)} / ({formatNumber(calc.k, "count")} − 1)) / ({f(ch.ssw)} / ({formatNumber(calc.n, "count")} − {formatNumber(calc.k, "count")}))</p><p><strong>Calinski-Harabasz = {f(calc.metrics.calinski_harabasz)}</strong></p></> : <p>Not available</p>}
+    {!silhouetteOnly && <><section className="final-card" style={{ padding: 16 }}><h5>Davies-Bouldin Index</h5>
+      {calc?.k === 2 && db ? <><dl><div><dt>Average distance of cluster members to their centroid (σ₀)</dt><dd>{f(db.sigma0)}</dd></div><div><dt>Average distance of cluster members to their centroid (σ₁)</dt><dd>{f(db.sigma1)}</dd></div><div><dt>Distance between the two centroids (d(c₀, c₁))</dt><dd>{f(db.centroidDistance)}</dd></div></dl><p>({f(db.sigma0)} + {f(db.sigma1)}) / {f(db.centroidDistance)}</p><p><strong>Davies-Bouldin = {f(calc.metrics.davies_bouldin)}</strong></p></> : <p>Not available</p>}
+    </section><section className="final-card" style={{ padding: 16 }}><h5>Calinski-Harabasz Index</h5>
+      {calc && ch ? <><dl><div><dt>Between-cluster spread (SSB)</dt><dd>{f(ch.ssb)}</dd></div><div><dt>Within-cluster spread (SSW)</dt><dd>{f(ch.ssw)}</dd></div><div><dt>Clusters (K)</dt><dd>{formatNumber(calc.k, "count")}</dd></div><div><dt>Participants (N)</dt><dd>{formatNumber(calc.n, "count")}</dd></div></dl><p>({f(ch.ssb)} / ({formatNumber(calc.k, "count")} − 1)) / ({f(ch.ssw)} / ({formatNumber(calc.n, "count")} − {formatNumber(calc.k, "count")}))</p><p><strong>Calinski-Harabasz = {f(calc.metrics.calinski_harabasz)}</strong></p></> : <p>Not available</p>}
     </section></>}
     {dialog && rows && <Dialog title={label + " — All " + formatNumber(calc?.n, "count") + " participants"} close={() => setDialog(false)}><ParticipantRows rows={rows} all /></Dialog>}
   </section>;

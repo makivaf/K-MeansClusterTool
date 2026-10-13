@@ -36,7 +36,7 @@ for (let i = 0; i < 6; i++) {
   const html = renderToStaticMarkup(tree());
   assert.equal((html.match(/aria-expanded="true"/g) ?? []).length, 1);
   assert.match(html, new RegExp(`<tr id="test-pc-${i + 1}" class="pca-variance-details">`));
-  assert.match(html, /1\.235/);
+  assert.match(html, /1\.23457/);
 assert.match(html, /PC6<svg/);
 assert.doesNotMatch(html, /★|Retained at/);
   assert.doesNotMatch(html, />PC7/);
