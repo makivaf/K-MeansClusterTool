@@ -12,7 +12,7 @@ import { StaticRouter } from "react-router-dom/server.js";
 const root = fileURLToPath(new URL("../../../", import.meta.url));
 const require = createRequire(import.meta.url);
 const hookSource = readFileSync(new URL("../src/hooks/useStudyFindings.ts", import.meta.url), "utf8");
-const dataset = { upload_ref: "test-upload", file_count: 7, filenames: ["ADAS.csv", "CDR.csv", "FAQ.csv", "MMSE.csv", "NEUROBAT.csv", "NPIQ.csv", "GDSCALE.csv"] };
+const dataset = { upload_ref: "test-upload", preparation: { status: "ready", stage: "ready", error: null }, file_count: 7, filenames: ["ADAS.csv", "CDR.csv", "FAQ.csv", "MMSE.csv", "NEUROBAT.csv", "NPIQ.csv", "GDSCALE.csv"] };
 const job = { status: "complete", run_id: "job", result_run_id: "result" };
 // Transport/validation boundaries are stubbed in these UI tests. No fixture is
 // imported into production, and no scientific calculation is executed here.
@@ -111,10 +111,10 @@ console.log("PASS sequential states, independent results, duplicate prevention, 
 
 // Render the production page with controlled evidence and tab selection. This
 // checks all five layouts plus every tab without starting a research job.
-const bundle = await build({ absWorkingDir: root, entryPoints: ["apps/web/src/pages/StudyFindingsPage.tsx"], bundle: true, write: false, platform: "node", format: "cjs", packages: "external", loader: { ".css": "empty" },
+const bundle = await build({ absWorkingDir: root, entryPoints: ["apps/web/src/pages/StudyFindingsPage.tsx"], bundle: true, write: false, platform: "node", format: "cjs", packages: "external", loader: { ".css": "empty" }, define: { "import.meta.env.VITE_API_URL": "undefined" },
   plugins: [{ name: "test-evidence", setup(build) {
     build.onLoad({ filter: /useSopEvaluation\.ts$/ }, () => ({ contents: "export const useSopEvaluation = () => globalThis.__studyEvidence;", loader: "ts" }));
-    build.onLoad({ filter: /StudyFindingsPage\.tsx$/ }, args => ({ contents: readFileSync(args.path, "utf8").replace('useState("sop1")', 'useState(globalThis.__studyTab ?? "sop1")'), loader: "tsx" }));
+    build.onLoad({ filter: /StudyFindingsPage\.tsx$/ }, args => ({ contents: readFileSync(args.path, "utf8").replace('useState(initialTab)', 'useState(globalThis.__studyTab ?? "sop1")'), loader: "tsx" }));
   } }] });
 const module = { exports: {} };
 globalThis.__studyEvidence = { studyEvidence: JSON.parse(readFileSync(new URL("../../api/artifacts/study_evidence.json", import.meta.url))), dpcStatus: "unavailable" };
@@ -126,7 +126,7 @@ const render = (standard, enhanced, tab = "sop1", progress = {}) => {
     analysis: { standard: { status: standard, run: standard === "completed" ? run : null }, enhanced: { status: enhanced, run: enhanced === "completed" ? run : null }, locked: standard === "running", ...progress } })));
 };
 let html = render("idle", "locked");
-assert.match(html, /Run Standard K-Means/); assert.match(html, /n = 2,437/); assert.doesNotMatch(html, /role="tab"|Method Comparison Overview|Analysis Runs/);
+assert.match(html, /Run Standard K-Means/); assert.doesNotMatch(html, /Validated full-cohort analysis|n = 2,437/); assert.doesNotMatch(html, /role="tab"|Method Comparison Overview|Analysis Runs/);
 html = render("running", "locked"); assert.match(html, /Running Standard K-Means/); assert.match(html, /What happens next/); assert.match(html, /Results will appear here/); assert.doesNotMatch(html, /role="tab"|Run Enhanced K-Means|aria-label="Analysis Runs"/);
 const workflowSteps = ["Preparing Run", "Preprocessing", "Standard Setup", "K-Means", "Validation", "Complete"];
 assert.doesNotMatch(html,/Preparing Data|Dataset ready|Cleaning &amp; standardization|Feature space ready/);
@@ -159,17 +159,17 @@ for (const enhancedStatus of ['ready', 'completed']) {
   const standardPanel = sop2.match(/<section class="sop-method-card simulation-chart ">([\s\S]*?)<\/section>/)?.[1];
   assert.ok(standardPanel);
   assert.ok(standardPanel.indexOf('Silhouette by k') < standardPanel.indexOf('Selection Summary'));
-  assert.ok(standardPanel.indexOf('Loading validated baseline sweep') < standardPanel.indexOf('Selection Summary'));
+  assert.ok(standardPanel.indexOf('Not available') < standardPanel.indexOf('Selection Summary'));
   assert.ok(standardPanel.indexOf('Selection Summary') < standardPanel.indexOf('Selected k'));
   assert.equal((standardPanel.match(/<dt>Selected k<\/dt>/g) ?? []).length, 1);
   assert.match(standardPanel, /<dt>Selected k<\/dt><dd>2<\/dd>/);
 }
 console.log('PASS Study Findings Standard summary follows unavailable evidence in Standard-only and comparison states');
 for (const tab of ["sop1", "sop2", "sop3", "final"]) {
-  html = render("completed", "ready", tab); assert.match(html, /Standard K-Means Results/); assert.match(html, /Run Enhanced K-Means/);
+  html = render("completed", "ready", tab); assert.doesNotMatch(html, /Standard K-Means Results/); assert.match(html, /Run Enhanced K-Means/);
   assert.doesNotMatch(html, /Method Comparison Overview|Principal Component Analysis<\/h3>|DPC Initialization Evidence|Final Cluster Profiles|Relative Change/);
   assert.match(html, new RegExp(`id="study-panel-${tab}"`));
-  html = render("completed", "running", tab); assert.match(html, /Standard K-Means Results/); assert.doesNotMatch(html, /Method Comparison Overview/);
+  html = render("completed", "running", tab); assert.doesNotMatch(html, /Standard K-Means Results/); assert.doesNotMatch(html, /Method Comparison Overview/);
   assert.match(html, /Run Enhanced K-Means/);
   assert.match(html, /Track Enhanced K-Means analysis progress on the validated full cohort/);
   assert.match(html, /Loading and verifying Enhanced results/);
@@ -179,7 +179,7 @@ for (const tab of ["sop1", "sop2", "sop3", "final"]) {
   for (const label of ["Initialize analysis", "Using validated, standardized study-entry data", "Dimensionality reduction", "Cluster-number selection", "Deterministic centroid initialization", "Lloyd clustering", "Metrics &amp; reproducibility evidence", "Enhanced results ready"]) assert.ok(html.includes(label));
   assert.match(html, new RegExp(`id="study-panel-${tab}"`));
   assert.match(html, new RegExp(`id="study-tab-${tab}"[^>]*aria-selected="true"`));
-  assert.ok(html.indexOf("Run Enhanced K-Means") < html.indexOf("Standard K-Means Results"));
+  assert.ok(html.indexOf("Run Enhanced K-Means") < html.indexOf("study-sop-tabs"));
   assert.doesNotMatch(html, /<button[^>]*>Run Enhanced K-Means/);
   html = render("completed", "completed", tab); assert.match(html, /Method Comparison Overview/); assert.match(html, /Comparison Ready/);
   assert.doesNotMatch(html, /study-stepper|Loading and verifying Enhanced results/);
@@ -190,8 +190,8 @@ for (const tab of ["sop1", "sop2", "sop3", "final"]) {
   }
   if (tab === "sop1" || tab === "final") {
     const validation = html.match(/<table class="internal-validation-table">[\s\S]*?<\/table>/)?.[0];
-    assert.ok(validation);
-    assert.equal((validation.match(/scope="row"/g) ?? []).length, tab === "sop1" ? 1 : 3);
+    assert.equal(validation, undefined, "Incomplete historical fixture cannot display native-space metrics as a common-space table");
+    assert.match(html, /Not available/);
     assert.match(html, /View Calculation Details/);
   }
 }
@@ -219,7 +219,7 @@ assert.equal(beforeEnhanced.node.props.run, duringEnhanced.node.props.run);
 assert.equal(beforeEnhanced.node.props.standardRun, duringEnhanced.node.props.standardRun);
 console.log("PASS Enhanced card, eight unreported stages pending, preserved Standard tabs/component/result identity, gated comparison");
 html = render("completed", "ready"); assert.match(html, /Pre-PCA correlation heatmap/);
-html = render("completed", "completed"); assert.match(html, /Principal Component Analysis<\/h3>/); assert.match(html, /Controlled PCA Contribution/);
+html = render("completed", "completed"); assert.match(html, /Principal Component Analysis<\/h3>/); assert.match(html, /PCA Contribution/);
 assert.match(html, /Principal Components \u2014 Loading Matrix/);
 assert.match(html, /Loading values will appear when PCA loading data is available/);
 const placeholderMatrix = html.match(/<table class="pca-loading-table">[\s\S]*?<\/table>/)?.[0];
@@ -227,7 +227,7 @@ assert.ok(placeholderMatrix);
 assert.doesNotMatch(placeholderMatrix, /is-strongest|color-mix/);
 assert.equal((placeholderMatrix.match(/class="is-placeholder"/g) ?? []).length, run.preprocessing.retainedFeatures.length * run.pca.components);
 assert.ok(html.indexOf("Variance Summary") < html.indexOf("Loading Matrix"));
-assert.ok(html.indexOf("Loading Matrix") < html.indexOf("Controlled PCA Contribution"));
+assert.ok(html.indexOf("Loading Matrix") < html.indexOf("PCA Contribution"));
 // Supply evidence only on the Enhanced result: the final comparison must use
 // that result rather than the earlier Standard result or a running-state gate.
 const enhancedWithLoadings = { ...run, pca: { ...run.pca, pcaLoadings: {
@@ -236,9 +236,9 @@ const enhancedWithLoadings = { ...run, pca: { ...run.pca, pcaLoadings: {
 const withLoadings = render("completed", "completed", "sop1", { enhanced: { status: "completed", run: enhancedWithLoadings } });
 assert.match(withLoadings, /Comparison Ready/);
 assert.equal((withLoadings.match(/Principal Components — Loading Matrix/g) ?? []).length, 1);
-assert.match(withLoadings, /\+0\.421583/); assert.match(withLoadings, /-0\.438192/);
+assert.match(withLoadings, /\+0\.42158/); assert.match(withLoadings, /-0\.43819/);
 assert.ok(withLoadings.indexOf("Principal Components — Variance Summary") < withLoadings.indexOf("Principal Components — Loading Matrix"));
-assert.ok(withLoadings.indexOf("Principal Components — Loading Matrix") < withLoadings.indexOf("Controlled PCA Contribution to Clustering"));
+assert.ok(withLoadings.indexOf("Principal Components — Loading Matrix") < withLoadings.indexOf("PCA Contribution"));
 assert.doesNotMatch(render("completed", "running", "sop1", { enhanced: { status: "running", run: enhancedWithLoadings } }), /Principal Components — Loading Matrix/);
 console.log("PASS Comparison Ready SOP 1 consumes Enhanced loading evidence once, in the required order; absent evidence shows neutral placeholders");
 const completedCard = html.match(/<section class="study-runs is-completed"[\s\S]*?<\/section>/)?.[0];
@@ -271,7 +271,7 @@ assert.ok(distributions);
 assert.match(distributions, /Standard distribution unavailable/);
 assert.match(distributions, /required shared provenance is missing or mismatched/);
 assert.match(distributions, /1,553/); assert.match(distributions, /884/);
-assert.match(distributions, /participants · 63.73%/); assert.match(distributions, /participants · 36.27%/);
+assert.match(distributions, /participants · 63.72589%/); assert.match(distributions, /participants · 36.27411%/);
 assert.equal((distributions.match(/class="sop-cluster"/g) ?? []).length, 2, 'unavailable Standard never fabricates counts');
 globalThis.__studyEvidence = { ...originalEvidence, status: "ready",
   defenseGeometry: JSON.parse(readFileSync(new URL("../../api/artifacts/defense_geometry.json", import.meta.url))) };
@@ -326,12 +326,12 @@ for (const values of [
   const final = render('completed', 'completed', 'final', { enhanced: { status: 'completed', run: lmeRun } });
   const lme = final.match(/<section class="research-panel[^"]*study-lme">[\s\S]*?<\/dl><\/section><\/div><\/section>/)?.[0];
   assert.ok(lme);
-  assert.ok(lme.includes(`${values.n.toLocaleString('en-US')} eligible participants · ${values.observations.toLocaleString('en-US')} repeated ADAS-Cog13 observations`));
-  assert.match(lme, /Maximum likelihood \(ML\) · Random intercept only/);
+  assert.ok(lme.includes(`${values.n.toLocaleString('en-US')} eligible participants, ${values.observations.toLocaleString('en-US')} observations`));
+  assert.match(lme, /Random intercept only, maximum likelihood/);
   assert.match(lme, /Annual ADAS-Cog13 Change/);
   assert.ok(lme.indexOf('Cluster 0') < lme.indexOf('Cluster 1'), 'cluster cards keep comparison order');
-  for (const value of [values.lower, values.higher, values.effect, ...values.ci]) assert.ok(lme.includes(value.toFixed(6)));
-  assert.ok(lme.includes(values.p < 0.001 ? '&lt;0.001' : values.p.toFixed(6)));
+  for (const value of [values.lower, values.higher, values.effect, ...values.ci]) assert.ok(lme.includes(value.toLocaleString('en-US', {minimumFractionDigits:5, maximumFractionDigits:5})));
+  assert.ok(lme.includes(values.p.toFixed(5)));
   assert.equal((lme.match(/ADAS-Cog13 points\/year/g) ?? []).length, 2);
   assert.equal((lme.match(/study-lme-slope-value/g) ?? []).length, 2);
   assert.doesNotMatch(lme, /<table|<svg|interpretation banner|Cluster 1 shows a greater annual increase/);

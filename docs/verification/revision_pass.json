@@ -1,0 +1,120 @@
+{
+  "sources": {
+    "standard": "apps/api/private/method-runs/b5a2d139-7233-4fb7-a904-52736f2e6064/result.json",
+    "enhanced": "apps/api/private/method-runs/fb033272-d715-4a5e-b3a1-d488ee7fdc7e/result.json",
+    "comparison": "apps/api/private/method-runs/a952b69b-2f19-4f92-bfb2-daae1416da10/result.json"
+  },
+  "tables": {
+    "enhanced": [
+      {
+        "metric": "silhouette",
+        "standard": "0.331875",
+        "after": "0.372700",
+        "improvement": "+12.30%"
+      },
+      {
+        "metric": "davies_bouldin",
+        "standard": "1.224116",
+        "after": "1.075885",
+        "improvement": "-12.11%"
+      },
+      {
+        "metric": "calinski_harabasz",
+        "standard": "1,442.023132",
+        "after": "1,800.024958",
+        "improvement": "+24.83%"
+      }
+    ],
+    "pcaRandom": [
+      {
+        "metric": "silhouette",
+        "standard": "0.331875",
+        "after": "0.372770",
+        "improvement": "+12.32%"
+      },
+      {
+        "metric": "davies_bouldin",
+        "standard": "1.224116",
+        "after": "1.075644",
+        "improvement": "-12.13%"
+      },
+      {
+        "metric": "calinski_harabasz",
+        "standard": "1,442.023132",
+        "after": "1,800.016609",
+        "improvement": "+24.83%"
+      }
+    ]
+  },
+  "mismatches": [],
+  "enhancedRun": {
+    "id": "65eb2ae8-5baf-440f-8548-4aad19945328",
+    "ownEvidenceRendered": true,
+    "executions": 30,
+    "pairs": 435,
+    "minimum": 1,
+    "mean": 1,
+    "maximumDifferingParticipants": 0,
+    "metricsUnchanged": true,
+    "legacyEnhancedResultUnchanged": true,
+    "runtimeDisplay": {
+      "wallSeconds": "261.08",
+      "additionalRepetitionSeconds": "42.12",
+      "evidenceSeconds": "2.82"
+    },
+    "timings": {
+      "preprocessing": 0.062125299999934214,
+      "pca": 0.005018400000153633,
+      "k_selection": 0,
+      "nbclust": 204.77132149999943,
+      "dpc": 46.7260710999999,
+      "lloyd": 0.2230630000049132,
+      "seed_evaluation": 0,
+      "validation": 0.17409599999518832,
+      "evidence": 2.8165420000004815,
+      "additional_enhanced_repetitions": 42.12367020000056,
+      "total": 256.0284437,
+      "wall": 261.082,
+      "admission_and_snapshot": 0.306,
+      "queue_and_capacity_wait": 0.014000000000000012,
+      "environment_and_code_checks": 0.679,
+      "cohort_cache_hit": 1,
+      "prepared_cohort_verification": 0.164,
+      "worker_input_preparation": 0.005,
+      "worker_and_result_validation": 260.219,
+      "worker_startup_and_transport": 4.190556299999969,
+      "result_persistence": 0.015,
+      "application_wall": 261.402
+    },
+    "independentlyRederived": true,
+    "nbclustCalls": 1
+  },
+  "tests": {
+    "webTypecheck": "passed",
+    "affectedWebTests": [
+      "finalUiPass.test.mjs",
+      "independentJobs.test.mjs",
+      "studyFindings.test.mjs",
+      "finalPresentation.test.mjs",
+      "formatNumber.test.mjs"
+    ],
+    "pythonEvidenceTests": "6 passed, including changed/missing/mislabeled Enhanced partition rejection",
+    "sharedContracts": "passed",
+    "build": "passed",
+    "enhancedEndToEnd": "passed",
+    "publishedSop3Render": "passed"
+  },
+  "filesChanged": [
+    "scripts/research/simulation/run_method.py",
+    "scripts/research/validation/derive_partition_evidence.py",
+    "apps/web/src/components/final/StudyResults.tsx",
+    "apps/web/src/components/final/FinalResults.tsx",
+    "apps/web/src/components/final/RangeCards.tsx",
+    "apps/web/src/components/final/SopPanels.tsx",
+    "apps/web/tests/finalUiPass.test.mjs",
+    "scripts/research/validation/test_ari_calculation.py",
+    "docs/UI_FINAL_PASS_PROGRESS.md",
+    "docs/verification/revision_pass.json"
+  ],
+  "unresolvedIssues": []
+}

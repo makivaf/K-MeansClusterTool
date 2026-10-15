@@ -134,7 +134,7 @@ def fit_random_kmeans(
     X: np.ndarray,
     k: int,
     seed: int,
-    run_number: int, *, expected_shape: tuple[int, int] = EXPECTED_SHAPE,
+    run_number: int, *, expected_shape: tuple[int, int] = EXPECTED_SHAPE, evaluate=None,
 ) -> BaselineRun:
     """Fit one retained baseline run with one random initialization."""
     model = KMeans(
@@ -155,9 +155,12 @@ def fit_random_kmeans(
     if sum(cluster_sizes) != expected_shape[0]:
         raise AssertionError(f"Seed {seed} cluster sizes do not sum to 2,437")
 
-    silhouette = float(silhouette_score(X, labels, metric="euclidean"))
-    davies_bouldin = float(davies_bouldin_score(X, labels))
-    calinski_harabasz = float(calinski_harabasz_score(X, labels))
+    if evaluate is None:
+        silhouette = float(silhouette_score(X, labels, metric="euclidean"))
+        davies_bouldin = float(davies_bouldin_score(X, labels))
+        calinski_harabasz = float(calinski_harabasz_score(X, labels))
+    else:
+        silhouette, davies_bouldin, calinski_harabasz = evaluate(labels)
     numeric = np.asarray(
         [model.inertia_, model.n_iter_, silhouette, davies_bouldin, calinski_harabasz],
         dtype=np.float64,

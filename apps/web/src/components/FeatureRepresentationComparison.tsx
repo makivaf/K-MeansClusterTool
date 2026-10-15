@@ -13,21 +13,16 @@ export const FeatureRepresentationComparison = ({ standardVariables, standardFig
   children: ReactNode;
 }) => {
   const variance = formatPercent(enhanced.cumulativeExplainedVariance * 100);
-  return <SopComparison className="sop-feature-representation" standardOnly={standardOnly} simulation figures
+  return <SopComparison className="sop-feature-representation" simulation figures
     standard={<MethodCard simulation title="Original Feature Representation">
-      <p className="simulation-compact-note">{standardVariables.length} standardized input variables</p>
+      <p className="simulation-compact-note">{standardVariables.length} standardized variables</p>
       {standardFigure}
       <VariableChips variables={standardVariables} />
     </MethodCard>}
-    enhanced={<MethodCard simulation enhanced title="Principal Component Analysis">
-      <PcaChart showAllComponents enhanced={enhanced} />
-      <dl className="simulation-detail-list sop-summary">
-        <div><dt>Input variables</dt><dd>{enhancedVariables.length}</dd></div>
-        <div><dt>Components retained</dt><dd>{enhanced.pcaComponents}</dd></div>
-        <div><dt>Cumulative explained variance</dt><dd>{variance}</dd></div>
-        <div><dt>Variance retention threshold</dt><dd>≥ 85.00%</dd></div>
-      </dl>
+    enhanced={standardOnly ? <MethodCard simulation enhanced title="Enhanced K-Means"><p role="status">Not run yet</p></MethodCard> : <MethodCard simulation enhanced title="Principal Component Analysis">
+      <p className="simulation-compact-note">{enhancedVariables.length} variables {" -> "}{enhanced.pcaComponents} PCs, {variance} variance</p>
+      <PcaChart enhanced={enhanced} />
     </MethodCard>}>
-    {children}
+    {!standardOnly && children}
   </SopComparison>;
 };

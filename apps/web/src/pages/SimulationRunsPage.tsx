@@ -11,15 +11,20 @@ import { InitializationComparison } from "../components/InitializationComparison
 import { sopText } from "../utils/sopText";
 import { InternalValidationCalculationDetails } from "../components/InternalValidationCalculationDetails";
 import { MetricComparisonTable, formatMetric } from "../components/MetricComparisonTable";
-﻿import { useEffect, useState } from "react";
-import { Play, RefreshCw } from "lucide-react";
-import { useRef } from "react";
+﻿import { useState } from "react";
+
+
 import { Link } from "react-router-dom";
 import { CartesianGrid, ResponsiveContainer, Scatter, ScatterChart, Tooltip, XAxis, YAxis } from "recharts";
-import { simulationParticipantLimit, simulationConfigurationKey, SimulationRunStateSchema, type SimulationRunState } from "../../../../packages/shared/src/simulation";
+import { simulationParticipantLimit, SimulationAnalysisSchema, type SimulationRunState } from "../../../../packages/shared/src/simulation";
 import { useSimulationMetadata } from "../hooks/useSimulationMetadata";
 import { useSimulationCapabilities } from "../hooks/useSimulationCapabilities";
-import { API_BASE_URL } from "../config/api";
+import { useMethodJobs } from "../hooks/useMethodJobs";
+import { visibleMethodResult, methodPlaceholder } from "../utils/methodPresentation";
+import type { MethodResult } from "../../../../packages/shared/src/methodExecution";
+import { MethodExecutionControls } from "../components/MethodExecutionControls";
+import { FreshStudyResults } from "../components/FreshStudyResults";
+import { CommonSpaceValidation } from "../components/CommonSpaceValidation";
 import "./SimulationRunsPage.css";
 import { CorrelationHeatmap } from "../components/charts/FinalFindingsCharts";
 import { MethodCard, VarianceSummary, PcaContribution, ClusterDistribution } from "../components/SopComparison";
@@ -39,19 +44,19 @@ const DecisionGraph = ({ enhanced }: { enhanced: Analysis["enhanced"] }) => enha
     <ResponsiveContainer width="100%" height="100%"><ScatterChart margin={{ top: 12, right: 24, bottom: 16, left: 20 }}>
       <CartesianGrid stroke="var(--research-border)" strokeDasharray="3 3" />
       <XAxis type="number" dataKey="rho" name="rho" allowDecimals={false} tickCount={5} minTickGap={24} tickFormatter={projectionTick} height={50} tickMargin={8}
-        tick={{ fontSize: 12, fill: "var(--research-muted)" }} axisLine={{ stroke: "var(--research-border)" }} tickLine={false}
-        label={{ value: "ρ (Local density)", position: "insideBottom", offset: 0, fontSize: 12, fill: "var(--research-muted)" }} />
+        tick={{ fontSize: "var(--research-caption-size)", fill: "var(--research-muted)" }} axisLine={{ stroke: "var(--research-border)" }} tickLine={false}
+        label={{ value: "rho", position: "insideBottom", offset: 0, fontSize: "var(--research-caption-size)", fill: "var(--research-muted)" }} />
       <YAxis type="number" dataKey="delta" name="delta" tickCount={5} minTickGap={16} tickFormatter={projectionTick} width={64} tickMargin={8}
-        tick={{ fontSize: 12, fill: "var(--research-muted)" }} axisLine={{ stroke: "var(--research-border)" }} tickLine={false}
-        label={{ value: "δ (Distance)", angle: -90, position: "left", offset: 12, style: { textAnchor: "middle" }, fontSize: 12, fill: "var(--research-muted)" }} />
+        tick={{ fontSize: "var(--research-caption-size)", fill: "var(--research-muted)" }} axisLine={{ stroke: "var(--research-border)" }} tickLine={false}
+        label={{ value: "delta", angle: -90, position: "left", offset: 12, style: { textAnchor: "middle" }, fontSize: "var(--research-caption-size)", fill: "var(--research-muted)" }} />
       <Tooltip formatter={(value: number, name: string) => [name === "rho" ? (Number.isInteger(value) ? formatInteger(value) : formatContinuous(value)) : displayCoordinate(value), name]} cursor={{ strokeDasharray: "3 3" }} />
-      <Scatter name="Participants" data={enhanced.dpc.decisionGraph.filter(point => !point.selected)} fill="#b7d9d5" isAnimationActive={false} />
-      <Scatter name="DPC centers" data={enhanced.dpc.decisionGraph.filter(point => point.selected)} fill="#e49b35" shape="diamond" isAnimationActive={false} />
+      <Scatter name="Participants" data={enhanced.dpc.decisionGraph.filter(point => !point.selected)} fill="var(--research-selected-border)" isAnimationActive={false} />
+      <Scatter name="DPC centers" data={enhanced.dpc.decisionGraph.filter(point => point.selected)} fill="var(--research-comparison)" shape="diamond" isAnimationActive={false} />
     </ScatterChart></ResponsiveContainer>
   </div>
   <ul className="projection-legend" aria-label="DPC decision graph legend">
-    <li><span className="projection-legend-dot" style={{ backgroundColor: "#b7d9d5" }} aria-hidden="true" />Participants</li>
-    <li><span className="projection-legend-diamond" style={{ backgroundColor: "#e49b35" }} aria-hidden="true" />Selected DPC centers</li>
+    <li><span className="projection-legend-dot" style={{ backgroundColor: "var(--research-selected-border)" }} aria-hidden="true" />Participants</li>
+    <li><span className="projection-legend-diamond" style={{ backgroundColor: "var(--research-comparison)" }} aria-hidden="true" />Selected DPC centers</li>
   </ul>
 </figure> : <p className="simulation-unavailable">Decision graph unavailable for this historical run.</p>;
 const ProjectionChart = ({ analysis, method }: { analysis: Analysis; method: "standard" | "enhanced" }) => {
@@ -62,7 +67,7 @@ const ProjectionChart = ({ analysis, method }: { analysis: Analysis; method: "st
 };
 
 
-export const SimulationResults = ({ result }: { result: NonNullable<SimulationRunState["result"]> }) => {
+export const SimulationResults = ({ result, comparisonEvidence }: { result: Pick<NonNullable<SimulationRunState["result"]>, "analysis" | "comparison"> & { metadata: { configuration?: { manualK: number | null } } }; comparisonEvidence?: MethodResult }) => {
   const { existing, enhanced } = result.analysis;
   const pcaLoadings = readPcaLoadings(enhanced, enhanced.retainedVariables, enhanced.pcaComponents);
   const exploratory = result.metadata.configuration?.manualK != null;
@@ -95,7 +100,10 @@ export const SimulationResults = ({ result }: { result: NonNullable<SimulationRu
       <div className="simulation-section-heading"><h2 className="simulation-section-title">{sopText.sop3.heading}</h2><p>{sopText.sop3.description}</p></div>
       {/* Current-run reference-seed ARI and historical DPC checks are not
           modal-partition evidence. Only supplied execution counts are shown. */}
-      <InitializationComparison simulation standard={{ executions: existing.runs.length }}
+      <InitializationComparison simulation controlled={!!comparisonEvidence?.sopControls}
+        standard={comparisonEvidence?.sopControls ? comparisonEvidence.initializationEvidence?.pcaRandom : { executions: existing.runs.length }}
+        enhanced={comparisonEvidence?.initializationEvidence?.enhanced} baseline={comparisonEvidence?.initializationEvidence?.standard}
+        randomRuns={comparisonEvidence ? existing.ariBySeed : undefined} dpcRuns={comparisonEvidence ? enhanced.dpc.ariByRun : undefined} controlledRuns={comparisonEvidence?.sopControls?.randomAriBySeed}
         selectedCenters={enhanced.dpc.centroidCount}
         centerTable={<DpcCenterTable centers={enhanced.dpc.centers.map((center, index) => ({ ...center, center: index + 1 }))} />}
         decisionGraph={<>
@@ -111,17 +119,19 @@ export const SimulationResults = ({ result }: { result: NonNullable<SimulationRu
       <div className="simulation-section-heading"><h2 className="simulation-section-title">Standard vs Enhanced Comparison</h2><p>n = {formatInteger(existing.participantCount)}</p></div>
       <section className="simulation-chart"><h3 className="card-title">Scatter Plot Comparison (PCA Space)</h3><div className="projection-comparison-grid">{(["Standard K-Means", "Enhanced K-Means"] as const).map((name, index) => <div key={name} className="projection-method-panel"><h4>{name}</h4><ProjectionChart analysis={result.analysis} method={index ? "enhanced" : "standard"} /><p className="simulation-compact-note projection-method-metadata">Initialization: {index ? "DPC (Deterministic)" : "Random"} · {index ? enhanced.iterations : selectedRun.iterations} iterations · Converged: {(index ? enhanced.convergedBeforeMaxIter : selectedRun.convergedBeforeMaxIter) ? "Yes" : "No"}{!index && " · Seed 0"}</p></div>)}</div></section>
       <section className="simulation-chart">
-        {exploratory && <p className="simulation-preview-note">These relative changes compare an exploratory Standard k override with automatic Enhanced clustering. They are not the canonical enhancement comparison.</p>}
-        <MetricComparisonTable existing={Object.fromEntries(result.comparison.map(row => [row.metric, row.existing]))}
-          enhanced={Object.fromEntries(result.comparison.map(row => [row.metric, row.enhanced]))}
-          relativeChange={Object.fromEntries(result.comparison.map(row => [row.metric, row.relativeImprovementPercent]))}
-          changeConvention="direction-aware" />
+        {exploratory && <p className="simulation-preview-note">This compares an exploratory Standard k override with automatic Enhanced clustering. It is not the canonical enhancement comparison.</p>}
+        {comparisonEvidence?.commonSpace ? <CommonSpaceValidation comparison={comparisonEvidence} standardK={existing.selectedK} enhancedK={enhanced.selectedK} /> : <p role="status">Compatible common-space validation is unavailable for this stored result.</p>}
+        <details className="pca-calculation-details"><summary>Supplementary native-space metrics</summary>
+        <MetricComparisonTable existing={existing.metrics ?? {}}
+          enhanced={enhanced.metrics ?? {}}
+          footerNote="Supplementary native-space metrics: Standard uses standardized features; Enhanced uses retained PCs. These values do not establish cross-space improvement." />
         <InternalValidationCalculationDetails
           standard={{ n: existing.participantCount, k: existing.selectedK, representation: `${enhanced.retainedVariables.length} standardized features`, runCount: existing.runs.length, calculation: result.analysis.calculations?.standard,
-            metrics: Object.fromEntries(result.comparison.map(row => [row.metric, row.existing])) }}
+            metrics: existing.metrics ?? {} }}
           enhanced={{ n: enhanced.participantCount, k: enhanced.selectedK, representation: `${enhanced.pcaComponents} principal components`, calculation: result.analysis.calculations?.enhanced,
-            metrics: Object.fromEntries(result.comparison.map(row => [row.metric, row.enhanced])) }}
+            metrics: enhanced.metrics ?? {} }}
           formatValue={value => formatMetric(value, true)} />
+        </details>
       </section>
       <section className="simulation-chart"><h3 className="card-title">Cluster Distribution</h3><div className="sop-distribution-grid is-comparison"><ClusterDistribution title="Standard K-Means" metadata={`Seed ${selectedRun.seed}`} sizes={selectedRun.clusterSizes} participants={existing.participantCount} /><ClusterDistribution title="Enhanced K-Means" sizes={enhanced.clusterSizes} participants={enhanced.participantCount} /></div></section>
     </section>
@@ -135,98 +145,12 @@ export const SimulationRunsPage = () => {
   const { metadata, loading, error, retry } = useSimulationMetadata();
   const selected = metadata?.simulations.find((entry) => entry.simulationId === simulation);
   const { capabilities } = useSimulationCapabilities();
-  const [runState, setRunState] = useState<SimulationRunState | null>(null);
-  const [runError, setRunError] = useState<string | null>(null);
-  const [attempt, setAttempt] = useState(0);
-  const [stage, setStage] = useState<number | null>(null);
-  const [hasCompleted, setHasCompleted] = useState(false);
-  const postAllowedAt = useRef(0);
-  const runLocked = useRef(false);
   const configuration = { sampleMode, sampleCount, manualK: null };
   const availableParticipantCount = metadata?.availableParticipantCount ?? simulationParticipantLimit;
   const changeSampleCount = (value: string) => setSampleCount(Math.min(availableParticipantCount, Math.max(100, Math.trunc(Number(value)) || 100)));
-  const configurationKey = simulationConfigurationKey(configuration);
-  const [requestedKey, setRequestedKey] = useState<string | null>(null);
-  useEffect(() => {
-    runLocked.current = false;
-    setAttempt(0); setRunState(null); setStage(null); setRunError(null); setHasCompleted(false);
-  }, [configurationKey]);
-  useEffect(() => {
-    // Metadata (including a cached analysisStatus) never starts execution or
-    // reveals results. Only the action button creates an attempt.
-    if (attempt === 0 || requestedKey !== configurationKey) return;
-    const controller = new AbortController();
-    let timer: ReturnType<typeof setTimeout>;
-    let backendRunning = false;
-    const execute = async (method: "POST" | "GET", allowStart = false) => {
-      try {
-        const query = new URLSearchParams({ sampleMode, sampleCount: String(configuration.sampleCount) });
-        if (configuration.manualK !== null) query.set("manualK", String(configuration.manualK));
-        const response = await fetch(`${API_BASE_URL}/api/simulations/${simulation}/run${method === "GET" ? `?${query}` : ""}`, {
-          method, signal: controller.signal, cache: "no-store",
-          ...(method === "POST" ? { headers: { "Content-Type": "application/json" }, body: JSON.stringify(configuration) } : {})
-        });
-        if (controller.signal.aborted) return;
-        if (response.status === 429) {
-          const retryAfter = response.headers.get("Retry-After");
-          const seconds = retryAfter && /^\d+$/.test(retryAfter) ? Number(retryAfter) : null;
-          const retryAt = seconds !== null ? Date.now() + seconds * 1000 : Date.parse(retryAfter ?? "");
-          postAllowedAt.current = Number.isFinite(retryAt) ? retryAt : 0;
-          setRunError(`Simulation request throttled (HTTP 429). Analysis has not been reported as failed.${postAllowedAt.current > Date.now() ? ` New execution requests can be retried after ${new Date(postAllowedAt.current).toLocaleTimeString()}.` : " Please wait before requesting execution again."} Retry checks the existing status first.`);
-          if (backendRunning) timer = setTimeout(() => void execute("GET"), 2000);
-          return;
-        }
-        if (!response.ok) throw new Error(`Unable to ${method === "GET" ? "check simulation status" : "request simulation execution"} (HTTP ${response.status}). Retry checks status first.`);
-        const state = SimulationRunStateSchema.parse(await response.json());
-        if (state.simulationId !== simulation || state.configurationKey !== configurationKey) throw new Error();
-        if (!controller.signal.aborted) {
-          if (allowStart && (state.status === "sample_ready" || state.status === "failed")) {
-            if (postAllowedAt.current > Date.now()) {
-              setRunError(`Simulation execution requests are throttled (HTTP 429). Please wait until ${new Date(postAllowedAt.current).toLocaleTimeString()} before starting another execution. Retry checks the existing status first.`);
-              return;
-            }
-            await execute("POST");
-            return;
-          }
-          setRunError(null);
-          backendRunning = state.status === "running";
-          setRunState(state);
-          if (state.status === "running" || state.status === "sample_ready") timer = setTimeout(() => void execute("GET"), 2000);
-        }
-      } catch (caught) {
-        if (!controller.signal.aborted) {
-          setRunError(caught instanceof Error && caught.message.startsWith("Unable to ") ? caught.message : "Unable to verify simulation status. Retry checks status before requesting execution.");
-          if (backendRunning) timer = setTimeout(() => void execute("GET"), 2000);
-        }
-      }
-    };
-    // Recover completed/running work without consuming POST admission quota.
-    // Only the initial status check may start work; polling never restarts it.
-    void execute("GET", true);
-    return () => { controller.abort(); clearTimeout(timer); };
-  }, [simulation, attempt, configurationKey, requestedKey]);
-
-  const active = attempt > 0 && requestedKey === configurationKey && runState?.configurationKey === configurationKey && runState?.simulationId === simulation ? runState : null;
-  const interrupted = (!!runError && active?.status !== "running") || active?.status === "failed";
-  useEffect(() => {
-    if ((interrupted && active?.status !== "running") || stage === 4) runLocked.current = false;
-  }, [interrupted, stage, active?.status]);
-  useEffect(() => {
-    if (!active) return;
-    if (active.status === "complete") { setStage(4); setHasCompleted(true); }
-    else if (active.status === "running") setStage(active.stage ?? 2);
-  }, [active?.status, active?.stage]);
-  const running = active?.status === "running" || (stage !== null && stage < 4 && !interrupted);
-  const result = stage === 4 && !interrupted && active?.status === "complete" ? active.result : null;
-  const start = () => {
-    if (running || runLocked.current) return;
-    runLocked.current = true;
-    setRunError(null);
-    setRunState(null);
-    setRequestedKey(configurationKey);
-    setStage(0);
-    setAttempt(value => value + 1);
-  };
+  const jobs = useMethodJobs({ scope: "simulation", simulationId: simulation, configuration });
+  const comparison = jobs.comparison?.result;
+  const running = jobs.locked;
 
   return <div className="simulation-page">
     <header className="simulation-heading">
@@ -248,17 +172,10 @@ export const SimulationRunsPage = () => {
           <section className="simulation-chart"><h3 className="simulation-eyebrow">Enhanced K-Means</h3><p className="simulation-compact-note">Cluster selection</p><h4>NbClust</h4><dl className="simulation-detail-list"><div><dt>Selection rule</dt><dd>Multi-index consensus</dd></div><div><dt>Candidate k</dt><dd>2–10</dd></div><div><dt>Initialization</dt><dd>DPC (Deterministic)</dd></div></dl></section>
         </div>
       </fieldset>
-      <div className="simulation-control-row">
-        <button type="button" onClick={start} disabled={!selected || !capabilities?.executionAvailable || running} className="simulation-run-button" aria-describedby={stage !== null ? "simulation-analysis-status" : undefined}>
-          {hasCompleted ? <RefreshCw size={14} aria-hidden="true" /> : <Play size={14} fill="currentColor" aria-hidden="true" />}{running ? "Running..." : hasCompleted ? "Rerun" : "Run K-Means Comparison"}
-        </button>
-      </div>
-      {(error || runError || active?.status === "failed") && <div className="mt-6 text-sm text-muted">
-        {error && <div role="alert">{error} <button type="button" className="underline" onClick={retry}>Retry</button></div>}
-        {(runError || active?.status === "failed") && <p role="alert">{runError ?? active?.message ?? "Simulation analysis failed."} <button type="button" className="underline" onClick={start}>Retry</button></p>}
-      </div>}
+      {error && <div role="alert">{error} <button type="button" className="underline" onClick={retry}>Retry</button></div>}
     </section>
-    <section id="simulation-analysis-status" className="research-page" aria-label="K-Means Comparison Progress"><SimulationProgress stage={stage ?? -1} interrupted={stage === null || interrupted} /></section>
-    {result && <SimulationResults result={result} />}
+    <MethodExecutionControls state={jobs} ready={!!selected && !!capabilities?.executionAvailable} />
+    <FreshStudyResults standard={visibleMethodResult(jobs, "standard")} enhanced={visibleMethodResult(jobs, "enhanced")}
+      comparison={comparison ?? undefined} standardState={methodPlaceholder(jobs, "standard")} enhancedState={methodPlaceholder(jobs, "enhanced")} />
   </div>;
 };

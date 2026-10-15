@@ -7,7 +7,7 @@ type Evidence = {
   selectedK: number;
   usableIndices: number;
   votes: readonly { k: number; count?: number }[];
-  indices: readonly { index: string; status: string; recommendedK?: number | null }[];
+  indices: readonly { index: string; status: string; recommendedK?: number | null; reason?: string }[];
 };
 
 export const StandardSelectionSummary = ({ selectedK }: { selectedK: number }) => <>
@@ -17,7 +17,7 @@ export const StandardSelectionSummary = ({ selectedK }: { selectedK: number }) =
   </dl>
 </>;
 
-export const NbClustSummary = ({ candidateK, selectedK, usableIndices, votes }: Evidence) => {
+export const NbClustSummary = ({ candidateK, selectedK, usableIndices, votes, indices }: Evidence) => {
   const chartVotes = candidateK.map(k => ({ k, count: votes.find(vote => vote.k === k)?.count }));
   const complete = chartVotes.length > 0 && chartVotes.every(vote => vote.count !== undefined);
   const highest = complete ? Math.max(...chartVotes.map(vote => vote.count!)) : undefined;
@@ -40,11 +40,14 @@ export const NbClustSummary = ({ candidateK, selectedK, usableIndices, votes }: 
       <div><dt>Highest vote count</dt><dd>{highest ?? "Unavailable"}</dd></div>
       <div><dt>Selected k</dt><dd>{selectedK}</dd></div>
     </dl>
+    <p className="simulation-compact-note">{indices.length} indices evaluated: {indices.filter(row => row.recommendedK != null).length} voted, {indices.filter(row => ["hubert", "dindex"].includes(row.index.toLowerCase()) && row.recommendedK == null).length} graphical.</p>
   </MethodCard>;
 };
 
 // Both result pages use this same card and full-width disclosure arrangement.
-export const NbClustComparison = ({ standard, standardOnly = false, ...evidence }: Evidence & { standard: ReactNode; standardOnly?: boolean }) =>
-  <SopComparison simulation figures standardOnly={standardOnly} standard={standard} enhanced={<NbClustSummary {...evidence} />}>
-    <NbClustIndexDetails indices={evidence.indices} />
+export const NbClustComparison = ({ standard, standardOnly = false, enhancedOnly = false, ...evidence }: Evidence & { standard: ReactNode; standardOnly?: boolean; enhancedOnly?: boolean }) =>
+  <SopComparison simulation figures
+    standard={enhancedOnly ? <MethodCard title="Standard K-Means"><p role="status">Not run yet</p></MethodCard> : standard}
+    enhanced={standardOnly ? <MethodCard enhanced title="Enhanced K-Means"><p role="status">Not run yet</p></MethodCard> : <NbClustSummary {...evidence} />}>
+    {!standardOnly && <NbClustIndexDetails indices={evidence.indices} />}
   </SopComparison>;

@@ -1,6 +1,8 @@
 import { z } from "zod";
-import { CalculationSetSchema } from "./calculationEvidence";
-import { adjustedRandIndex } from "./adjustedRandIndex";
+import { StudyPreparationSchema } from "./studyPreparation.js";
+import { CalculationSetSchema } from "./calculationEvidence.js";
+import { adjustedRandIndex } from "./adjustedRandIndex.js";
+import { InitializationEvidenceSchema } from "./partitionEvidence.js";
 
 export const AxisSchema = z.enum(["Axis A", "Axis B"]);
 export const ResultSourceSchema = z.enum(["development_fixture", "validated_research_output"]);
@@ -923,7 +925,8 @@ export const UploadResponseSchema = z
   .object({
     upload_ref: z.string().min(1),
     filenames: z.array(z.string().min(1)),
-    file_count: z.number().int().positive()
+    file_count: z.number().int().positive(),
+    preparation: StudyPreparationSchema.optional()
   })
   .strict();
 
@@ -1394,6 +1397,7 @@ export type DefenseGeometry = z.infer<typeof DefenseGeometrySchema>;
 export type DefensePanel = z.infer<typeof DefensePanelSchema>;
 
 export const StudyEvidenceSchema = z.object({
+  initializationEvidence: InitializationEvidenceSchema.optional(),
   calculations: CalculationSetSchema.optional(),
   // Explicit selected-center RID display; no additional participant attributes.
   dpcCenters: z.array(z.object({ center: z.number().int().positive(), rid: z.string().regex(/^[1-9]\d*$/),

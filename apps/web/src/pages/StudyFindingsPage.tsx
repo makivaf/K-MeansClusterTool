@@ -1,3 +1,4 @@
+import { formatNumber } from "../utils/formatNumber";
 import { NbClustComparison, StandardSelectionSummary } from "../components/NbClustComparison";
 import { formatContinuous, formatPercent, formatInteger } from "../utils/numberFormatting";
 import { SilhouetteChart } from "../components/SopFigures";
@@ -5,16 +6,20 @@ import { FeatureRepresentationComparison } from "../components/FeatureRepresenta
 import { DpcCenterTable } from "../components/DpcCenterTable";
 import { InitializationComparison } from "../components/InitializationComparison";
 import { sopText } from "../utils/sopText";
-import { memo, useState } from "react";
+import { memo, useState, useEffect } from "react";
 import { CorrelationHeatmap } from "../components/charts/FinalFindingsCharts";
 import { LongitudinalProgressionChart } from "../components/charts/LongitudinalProgressionChart";
 import { MetricComparisonTable, metricDefinitions } from "../components/MetricComparisonTable";
 import { InternalValidationCalculationDetails } from "../components/InternalValidationCalculationDetails";
 import { Panel } from "../components/ui/Panel";
 import { ResearchPageNavigation } from "../components/layout/ResearchPageNavigation";
-import { Check, CheckCircle2, Database, Network } from "lucide-react";
+import { Check, CheckCircle2, Database, Network, ChevronDown } from "lucide-react";
 import { Link } from "react-router-dom";
-import { StudyEvidenceSchema, type UnifiedResearchRun, type UploadResponse } from "../../../../packages/shared/src/schema";
+import { RunListResponseSchema, FrozenUnifiedStudyResultSchema, StudyEvidenceSchema, type UnifiedResearchRun, type UploadResponse } from "../../../../packages/shared/src/schema";
+import type { MethodJobs } from "../hooks/useMethodJobs";
+import { MethodExecutionControls } from "../components/MethodExecutionControls";
+import { FreshStudyResults } from "../components/FreshStudyResults";
+import { API_BASE_URL } from "../config/api";
 import type { AnalysisRunState } from "../hooks/useStudyFindings";
 import { isDatasetReady } from "../utils/validatedDataset";
 import { useSopEvaluation } from "../hooks/useSopEvaluation";
@@ -28,6 +33,13 @@ import { StandardRunProgress } from "../components/StandardRunProgress";
 import { EnhancedRunProgress } from "../components/StudyRunProgressCard";
 import { PcaLoadingMatrix } from "../components/PcaLoadingMatrix";
 import { readPcaLoadings } from "../utils/pcaLoadings";
+import { visibleMethodResult, methodPlaceholder } from "../utils/methodPresentation";
+import { VerifiedStudyMetrics } from "../components/VerifiedStudyMetrics";
+import verifiedPresentation from "../data/verifiedStudyPresentation.json";
+import type { MethodResult } from "../../../../packages/shared/src/methodExecution";
+import { RunsCard as FinalRunsCard } from "../components/final/RunsCard";
+import { StudyResults as FinalStudyResults } from "../components/final/StudyResults";
+import { FinalLongitudinal } from "../components/final/FinalLongitudinal";
 
 // Loading initialization evidence should not rerender the retained charts.
 const ProgressionChart = memo(LongitudinalProgressionChart);
@@ -51,7 +63,7 @@ export const StudyFindingsPage = ({ analysis, dataset }: { analysis: AnalysisRun
   // metadata. Once completed, always display the returned result's count.
   const cohort = standard.run?.cohort.parentN ?? (ready || started ? StudyEvidenceSchema.innerType().shape.cohortN.value : undefined);
   return <div className="research-page study-findings">
-    <PageHeading title="Study Findings" description={cohort ? `Validated full-cohort analysis · n = ${formatInteger(cohort)}` : ready || started ? "Validated full-cohort analysis" : "Validate datasets to begin the study analysis."} />
+    <PageHeading title="Study Findings" description={ready || started ? undefined : "Validate datasets to begin the study analysis."} />
     {!started ? <Panel title={ready ? "Ready to run analysis" : "Datasets required"} variant="surface" className="study-ready-card">
       <div className="study-readiness">
         <div className="flex min-w-0 items-start gap-3">
@@ -87,7 +99,7 @@ export const StudyFindingsPage = ({ analysis, dataset }: { analysis: AnalysisRun
   </div>;
 };
 
-const StudyResults = memo(function StudyResults({ run, standardRun, comparison }: { run: UnifiedResearchRun; standardRun: UnifiedResearchRun; comparison: boolean }) {
+export const StudyResults = memo(function StudyResults({ run, standardRun, comparison, initialTab = "sop1", showLongitudinal = true }: { run: UnifiedResearchRun; standardRun: UnifiedResearchRun; comparison: boolean; initialTab?: string; showLongitudinal?: boolean }) {
   const { evaluation, baselineSweep, studyEvidence, defenseGeometry, error: sopError, dpcStatus, status: sopStatus } = useSopEvaluation(run);
   const dpcUnavailable = {
     loading: "Loading validated DPC reproducibility evidence...",
@@ -97,22 +109,19 @@ const StudyResults = memo(function StudyResults({ run, standardRun, comparison }
     unavailable: "Verified DPC geometry or per-run ARI evidence is not supplied by this study response.",
     ready: undefined
   }[dpcStatus];
-  const [activeTab, setActiveTab] = useState("sop1");
+  const [activeTab, setActiveTab] = useState(initialTab);
   const ablation = evaluation?.sop1.ablation;
   const pcaLoadings = readPcaLoadings(run.pca, run.preprocessing.retainedFeatures, run.pca.components);
   const existing = Object.fromEntries(standardRun.baselineComparison.metrics.map((metric) => [metric.metric, metric.baselineValue]));
   const enhanced = Object.fromEntries(metricDefinitions.map(({ key, field }) => [key, run.enhancedClustering.metrics[field]]));
   const baseline = standardRun.baselineComparison.baselineMethod;
-  const relativeChange = Object.fromEntries(run.baselineComparison.metrics.map(metric => [metric.metric, metric.signedRelativeChangePercent]));
   const candidates = baselineSweep?.candidates.map(candidate => candidate.k) ?? standardRun.kSelection.candidateK;
   const candidateRange = `${candidates[0]}–${candidates[candidates.length - 1]}`;
   const variance = formatPercent(run.pca.cumulativeExplainedVariance * 100);
+  const verified = FrozenUnifiedStudyResultSchema.safeParse(run).success;
   const profiles = new Map(run.clusterProfiles.profiles.map((profile) => [profile.clusterId, profile]));
-  const model = run.longitudinal.mixedEffects;
-  const result = model.primaryResult;
 
   return <div className={comparison ? "study-results" : "study-results study-standard-results"}>
-    {!comparison && <header className="study-result-heading"><div><h2 className="text-base font-semibold">Standard K-Means Results</h2><p className="mt-1 text-sm text-muted">Full validated cohort · n = {formatInteger(standardRun.cohort.parentN)}</p></div><span className="research-badge is-valid">Completed</span></header>}
     <div className="study-results-sections">
       {comparison && <Panel title="Method Comparison Overview" variant="surface" className="study-overview-card">
         <div className="overflow-x-auto"><table className="research-table study-overview">
@@ -149,6 +158,7 @@ const StudyResults = memo(function StudyResults({ run, standardRun, comparison }
           <PcaLoadingMatrix variables={pcaLoadings?.variables ?? run.preprocessing.retainedFeatures}
             components={Array.from({ length: run.pca.components }, (_, index) => `PC${index + 1}`)} values={pcaLoadings?.values} />
           <PcaContribution dimensions={run.preprocessing.retainedFeatures.length} components={run.pca.components}
+            evidence={comparison && verified ? <VerifiedStudyMetrics experiment="sop1" /> : undefined}
             n={ablation?.settings.cohortN ?? run.cohort.parentN} k={ablation?.settings.k}
             calculations={defenseGeometry ? { existing: studyEvidence?.calculations?.standard, enhanced: studyEvidence?.calculations?.pca } : undefined}
             runCount={ablation?.settings.seeds.length}
@@ -163,37 +173,32 @@ const StudyResults = memo(function StudyResults({ run, standardRun, comparison }
         <NbClustComparison standardOnly={!comparison} standard={<MethodCard simulation title="Silhouette-Based Selection">
           <p className="simulation-compact-note">Selects k with the highest mean Silhouette.</p>
           <dl className="simulation-detail-list"><div><dt>Selection method</dt><dd>Silhouette Coefficient</dd></div><div><dt>Candidate k</dt><dd>{candidateRange}</dd></div></dl><h3 className="card-title">Silhouette by k</h3>
-          {baselineSweep ? <SilhouetteChart candidates={baselineSweep.candidates} /> : <p className="text-sm text-muted">{sopError ?? "Loading validated baseline sweep…"}</p>}
+          <p className="text-sm text-muted" role="status">Not available — this legacy Standard result does not supply Silhouette-by-k.</p>
           <StandardSelectionSummary selectedK={baseline.selectedK} />
         </MethodCard>} candidateK={run.kSelection.candidateK} selectedK={run.kSelection.selectedK}
           usableIndices={run.kSelection.usableVotes} votes={run.kSelection.voteDistribution.map(row => ({ k: row.k, count: row.votes }))}
           indices={run.kSelection.indexResults} />
       </Panel>}
       {activeTab === "sop3" && <Panel title={sopText.sop3.heading} variant="surface">
-        {/* Frozen reference-seed ARI and three historical DPC checks cannot
-            supply modal-partition ARI or the revised execution evidence. */}
+        {comparison && studyEvidence?.initializationEvidence && <p className="text-xs text-muted">Historical DPC evidence uses saved reference run 1 and previously validated reconstructed checks 2 and 3.</p>}
         <InitializationComparison standardOnly={!comparison}
-          standard={sopStatus === "ready" ? { executions: standardRun.baselineComparison.baselineMethod.runCount } : undefined}
+          controlled={false}
+          baseline={studyEvidence?.initializationEvidence?.standard}
+          standard={studyEvidence?.initializationEvidence?.standard}
+          enhanced={studyEvidence?.initializationEvidence?.enhanced}
+          randomRuns={studyEvidence?.standardAriBySeed} dpcRuns={studyEvidence?.dpcAriByRun}
           dpcUnavailable={dpcUnavailable}
           randomUnavailable={sopError ?? "Verified Standard modal-partition ARI is not supplied."}
           selectedCenters={run.initialization.selectedCentroids.length}
           centerTable={<DpcCenterTable centers={run.initialization.selectedCentroids.map(center => ({ ...center, center: center.rank,
             rid: defenseGeometry ? studyEvidence?.dpcCenters?.find(row => row.center === center.rank && row.rho === center.rho &&
               Math.abs(row.delta - center.delta) < 1e-9 && Math.abs(row.gamma - center.gamma) < 1e-9)?.rid : undefined }))} />} />
+        {comparison && verified && <section className="sop-support-card"><h3 className="card-title">PCA + random versus DPC</h3><VerifiedStudyMetrics experiment="sop3" /></section>}
       </Panel>}
-      {activeTab === "final" && <>
+      {activeTab === "final" && comparison && <>
       <Panel title={comparison ? "Standard vs Enhanced Comparison" : "Standard Clustering Results"} variant="surface">
-        <h3 className="card-title mb-4">{comparison ? "Scatter Plot Comparison (PCA Space)" : "Standard Clustering (PCA Space)"}</h3>
-        <div className={comparison ? "projection-comparison-grid" : "study-single-method"}>
-          <MethodCard title="Standard K-Means">
-            <StudyProjection panel={defenseGeometry?.sop1.baseline} label="Standard K-Means" />
-          </MethodCard>
-          {comparison && <MethodCard title="Enhanced K-Means" enhanced>
-            <StudyProjection panel={defenseGeometry?.sop3.dpc[0]} label="Enhanced K-Means" />
-          </MethodCard>}
-        </div>
         <section className="mt-6 border-t border-line pt-5" aria-label="Internal Validation">
-          <MetricComparisonTable standardOnly={!comparison} existing={existing} enhanced={enhanced} relativeChange={relativeChange} />
+          {verified ? <VerifiedStudyMetrics /> : <p role="status">Not available — verified common-space metrics are not supplied for this run.</p>}
           {comparison && <InternalValidationCalculationDetails standard={{ n: run.cohort.parentN, k: baseline.selectedK, representation: baseline.representation, metrics: existing, runCount: baseline.runCount, calculation: defenseGeometry ? studyEvidence?.calculations?.standard : undefined }} enhanced={{ n: run.cohort.parentN, k: run.kSelection.selectedK, representation: run.baselineComparison.enhancedMethod?.representation,
             metrics: enhanced, calculation: defenseGeometry ? studyEvidence?.calculations?.enhanced : undefined }} />}
         </section>
@@ -225,34 +230,122 @@ const StudyResults = memo(function StudyResults({ run, standardRun, comparison }
           </table>
         </div>
       </Panel>
+      {showLongitudinal && <HistoricalLongitudinal run={run} />}<details className="sop3-disclosure"><summary>Cluster visualization — Seed 0</summary>        <h3 className="card-title mb-4">{comparison ? "Scatter Plot Comparison (PCA Space)" : "Standard Clustering (PCA Space)"}</h3>
+        <div className={comparison ? "projection-comparison-grid" : "study-single-method"}>
+          <MethodCard title="Standard K-Means">
+            <StudyProjection panel={defenseGeometry?.sop1.baseline} label="Standard K-Means" />
+          </MethodCard>
+          {comparison && <MethodCard title="Enhanced K-Means" enhanced>
+            <StudyProjection panel={defenseGeometry?.sop3.dpc[0]} label="Enhanced K-Means" />
+          </MethodCard>}
+        </div>
+</details></>}
+      </>}
+      {activeTab === "final" && !comparison && <Panel title="Final Results"><p role="status">Complete both methods to view Final Results.</p></Panel>}
+      </div>
+    </div>
+    <ResearchPageNavigation currentPath="/study-findings" />
+  </div>;
+});
+
+export function HistoricalLongitudinal({ run, currentEnhanced }: { run: UnifiedResearchRun; currentEnhanced?: MethodResult }) {
+  const model = run.longitudinal.mixedEffects;
+  const result = model.primaryResult;
+  const [matchedPartition, setMatchedPartition] = useState<MethodResult | null>(null);
+  useEffect(() => {
+    let cancelled = false;
+    setMatchedPartition(null);
+    if (currentEnhanced?.provenance.participantsHash === verifiedPresentation.verifiedEnhanced.participantsHash && globalThis.crypto?.subtle) {
+      void crypto.subtle.digest("SHA-256", new TextEncoder().encode(JSON.stringify(currentEnhanced.labels))).then(bytes => {
+        const hash = [...new Uint8Array(bytes)].map(value => value.toString(16).padStart(2, "0")).join("");
+        if (!cancelled && hash === verifiedPresentation.verifiedEnhanced.labelsHash) setMatchedPartition(currentEnhanced);
+      }).catch(() => { /* Preserve the stored-assignment label if verification is unavailable. */ });
+    }
+    return () => { cancelled = true; };
+  }, [currentEnhanced]);
+  const sensitivity = verifiedPresentation.longitudinal.randomSlope;
+  const effect = sensitivity.fixedEffects["time_years:original_cluster[T.1]"];
+  const sensitivityApplicable = model.participantCount === verifiedPresentation.longitudinal.participants &&
+    model.observationCount === verifiedPresentation.longitudinal.observations &&
+    Math.abs(result.estimate - verifiedPresentation.longitudinal.randomIntercept.fixedEffects["time_years:original_cluster[T.1]"].estimate) < 1e-8 &&
+    sensitivity.converged && !sensitivity.singularFit && effect.ci95.every(Number.isFinite);
+  return <section className="space-y-6" aria-label="Historical longitudinal evidence">
+    <p className="text-sm text-muted">Historical validated model; fresh K-Means executions do not refit it. Source run: {run.title} · {run.run_id} · <time dateTime={run.created_at}>{new Date(run.created_at).toLocaleString()}</time></p>
       <Panel title="ADAS-Cog13 Longitudinal Progression" variant="surface">
         <p className="mb-4 text-sm text-muted">ADAS-Cog13: higher score = greater impairment. Original cluster assignments remain fixed.</p>
         <ProgressionChart data={run.longitudinal.timeSeries} />
       </Panel>
       <Panel title="Linear Mixed-Effects Model (LME)" variant="surface" className="study-lme">
-        <p className="mb-5 text-xs text-muted">{formatInteger(model.participantCount)} eligible participants · {formatInteger(model.observationCount)} repeated ADAS-Cog13 observations · {model.estimationMethod?.replace("; random", " · Random")}</p>
+        <p className="mb-3 text-xs text-muted">Random intercept only, maximum likelihood</p>
+        <p className="mb-3 text-xs text-muted">{formatInteger(model.participantCount)} eligible participants, {formatInteger(model.observationCount)} observations</p>
+        <p className="mb-5 text-xs text-muted">{matchedPartition && matchedPartition === currentEnhanced
+          ? "Reference assignments equal the current Enhanced partition; the reference model has not been refitted."
+          : "Reference model uses the stored frozen assignments."}</p>
         <h3 className="card-title mb-3">Annual ADAS-Cog13 Change</h3>
         <div className="study-lme-slopes">
           {[...model.estimatedAnnualChangeByOriginalCluster].sort((a, b) => a.clusterId - b.clusterId).map((entry) =>
             <section key={entry.clusterId} className={`study-lme-slope${entry.clusterId === 1 ? " is-secondary" : ""}`} aria-label={`Cluster ${entry.clusterId} annual ADAS-Cog13 change`}>
               <h4>Cluster {entry.clusterId}</h4>
               <p className="study-lme-interpretation">{entry.clusterId === 0 ? "Lower" : "Higher"} impairment</p>
-              <p className="study-lme-slope-value">{formatContinuous(entry.estimate)}</p>
+              <p className="study-lme-slope-value">{formatNumber(entry.estimate, "lme")}</p>
               <p className="text-xs text-muted">{entry.unit}</p>
             </section>)}
         </div>
         <section className="study-lme-effect" aria-labelledby="study-lme-effect-title">
           <h3 id="study-lme-effect-title" className="card-title">Time × Cluster Effect</h3>
           <dl className="study-lme-statistics">
-            <div><dt>Difference in annual change</dt><dd>{formatContinuous(result.estimate)} <span className="study-lme-unit">points/year</span></dd></div>
-            <div><dt>95% CI</dt><dd>{formatContinuous(result.confidenceInterval95.lower)} to {formatContinuous(result.confidenceInterval95.upper)}</dd></div>
-            <div><dt>p-value</dt><dd>{result.pValue < 0.001 ? "<0.001" : formatContinuous(result.pValue)}</dd></div>
+            <div><dt>Difference in annual change</dt><dd>{formatNumber(result.estimate, "lme")} <span className="study-lme-unit">points/year</span></dd></div>
+            <div><dt>95% CI</dt><dd>{formatNumber(result.confidenceInterval95.lower, "lme")} to {formatNumber(result.confidenceInterval95.upper, "lme")}</dd></div>
+            <div><dt>p-value</dt><dd>{formatNumber(result.pValue, "pValue")}</dd></div>
           </dl>
         </section>
-      </Panel></>}
-      </>}
-      </div>
-    </div>
+        {sensitivityApplicable && <details className="sop3-disclosure"><summary>Sensitivity analysis (random slope)</summary>
+          <dl className="study-lme-statistics"><div><dt>Time-by-cluster difference</dt><dd>{formatNumber(effect.estimate, "lme")} points/year</dd></div>
+            <div><dt>95% CI</dt><dd>{formatNumber(effect.ci95[0], "lme")} to {formatNumber(effect.ci95[1], "lme")}</dd></div>
+            <div><dt>p-value</dt><dd>{formatNumber(effect.pValue, "pValue")}</dd></div></dl>
+          <p className="text-xs text-muted">{verifiedPresentation.discrepancyNote}</p>
+        </details>}
+      </Panel>
+  </section>;
+}
+
+function StoredFinalEvidence({ run, loading, error, load, currentEnhanced }: { run: UnifiedResearchRun | null; loading: boolean; error: string | null; load: () => Promise<void>; currentEnhanced?: MethodResult }) {
+  useEffect(() => { void load(); }, []);
+  return <>
+    {loading && <p role="status">Loading stored longitudinal evidence...</p>}
+    {error && <p role="alert">{error}</p>}
+    {run && <FinalLongitudinal run={run} />}
+  </>;
+}
+
+export function StudyExecutionPage({ jobs, dataset }: { jobs: MethodJobs; dataset: UploadResponse | null }) {
+  const ready = isDatasetReady(dataset);
+  const [stored, setStored] = useState<UnifiedResearchRun | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const loadStored = async () => {
+    if (stored || loading) return;
+    setLoading(true);
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/runs`, { cache: "no-store" });
+      if (!response.ok) throw new Error();
+      const payload = RunListResponseSchema.parse(await response.json());
+      const run = payload.runs.find((value): value is UnifiedResearchRun => "pipeline" in value && value.pipeline === "unified" && FrozenUnifiedStudyResultSchema.safeParse(value).success);
+      if (!run) throw new Error();
+      setStored(run); setError(null);
+    } catch { setError("The reference longitudinal model is not available."); }
+    finally { setLoading(false); }
+  };
+  return <div className="research-page study-findings final-ui">
+    <PageHeading title="Study Findings" description={ready ? undefined : "Prepare the validated datasets to begin the study analysis."} />
+    {!ready && <Panel title="Datasets required" variant="surface" className="study-ready-card"><div className="study-readiness">
+      <div className="flex min-w-0 items-start gap-3"><span className="research-status-icon" aria-hidden="true"><Database size={18} /></span><div><p className="font-semibold">{dataset ? "Preparing study-entry dataset" : "Validate all seven required datasets"}</p><p className="mt-1 text-sm text-muted">{dataset?.preparation?.error ?? "Complete verified preparation in Dataset Setup."}</p></div></div>
+      <Link className="research-primary-button" to="/dataset-setup">Go to Dataset Setup</Link>
+    </div></Panel>}
+    <FinalRunsCard state={jobs} ready={ready} />
+    <FinalStudyResults standard={visibleMethodResult(jobs, "standard")} enhanced={visibleMethodResult(jobs, "enhanced")} comparison={jobs.comparison?.result ?? undefined}
+      standardState={methodPlaceholder(jobs, "standard")} enhancedState={methodPlaceholder(jobs, "enhanced")}
+      historical={<StoredFinalEvidence run={stored} loading={loading} error={error} load={loadStored} currentEnhanced={visibleMethodResult(jobs, "enhanced")} />} />
     <ResearchPageNavigation currentPath="/study-findings" />
   </div>;
-});
+}

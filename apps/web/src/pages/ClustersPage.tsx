@@ -161,14 +161,14 @@ const OverviewTab = ({ run }: { run: UnifiedResearchRun }) => {
         <div className="existing-card-header">
           <div>
             <p>Primary Finding</p>
-            <h2>Enhanced pipeline improves internal validation</h2>
+            <h2>Internal validation requires a shared evaluation space</h2>
           </div>
         </div>
         <div className="existing-metrics summary-metric-grid">
           {run.baselineComparison.metrics.map((metric) => (
             <div key={metric.metric}>
               <span>{metricLabels[metric.metric]}</span>
-              <strong>{Math.abs(metric.signedRelativeChangePercent).toFixed(2)}%</strong>
+              <strong>See common-space metrics</strong>
               <small>{metric.direction === "lower" ? "lower is better" : "higher is better"} vs baseline K-Means</small>
             </div>
           ))}
@@ -243,7 +243,7 @@ const MetricsTab = ({ run }: { run: UnifiedResearchRun }) => (
               </div>
               <div>
                 <small>Relative change</small>
-                <strong>{Math.abs(metric.signedRelativeChangePercent).toFixed(2)}%</strong>
+                <strong>Common-space comparison required</strong>
               </div>
             </div>
           </article>
@@ -278,7 +278,7 @@ const MetricsTab = ({ run }: { run: UnifiedResearchRun }) => (
                 <td className="text-right tabular-nums">{metric.baselineStandardDeviation.toFixed(5)}</td>
                 <td className="text-right font-semibold tabular-nums text-teal-800">{formatComparisonMetric(metric.metric, metric.enhancedValue)}</td>
                 <td className="text-right capitalize text-muted">{metric.direction}</td>
-                <td className="text-right font-semibold tabular-nums">{metric.signedRelativeChangePercent.toFixed(2)}%</td>
+                <td className="text-right font-semibold tabular-nums">Not available</td>
               </tr>
             ))}
           </tbody>
@@ -358,7 +358,7 @@ const PcaTab = ({ run, evaluation, error, baselineSweep, geometry }: { run: Unif
                 <div>
                   <span>{sopMetricLabels[metric]}</span>
                   <small>{metric === "davies_bouldin" ? "Lower is better" : "Higher is better"}</small>
-                  <em>{formatSignedPercent(change)}</em>
+                  <em>Native-space values; no cross-space difference</em>
                 </div>
                 <strong>{formatSopMetric(metric, pcaValue)}</strong>
               </div>
@@ -705,7 +705,7 @@ const DpcTab = ({ run, evaluation, error, baselineSweep: _baselineSweep, geometr
                     <td className="font-medium">{sopMetricLabels[metric]}<small className="mt-1 block text-muted">{evidence ? evidence.direction === "lower" ? "Lower is better" : "Higher is better" : "Validated direction pending"}</small></td>
                     <td className="text-right tabular-nums">{evidence ? formatSopMetric(metric, evidence.randomMean) : "—"}</td>
                     <td className="text-right tabular-nums text-teal-800">{evidence ? formatSopMetric(metric, evidence.dpcValue) : "—"}</td>
-                    <td className="text-right text-muted">{evidence ? `${assessmentLabels[evidence.dpcAssessment]}; ${evidence.signedRelativeChangePercent > 0 ? "+" : ""}${evidence.signedRelativeChangePercent.toFixed(5)}% vs random mean` : "Validated comparison pending"}</td>
+                    <td className="text-right text-muted">{evidence ? `${assessmentLabels[evidence.dpcAssessment]}; common-space metrics required` : "Validated comparison pending"}</td>
                   </tr>
                 );
               })}

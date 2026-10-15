@@ -1,34 +1,34 @@
-.simulation-stepper { display: grid; grid-template-columns: repeat(9, minmax(0, 1fr)); width: 100%; margin: 24px auto 4px; padding: 0; list-style: none; }
-.simulation-step { display: flex; min-width: 0; flex-direction: column; align-items: center; gap: 8px; color: #4b5563; text-align: center; font-size: 11px; line-height: 1.4; }
-.simulation-step-subtitle { display: block; color: #7b8193; font-size: 10px; }
-.simulation-step-node { display: flex; width: 32px; height: 32px; align-items: center; justify-content: center; border: 2px solid #cfd6de; border-radius: 50%; background: #f8fafb; }
-.simulation-step-dot { width: 7px; height: 7px; border-radius: 50%; background: #cfd6de; }
+.simulation-stepper { display: grid; grid-template-columns: repeat(9, minmax(0, 1fr)); width: 100%; margin: var(--research-space-6) auto var(--research-space-1); padding: 0; list-style: none; }
+.simulation-step { display: flex; min-width: 0; flex-direction: column; align-items: center; gap: var(--research-space-2); color: var(--research-muted); text-align: center; font-size: var(--research-caption-size); line-height: 1.4; }
+.simulation-step-subtitle { display: block; color: var(--research-muted); font-size: var(--research-caption-size); }
+.simulation-step-node { display: flex; width: 32px; height: 32px; align-items: center; justify-content: center; border: 2px solid var(--research-selected-border); border-radius: 50%; background: var(--research-canvas); }
+.simulation-step-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--research-selected-border); }
 .simulation-step.is-reached { color: var(--simulation-teal, var(--research-primary)); }
 .simulation-step.is-reached .simulation-step-node { border-color: var(--simulation-teal, var(--research-primary)); background: var(--simulation-teal, var(--research-primary)); color: white; }
 .simulation-step.is-active { color: var(--simulation-teal, var(--research-primary)); }
-.simulation-step.is-active .simulation-step-node { border-color: var(--simulation-teal, var(--research-primary)); box-shadow: 0 0 0 4px #e5f3f0; }
+.simulation-step.is-active .simulation-step-node { border-color: var(--simulation-teal, var(--research-primary)); box-shadow: 0 0 0 4px var(--research-success); }
 .simulation-step.is-active .simulation-step-dot { background: var(--simulation-teal, var(--research-primary)); }
 @media (max-width: 767px) {
-  .simulation-stepper { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 20px 8px; }
+  .simulation-stepper { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--research-space-5) var(--research-space-2); }
 }
 
 /* Both pages use the Study Findings progress treatment. Scroll narrow lanes
    horizontally so eight stage labels remain readable without a tall card. */
 .study-running-badge { border: 1px solid var(--research-selected-border); flex-shrink: 0; }
 .method-progress-scroll { min-width: 0; overflow-x: auto; }
-.study-progress-card .study-stepper { grid-template-columns: repeat(var(--study-stage-count, 6), minmax(0, 1fr)); min-width: calc(var(--study-stage-count, 6) * 145px); gap: 0; margin: 36px 0 10px; }
-.study-stepper .simulation-step { position: relative; gap: 12px; padding-inline: 6px; font-size: 13px; color: var(--research-ink); }
+.study-progress-card .study-stepper { grid-template-columns: repeat(var(--study-stage-count, 6), minmax(0, 1fr)); min-width: calc(var(--study-stage-count, 6) * 145px); gap: 0; margin: var(--research-space-9) 0 var(--research-space-3); }
+.study-stepper .simulation-step { position: relative; gap: var(--research-space-3); padding-inline: var(--research-space-2); font-size: var(--research-body-size); color: var(--research-ink); }
 .study-stepper .simulation-step:is(.is-reached, .is-active) { color: var(--research-primary); }
-.study-stepper .simulation-step-subtitle { margin-top: 4px; font-size: 12px; color: var(--research-muted); }
+.study-stepper .simulation-step-subtitle { margin-top: var(--research-space-1); font-size: var(--research-caption-size); color: var(--research-muted); }
 .study-stepper .simulation-step-node { position: relative; z-index: 1; width: 38px; height: 38px; flex-shrink: 0; background: white; }
 .study-stepper .simulation-step:not(:first-child)::before { content: ""; position: absolute; top: 18px; right: calc(50% + 24px); width: calc(100% - 48px); border-top: 2px dashed var(--research-control-border); }
 .study-stepper .simulation-step:is(.is-reached, .is-active)::before { border-top-style: solid; border-top-color: var(--research-primary); }
-.study-progress-wait { margin-top: 16px; }
+.study-progress-wait { margin-top: var(--research-space-4); }
 .comparison-progress-card .section-title, .comparison-progress-card .section-subtitle { color: var(--research-primary); }
 .comparison-progress-card .research-panel-heading { align-items: center; }
-.comparison-progress-lane { margin-top: 24px; }
-.comparison-progress-lane + .comparison-progress-lane { padding-top: 20px; border-top: 1px solid var(--research-border); }
-.comparison-progress-lane .study-stepper { margin-top: 20px; }
+.comparison-progress-lane { margin-top: var(--research-space-6); }
+.comparison-progress-lane + .comparison-progress-lane { padding-top: var(--research-space-5); border-top: 1px solid var(--research-border); }
+.comparison-progress-lane .study-stepper { margin-top: var(--research-space-5); }
 @media (max-width: 767px) {
   .study-progress-card .study-stepper { min-width: calc(var(--study-stage-count, 6) * 135px); }
 }

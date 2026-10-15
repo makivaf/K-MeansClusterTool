@@ -1,4 +1,5 @@
 import { spawn, spawnSync } from "node:child_process";
+import { withResearchCapacity } from "./researchExecutionCapacity";
 import crypto from "node:crypto";
 import fs from "node:fs";
 import path from "node:path";
@@ -216,7 +217,12 @@ export const prepareWorkspace = (
   return workspace;
 };
 
-export const runUnifiedResearchPipeline = async (
+export const runUnifiedResearchPipeline = (
+  uploadDirectory: string,
+  options: ResearchPipelineOptions = {}
+): Promise<ResearchExecution> => withResearchCapacity(() => executeUnifiedResearchPipeline(uploadDirectory, options));
+
+const executeUnifiedResearchPipeline = async (
   uploadDirectory: string,
   options: ResearchPipelineOptions = {}
 ): Promise<ResearchExecution> => {

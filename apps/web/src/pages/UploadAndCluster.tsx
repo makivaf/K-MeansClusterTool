@@ -1,11 +1,12 @@
 import { CheckCircle2, UploadCloud } from "lucide-react";
 import { useEffect, useRef, useState, type Dispatch, type SetStateAction } from "react";
 import { UploadResponseSchema, type UploadResponse } from "../../../../packages/shared/src/schema";
+import { StudyPreparationSchema } from '../../../../packages/shared/src/studyPreparation';
 import { API_BASE_URL, isLocalApiBaseUrl } from "../config/api";
 import { canonicalUploadFilename } from "../utils/uploadFilename";
 import { Panel } from "../components/ui/Panel";
 import { PageHeading } from "./PageHeading";
-import { DATASETS, isDatasetReady } from "../utils/validatedDataset";
+import { DATASETS, isDatasetReady, isDatasetValidated } from "../utils/validatedDataset";
 import { CandidateVariables, StudyEntrySummary } from "../components/StudyEntrySummary";
 import "./DatasetSetup.css";
 
@@ -19,7 +20,8 @@ export const UploadAndCluster = ({ onValidated, dataset, files, setFiles, invali
   validatedFiles: Record<string, string>;
   setValidatedFiles: Dispatch<SetStateAction<Record<string, string>>>;
 }) => {
-  const validated = isDatasetReady(dataset);
+  const validated = isDatasetValidated(dataset);
+  const prepared = isDatasetReady(dataset);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const controllerRef = useRef<AbortController | null>(null);
@@ -28,6 +30,35 @@ export const UploadAndCluster = ({ onValidated, dataset, files, setFiles, invali
   const ready = DATASETS.every(([, name]) => files[name]);
 
   useEffect(() => () => controllerRef.current?.abort(), []);
+  const latest=useRef({dataset,onValidated});latest.current={dataset,onValidated};
+  useEffect(() => {
+    if(!dataset || !localApi) return;
+    const ref=dataset.upload_ref, controller=new AbortController();
+    let timer:ReturnType<typeof setTimeout>;
+    const poll=async()=>{
+      try {
+        const response=await fetch(`${API_BASE_URL}/api/study-preparations/${ref}`,{signal:controller.signal,cache:'no-store'});
+        if(!response.ok)throw Error('Dataset preparation is unavailable. Retry preparation.');
+        const preparation=StudyPreparationSchema.parse(await response.json());
+        if(controller.signal.aborted||latest.current.dataset?.upload_ref!==ref)return;
+        if(JSON.stringify(preparation)!==JSON.stringify(latest.current.dataset.preparation))latest.current.onValidated({...latest.current.dataset,preparation});
+        if(preparation.status==='preparing')timer=setTimeout(()=>void poll(),1000);
+      } catch(caught) {
+        if(!controller.signal.aborted&&latest.current.dataset?.upload_ref===ref)
+          latest.current.onValidated({...latest.current.dataset,preparation:{status:'error',stage:'status_error',error:'Unable to verify preparation. Retry preparation.'}});
+      }
+    };
+    void poll();return()=>{controller.abort();clearTimeout(timer);};
+  },[dataset?.upload_ref,dataset?.preparation?.status,localApi]);
+  const retryPreparation=async()=>{
+    if(!dataset)return;
+    try {
+      const response=await fetch(`${API_BASE_URL}/api/study-preparations/${dataset.upload_ref}`,{method:'POST'});
+      if(!response.ok)throw Error('Unable to start preparation. Validate the seven exports again.');
+      const preparation=StudyPreparationSchema.parse(await response.json());
+      if(latest.current.dataset?.upload_ref===dataset.upload_ref)onValidated({...dataset,preparation});
+    } catch(caught) {setError(caught instanceof Error?caught.message:'Unable to prepare dataset.');}
+  };
   const chooseFiles = (incoming: File[], expected?: string) => {
     if (busy || incoming.length === 0) return;
     setError(null);
@@ -76,7 +107,7 @@ export const UploadAndCluster = ({ onValidated, dataset, files, setFiles, invali
       const parsed = UploadResponseSchema.safeParse(await response.json());
       if (!parsed.success) throw new Error("The API returned an invalid dataset validation response.");
       const dataset = parsed.data;
-      if (!isDatasetReady(dataset)) throw new Error("The API did not validate all seven exports.");
+      if (!isDatasetValidated(dataset)) throw new Error("The API did not validate all seven exports.");
       if (controller.signal.aborted) return;
       setInvalidFiles([]); onValidated(dataset);
     } catch (caught) {
@@ -126,7 +157,8 @@ export const UploadAndCluster = ({ onValidated, dataset, files, setFiles, invali
       {!localApi ? <p role="alert" className="mt-4 text-sm text-muted">Dataset validation requires the local API.</p> : null}
       {error ? <p role="alert" className="mt-4 text-sm text-red-700">{error}</p> : null}
       <div className="mt-6 flex flex-col gap-4 border-t border-line pt-5 sm:flex-row sm:items-center sm:justify-between">
-        <span role="status" className="text-sm text-muted">{validated ? <span className="inline-flex items-center gap-2 text-teal-800"><CheckCircle2 size={18} aria-hidden="true" />Dataset ready</span> : busy ? "Validating exports…" : ready ? "All files selected. Ready to validate." : Object.keys(validatedFiles).length ? "Reselect all seven files to validate a replacement after refresh." : "Select all seven files to validate."}</span>
+        <span role="status" className="text-sm text-muted">{prepared ? <span className="inline-flex items-center gap-2 text-teal-800"><CheckCircle2 size={18} aria-hidden="true" />Dataset ready</span> : validated ? dataset?.preparation?.status==='error' ? 'Preparation error' : 'Preparing study-entry dataset…' : busy ? "Validating exports…" : ready ? "All files selected. Ready to validate." : Object.keys(validatedFiles).length ? "Reselect all seven files to validate a replacement after refresh." : "Select all seven files to validate."}</span>
+        {validated&&dataset?.preparation?.status==='error'&&<><p role="alert">{dataset.preparation.error}</p><button className="research-primary-button" onClick={()=>void retryPreparation()}>Retry preparation</button></>}
         {!validated ? <button type="button" disabled={!ready || busy || !localApi}
           onClick={() => { setInvalidFiles([]); void validate(); }}
           className="research-primary-button">
@@ -134,6 +166,6 @@ export const UploadAndCluster = ({ onValidated, dataset, files, setFiles, invali
         </button> : null}
       </div>
     </Panel>
-    {validated ? <StudyEntrySummary /> : null}
+    {prepared ? <StudyEntrySummary /> : null}
   </div>;
 };

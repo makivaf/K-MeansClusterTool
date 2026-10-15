@@ -4,6 +4,7 @@ const finite = z.number().finite();
 export const CalculationEvidenceSchema = z.object({
   n: z.number().int().positive(), k: z.number().int().min(2),
   representation: z.string().min(1), seed: z.number().int().nonnegative().optional(),
+  participantSidecar: z.object({ url: z.string().min(1), sha256: z.string().regex(/^[a-f0-9]{64}$/), count: z.number().int().positive() }).strict().optional(),
   exampleParticipant: z.object({ rid: z.string().min(1), cluster: z.number().int().nonnegative().optional(), a: finite.nonnegative(), b: finite.nonnegative(),
     s: finite.min(-1).max(1), singleton: z.boolean() }).strict(),
   daviesBouldin: z.object({ sigma0: finite.nonnegative(), sigma1: finite.nonnegative(), centroidDistance: finite.nonnegative() }).strict(),

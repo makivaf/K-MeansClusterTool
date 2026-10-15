@@ -1,4 +1,5 @@
 import fs from "node:fs";
+import { withResearchCapacity } from "./researchExecutionCapacity";
 import path from "node:path";
 import crypto from "node:crypto";
 import { spawn } from "node:child_process";
@@ -64,7 +65,11 @@ export function frozenArtifactHashes() {
   return hashes;
 }
 
-export async function executeSimulation(id: number, configuration?: SimulationConfiguration, onStage?: (stage: number) => void): Promise<SimulationRunState> {
+export function executeSimulation(id: number, configuration?: SimulationConfiguration, onStage?: (stage: number) => void): Promise<SimulationRunState> {
+  return withResearchCapacity(() => executeSimulationWithCapacity(id, configuration, onStage));
+}
+
+async function executeSimulationWithCapacity(id: number, configuration?: SimulationConfiguration, onStage?: (stage: number) => void): Promise<SimulationRunState> {
   const sample = getSimulationSample(id, configuration);
   const source = verifiedSource();
   const enriched = configuration ? await enrichSavedSimulation(id, configuration, sample.fingerprint, sha256(source), onStage) : null;

@@ -37,7 +37,7 @@ export const RunHistoryPage = ({ runs, selectedRunId, onSelectRun }: RunHistoryP
                   <p className="mt-1 text-xs leading-5 text-muted">
                     {formatDate(run.created_at)} - {run.cohort.parentN.toLocaleString()} participants - k={run.kSelection.selectedK}
                   </p>
-                  <p className="mt-1 break-all text-[11px] text-muted">{run.run_id}</p>
+                  <p className="mt-1 break-all text-xs text-muted">{run.run_id}</p>
                 </div>
                 <div className="flex items-center gap-2">
                   {selected ? <span className="text-xs font-semibold text-teal-800">Selected</span> : null}

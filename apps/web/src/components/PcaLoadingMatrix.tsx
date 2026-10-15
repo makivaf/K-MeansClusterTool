@@ -1,3 +1,5 @@
+import { ExpandPanel } from "./ExpandPanel";
+import { formatNumber } from "../utils/formatNumber";
 import { ChevronDown } from "lucide-react";
 import { formatContinuous } from "../utils/numberFormatting";
 import { getMeasureLabel } from "../utils/measureLabels";
@@ -8,7 +10,7 @@ import { topLoadingRows, type PcaLoadings } from "../utils/pcaLoadings";
 export { topLoadingRows } from "../utils/pcaLoadings";
 export type { PcaLoadings } from "../utils/pcaLoadings";
 
-export const PcaLoadingMatrix = ({ variables, components, values, topCount = 3, defaultExpanded = true }: {
+export const PcaLoadingMatrix = ({ variables, components, values, topCount = 3, defaultExpanded = false }: {
   variables: readonly string[];
   components: readonly string[];
   values?: PcaLoadings;
@@ -22,11 +24,8 @@ export const PcaLoadingMatrix = ({ variables, components, values, topCount = 3, 
   const highlighted = components.map((_, component) => new Set(matrix ? topLoadingRows(matrix, component, topCount) : []));
   const maximum = matrix ? Math.max(0, ...matrix.flatMap(row => row.slice(0, retainedComponents).map(value => Math.abs(value ?? 0)))) : 0;
   if (variables.length === 0 || retainedComponents < 1) return null;
-  return <section className="sop-support-card pca-loading-card">
+  return <ExpandPanel title="PCA loading matrix"><section className="sop-support-card pca-loading-card">
     <h3 className="card-title mb-2">Principal Components — Loading Matrix</h3>
-    <p className="pca-loading-summary">{variables.length} variables × {retainedComponents} retained PCs</p>
-    <details className="pca-loading-disclosure" open={defaultExpanded}>
-      <summary className="research-text-action"><span className="pca-loading-show">Show Loading Matrix</span><span className="pca-loading-hide">Hide Loading Matrix</span><ChevronDown size={14} aria-hidden="true" /></summary>
       <>
         <div className="pca-loading-scroll" role="region" aria-label="PCA loading matrix" tabIndex={0}>
           <table className="pca-loading-table">
@@ -39,7 +38,7 @@ export const PcaLoadingMatrix = ({ variables, components, values, topCount = 3, 
                 const intensity = value === null || maximum === 0 ? 0 : 65 * Math.abs(value) / maximum;
                 return <td key={component} className={value === null ? "is-placeholder" : strongest ? "is-strongest" : undefined}
                   style={value === null ? undefined : { backgroundColor: `color-mix(in srgb, var(${value !== null && value < 0 ? "--research-comparison" : "--research-primary"}) ${intensity}%, white)` }}>
-                  {value === null ? "\u2014" : `${value > 0 ? "+" : ""}${formatContinuous(value)}`}
+                  {value === null ? "\u2014" : `${value > 0 ? "+" : ""}${formatNumber(value, "loading")}`}
                   {strongest && <span className="sr-only"> · top {topCount} absolute loading for {label}</span>}
                 </td>;
               })}
@@ -47,9 +46,10 @@ export const PcaLoadingMatrix = ({ variables, components, values, topCount = 3, 
           </table>
         </div>
         {matrix ? <><div className="pca-loading-legend"><span>Strong negative</span><span className="pca-loading-swatches" aria-hidden="true">{[-65, -25, 0, 25, 65].map(value => <i key={value} style={{ backgroundColor: `color-mix(in srgb, var(${value < 0 ? "--research-comparison" : "--research-primary"}) ${Math.abs(value)}%, white)` }} />)}</span><span>← 0 → Strong positive</span></div>
-        <p className="text-xs text-muted">Cell colors indicate loading direction and magnitude. Outlined cells identify the {topCount === 3 ? "three" : topCount} largest absolute loadings per component. Negative loadings indicate direction, not unfavorable performance.</p>
-        <p className="mt-2 text-xs text-muted">Ties follow variable order.</p></> : <p className="mt-3 text-xs text-muted" role="status">Loading values will appear when PCA loading data is available.</p>}
+        <p className="text-xs text-muted">Outlined: {topCount} largest absolute loadings per PC</p>
+        <details className="sop3-disclosure"><summary>Color and tie-order details</summary>
+          <p className="text-xs text-muted">Cell colors indicate loading direction and magnitude. Negative loadings indicate direction, not unfavorable performance. Ties follow variable order.</p>
+        </details></> : <p className="mt-3 text-xs text-muted" role="status">Loading values will appear when PCA loading data is available.</p>}
       </>
-    </details>
-  </section>;
+  </section></ExpandPanel>;
 };

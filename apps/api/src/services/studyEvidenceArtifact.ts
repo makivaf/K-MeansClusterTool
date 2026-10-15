@@ -6,6 +6,7 @@ import { StudyEvidenceSchema, type SopEvaluation, type DefenseGeometry } from ".
 import { adjustedRandIndex } from "../../../../packages/shared/src/adjustedRandIndex";
 import { readCsvRecords } from "./artifactReaders";
 import { studyCalculations } from "./calculationEvidence";
+import { derivePartitionEvidence } from "../../../../packages/shared/src/partitionEvidence";
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../../../..");
 const digest = (bytes: Buffer | string) => crypto.createHash("sha256").update(bytes).digest("hex");
@@ -43,6 +44,7 @@ export function loadStudyEvidence(evaluation: SopEvaluation, geometry: DefenseGe
   const standardFile = path.join(sourceDirectory, path.posix.basename(standardSource));
   let standardAriBySeed;
   let standardAri;
+  let standardPartitions: number[][] | undefined;
   if (fs.existsSync(standardFile)) {
     const sourceSha256 = digest(fs.readFileSync(standardFile));
     const expected = evaluation.provenance.sourceSha256[standardSource] ?? geometry?.provenance.sourceSha256[standardSource];
@@ -57,15 +59,17 @@ export function loadStudyEvidence(evaluation: SopEvaluation, geometry: DefenseGe
       const seed = Number(row.seed), label = Number(row.cluster_label);
       if (!/^\d+$/.test(row.seed) || !Number.isInteger(seed) || seed < 0 || seed >= partitions.length ||
         !/^\d+$/.test(row.cluster_label) || !Number.isInteger(label) ||
-        partitions[seed].has(row.RID)) throw new Error("Invalid Standard ARI assignment.");
+        partitions[seed].has(row.RID) || row.run_number !== String(seed + 1)) throw new Error("Invalid Standard ARI assignment.");
       partitions[seed].set(row.RID, label);
     }
     const labels = partitions.map(partition => {
       if (partition.size !== participants.length || participants.some(rid => !partition.has(rid))) {
         throw new Error("Standard ARI participant membership mismatch.");
       }
+      if ([...partition.keys()].some((rid, i) => rid !== participants[i])) throw new Error("Standard assignment order mismatch.");
       return participants.map(rid => partition.get(rid)!);
     });
+    standardPartitions = labels;
     standardAriBySeed = labels.map((partition, seed) => ({ seed, adjustedRandIndex: adjustedRandIndex(labels[0], partition) }));
     standardAri = { source: standardSource, sourceSha256, referenceSeed: 0 as const };
   }
@@ -78,7 +82,28 @@ export function loadStudyEvidence(evaluation: SopEvaluation, geometry: DefenseGe
     dpcCenters = readCsvRecords(sourceDirectory, centersFile).map(row => ({ center: Number(row.centroid_order), rid: row.RID,
       rho: Number(row.rho), delta: Number(row.delta), gamma: Number(row.gamma) }));
   }
-  return StudyEvidenceSchema.parse({ ...evidence, standardAriBySeed,
+  let initializationEvidence;
+  if (available.length === required.length && geometry) {
+    const cohortRows = readCsvRecords(sourceDirectory, "clustering_features_standardized.csv");
+    const participants = cohortRows.map(row => row.RID);
+    if (new Set(cohortRows.map(row => row.PTID)).size !== evidence.cohortN || cohortRows.some(row => !row.PTID)) throw new Error("Invalid cohort identifier uniqueness.");
+    if (participants.length !== evidence.cohortN || new Set(participants).size !== participants.length || participants.some(v => !v)) throw new Error("Invalid partition cohort.");
+    const rows = readCsvRecords(sourceDirectory, "dpc_comparison_random_assignments.csv");
+    const random = Array.from({ length: 30 }, (_, seed) => {
+      const run = rows.filter(row => row.seed === String(seed));
+      if (run.length !== participants.length || run.some((row, i) => row.RID !== participants[i] || row.PTID !== cohortRows[i].PTID || row.run_number !== String(seed + 1) || !/^\d+$/.test(row.cluster_label))) throw new Error("Controlled assignment order or completeness mismatch.");
+      return run.map(row => Number(row.cluster_label));
+    });
+    if (rows.length !== 30 * participants.length) throw new Error("Unexpected controlled assignment rows.");
+    const dpc = geometry.sop3.dpc.map(panel => panel.observations.map(point => point.cluster));
+    const savedDpc = readCsvRecords(sourceDirectory, "unified_cluster_assignments.csv");
+    if (savedDpc.length !== participants.length || savedDpc.some((row, i) => row.RID !== participants[i] || row.PTID !== cohortRows[i].PTID || Number(row.cluster_label) !== dpc[0][i])) throw new Error("DPC saved reference order or partition mismatch.");
+    const scores = readCsvRecords(sourceDirectory, "clustering_pca_scores.csv");
+    if (scores.length !== participants.length || scores.some((row, i) => row.RID !== participants[i])) throw new Error("PCA cohort order mismatch.");
+    if (random.some((run, seed) => Math.abs(adjustedRandIndex(dpc[0], run) - evidence.ariBySeed[seed].adjustedRandIndex) > 1e-12)) throw new Error("Controlled reference ARI mismatch.");
+    initializationEvidence = { standard: standardPartitions && derivePartitionEvidence(standardPartitions), pcaRandom: derivePartitionEvidence(random), enhanced: derivePartitionEvidence(dpc, 1) };
+  }
+  return StudyEvidenceSchema.parse({ ...evidence, standardAriBySeed, initializationEvidence,
     provenance: { ...evidence.provenance, standardAri,
       sourceSha256: { ...evidence.provenance.sourceSha256, ...(standardAri ? { [standardSource]: standardAri.sourceSha256 } : {}) } },
     calculations: studyCalculations(sourceDirectory, geometry), dpcCenters, dpcAriByRun: reference && geometry

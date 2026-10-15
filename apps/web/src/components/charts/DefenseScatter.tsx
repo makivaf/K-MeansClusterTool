@@ -21,7 +21,7 @@ export const DefenseScatter = ({ panel, label }: { panel: DefensePanel | null; l
         {[0, 1, 2, 3, 4].map((tick) => {
           const xv = left + ((right - left) * tick) / 4;
           const yv = bottom + ((top - bottom) * tick) / 4;
-          return <g key={tick} fill={chartPalette.text} fontSize="11">
+          return <g key={tick} fill={chartPalette.text} fontSize="var(--research-caption-size)">
             <line x1={x(xv)} x2={x(xv)} y1="22" y2="266" stroke={chartPalette.grid} />
             <line x1="52" x2="498" y1={y(yv)} y2={y(yv)} stroke={chartPalette.grid} />
             <text x={x(xv)} y="282" textAnchor="middle">{xv.toFixed(1)}</text>
@@ -38,8 +38,8 @@ export const DefenseScatter = ({ panel, label }: { panel: DefensePanel | null; l
             {marker.type === "initial" ? <path d={`M ${mx} ${my - 7} L ${mx + 7} ${my} L ${mx} ${my + 7} L ${mx - 7} ${my} Z`} /> : <path d={`M ${mx - 7} ${my - 7} L ${mx + 7} ${my + 7} M ${mx - 7} ${my + 7} L ${mx + 7} ${my - 7}`} />}
           </g>;
         })}
-        <text x="275" y="302" textAnchor="middle" fill={chartPalette.text} fontSize="12">PC1</text>
-        <text transform="translate(14 144) rotate(-90)" textAnchor="middle" fill={chartPalette.text} fontSize="12">PC2</text>
+        <text x="275" y="302" textAnchor="middle" fill={chartPalette.text} fontSize="var(--research-caption-size)">PC1</text>
+        <text transform="translate(14 144) rotate(-90)" textAnchor="middle" fill={chartPalette.text} fontSize="var(--research-caption-size)">PC2</text>
       </svg>
       <figcaption className="text-xs text-muted">
         <span style={{ color: colors[0] }}>● Cluster 0</span>{" · "}<span style={{ color: colors[1] }}>● Cluster 1</span>

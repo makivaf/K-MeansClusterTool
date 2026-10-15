@@ -37,10 +37,10 @@ assert.equal((html.match(/scope="row"/g) ?? []).length, 13);
 assert.equal((html.match(/scope="col"/g) ?? []).length, 7);
 assert.equal((html.match(/class="is-strongest"/g) ?? []).length, 18);
 assert.doesNotMatch(html, /PC7|100\.000000/);
-assert.match(html, /\+0\.350000/); assert.match(html, /-0\.500000/);
+assert.match(html, /\+0\.350/); assert.match(html, /-0\.500/);
 assert.match(html, /--research-comparison/); assert.match(html, /--research-primary/);
-assert.match(html, /pca-loading-scroll/); assert.match(html, /open=""/);
-assert.match(html, /Show Loading Matrix/); assert.match(html, /Hide Loading Matrix/);
+assert.match(html, /pca-loading-scroll/); assert.doesNotMatch(html, /open=""/);
+assert.match(html, /aria-label="Expand"/); assert.doesNotMatch(html, /Show Loading Matrix|Hide Loading Matrix/);
 assert.doesNotMatch(render({ variables, components: components.slice(0, 6), values, defaultExpanded: false }), /open=""/);
 const rows = [...html.matchAll(/<tr><th scope="row">[\s\S]*?<\/tr>/g)].map(match => [...match[0].matchAll(/<td([^>]*)>/g)].map(cell => cell[1]));
 for (let column = 0; column < 6; column++) {
