@@ -13,7 +13,7 @@ FrozenUnifiedStudyResultSchema.parse(run);
 
 if (run.cohort.parentN !== 2437 || run.cohort.atLeast3ObservationN !== 1917 || run.cohort.atLeast12MonthN !== 1845) throw new Error("Unified cohort audit counts disagree");
 const eligible = [...run.cohort.byOriginalCluster].sort((left, right) => left.clusterId - right.clusterId).map((entry) => entry.atLeast12MonthParticipants);
-if (eligible[0] !== 1233 || eligible[1] !== 612) throw new Error("Original-cluster longitudinal counts disagree");
+if (eligible[0] !== 1239 || eligible[1] !== 606) throw new Error("Original-cluster longitudinal counts disagree");
 if (run.provenance.prohibitedLongitudinalOperations.kmeansInvoked) throw new Error("A second longitudinal K-Means escaped the contract");
 const mixedModel = run.longitudinal.mixedEffects;
 if (!mixedModel.converged || mixedModel.participantCount !== 1845 || mixedModel.observationCount !== 11111) throw new Error("Mixed-effects model convergence or cohort counts disagree");

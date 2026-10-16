@@ -2,9 +2,11 @@ import crypto from "node:crypto";
 import fs from "node:fs";
 import path from "node:path";
 
-/** SHA-256 of the committed LF Git blob used by the historical DPC audit. */
+/** SHA-256 of the canonical LF DPC source. Oct 2026 (15-variable revision): only the
+ * PCA dimension constant changed (read from the PCA artifact); the DPC algorithm is
+ * unchanged. The 13-variable audit hash was 714c22d4df1afff370d0f9f7f44e376fffe68998617799bab8ded3a89fccf54a. */
 export const DPC_INITIALIZER_CANONICAL_SHA256 =
-  "714c22d4df1afff370d0f9f7f44e376fffe68998617799bab8ded3a89fccf54a";
+  "4f0a5dca0a18c3674ccb8f9fd37ec32b1344799446f7883d307e543a7ab323e8";
 
 export class ResearchSourceMaterializationError extends Error {}
 

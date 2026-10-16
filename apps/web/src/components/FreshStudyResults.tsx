@@ -51,7 +51,7 @@ export function FreshStudyResults({ standard: savedStandard, enhanced: savedEnha
   return <div className="study-results">
     {bothComplete && <Panel title="Method Comparison Overview" variant="surface" className="study-overview-card">
       <table className="research-table study-overview"><thead><tr><th>Methodology</th><th>Standard K-Means</th><th>Enhanced K-Means</th></tr></thead><tbody>
-        <tr><th>Feature representation</th><td>13 standardized variables</td><td>PCA · {pca!.pcaComponents} PCs · {formatPercent(pca!.cumulativeExplainedVariance * 100)} variance</td></tr>
+        <tr><th>Feature representation</th><td>15 standardized variables</td><td>PCA · {pca!.pcaComponents} PCs · {formatPercent(pca!.cumulativeExplainedVariance * 100)} variance</td></tr>
         <tr><th>Selected k</th><td>{s!.selectedK}</td><td>{e!.selectedK}</td></tr>
         <tr><th>Initialization</th><td>Random ({s!.runs.length} runs)</td><td>DPC deterministic</td></tr>
       </tbody></table>

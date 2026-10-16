@@ -1,6 +1,6 @@
 {
   "sha256": {
-    "scripts/research/longitudinal/fit_longitudinal_mixed_model.py": "d11aff4038824e0db0e98ccb2591a942ddc59924b267d29f86e3a8e5c277c47b",
+    "scripts/research/longitudinal/fit_longitudinal_mixed_model.py": "f54b9d6168238249f8d9418ef7e899b90aaf9606899bf1a488094b5480cecf0c",
     "apps/api/private/longitudinal-refresh/4b3dca3d-b435-4485-ac2b-18a0e442a624/data/interim/unified_cluster_assignments.csv": "a98289c9f4548d26daf40060f13f07e18d9254f74e0f232d02cea016302090c5",
     "apps/api/private/longitudinal-refresh/4b3dca3d-b435-4485-ac2b-18a0e442a624/data/interim/unified_longitudinal_cohort.csv": "333dabedb1bc948c3b403cdf828d343dc76f74c821a0fdb43db9133588aed8b8",
     "apps/api/private/longitudinal-refresh/4b3dca3d-b435-4485-ac2b-18a0e442a624/data/interim/unified_longitudinal_mixed_model.json": "0313c166c383c5cfb7c92a95b4b173f545c080a3fc7f05dd4b65242df4553835",
@@ -9,7 +9,7 @@
     "data/interim/baseline_kmeans_assignments.csv": "7fbcd0075ca23a5beae1908cb590fe39eab3ccb8ee7b322a29e38d2b8ba0f275",
     "data/interim/dpc_comparison_random_assignments.csv": "fdb83f7dd423fd27b100e2299034a72065b8ee2b701993b4df091cd7bd09c0b4",
     "apps/api/private/method-runs/9313513c-93d0-407b-9647-0570ad9fa54a/partitions.npz": "e422f5e42df701ada8961de98d1beaa6aa4d39f895f47ede22f643879645792a",
-    "data/interim/unified_cluster_assignments.csv": "a98289c9f4548d26daf40060f13f07e18d9254f74e0f232d02cea016302090c5",
+    "data/interim/unified_cluster_assignments.csv": "22f28e1ea401fa44d1550159e888b2e553adf446c0642b7a6aa83bc97e27bc1e",
     "data/interim/clustering_nbclust_votes.csv": "43b93959db367e4b44ea776eddc7205a7381bcae4230df730a953d18915df077",
     "data/interim/clustering_selected_k.csv": "3bee43b1454424c3346b161e7acb99e58298b67335652854fadb84f26d5ac8d6",
     "apps/api/private/method-runs/1667c343-313f-4555-80be-655824db686a/job.json": "b6c35f365047f8825a475a55dadbd5e0b71b885b32dd08b4cd032965525ef224",
@@ -36,6 +36,8 @@
     "apps/api/private/simulation-runs/simulation-1-00229fed-bc14-41e7-a357-b6698fec96b3/data/interim/baseline_kmeans_summary.csv": "c18e079fb331a544eb986cb64a77ced0f61d70937c52a1270e4cbd38eca73e47",
     "data/interim/clustering_nbclust_summary.csv": "67cd64c991544e6bc3c5166a10d100a8da120d85028da34516f26f7ca817bf23",
     "scripts/research/simulation/run_method.py": "b86d37e593f2fcdfd5fa16acbc46a7b72fd715f646efd823f1bf855ea06fe16e",
-    "apps/api/src/services/methodExecution.ts": "b798c60d75acf86e37d2393809bb208c580853027765d8b85e37eb95301ad213"
+    "apps/api/src/services/methodExecution.ts": "b798c60d75acf86e37d2393809bb208c580853027765d8b85e37eb95301ad213",
+    "data/interim/unified_longitudinal_cohort.csv": "333dabedb1bc948c3b403cdf828d343dc76f74c821a0fdb43db9133588aed8b8",
+    "data/interim/unified_longitudinal_mixed_model.json": "007c4ec9e3ecb35ad90de0c1585212ec3283af6204d25f19a7e6abc73fe35e5d"
   }
 }

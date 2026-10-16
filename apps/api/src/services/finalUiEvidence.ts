@@ -8,7 +8,8 @@ import { listRuns } from "./runRepository";
 import { loadSopEvaluation } from "./sopEvaluationArtifact";
 import { loadDefenseGeometry } from "./defenseGeometryArtifact";
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../../../..");
-const sha = (file: string) => crypto.createHash("sha256").update(fs.readFileSync(file)).digest("hex");
+// Python sources are hashed in canonical LF form (Windows checkouts may use CRLF), as in researchSourceMaterializer.
+const sha = (file: string) => crypto.createHash("sha256").update(file.endsWith(".py") ? Buffer.from(fs.readFileSync(file, "utf8").replace(/\r\n?/g, "\n"), "utf8") : fs.readFileSync(file)).digest("hex");
 /** Read existing artifacts; never fits or mutates a research result. */
 export async function loadFinalUiEvidence() {
   const file = path.join(root, "apps/web/src/data/finalUiEvidence.json");
@@ -34,7 +35,11 @@ export async function loadFinalUiEvidence() {
   if (run) {
     if (evidence.headline) Object.assign(evidence.headline, { standardDimensions: run.preprocessing.retainedFeatures.length, enhancedDimensions: run.pca.components, varianceRetained: run.pca.cumulativeExplainedVariance });
   }
-  const evaluation = loadSopEvaluation(), geometry = evaluation && loadDefenseGeometry(evaluation);
+  // The legacy SOP evaluation/geometry artifacts are optional (projection only); a stale or
+  // missing artifact must not block the verified longitudinal evidence.
+  let evaluation: ReturnType<typeof loadSopEvaluation> = null, geometry: ReturnType<typeof loadDefenseGeometry> | null | undefined = null;
+  try { evaluation = loadSopEvaluation(); geometry = evaluation && loadDefenseGeometry(evaluation); }
+  catch (error) { console.warn("SOP evaluation projection unavailable:", (error as Error).message); }
   if (geometry) {
     const convert = (panel: typeof geometry.sop3.dpc[number]) => ({ points: panel.observations.map(p => ({ x: p.pc1, y: p.pc2, cluster: p.cluster })), means: panel.markers.filter(m => m.type === "final").map(m => ({ x: m.pc1, y: m.pc2, cluster: m.cluster })) });
     // SOP1 Standard uses the original Standard seed-0 partition on common PCs.

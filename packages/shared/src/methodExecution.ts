@@ -26,7 +26,7 @@ export const CommonSpaceSchema = z.object({ version: z.enum(["common-space-v1", 
   const fail = (message: string) => ctx.addIssue({ code: z.ZodIssueCode.custom, message });
   if (evidence.version==='common-space-v2' && (evidence.spaces.some(space=>!space.matrixHash) ||
     evidence.crossMethod.some(row=>row.enhancedRun!==1 || row.agreementCount===undefined))) fail('Missing explicit comparison references or matrix provenance.');
-  if (evidence.spaces[0].space !== "standardized_13" || evidence.spaces[0].dimensions !== 13 || !evidence.spaces[0].primary ||
+  if (evidence.spaces[0].space !== "standardized_13" || evidence.spaces[0].dimensions !== 15 || !evidence.spaces[0].primary ||
     evidence.spaces[1].space !== "retained_pcs" || evidence.spaces[1].primary) fail("Evaluation spaces are invalid.");
   for (const name of ["standard", "pcaRandom", "enhanced"] as const) {
     const expected = name === "enhanced" ? 3 : 30, pair = evidence.pairwise[name];
@@ -67,10 +67,10 @@ export const MethodProvenanceSchema = z.object({ compatibilityKey: sha, sourceHa
   evaluationVersion: z.literal("euclidean-full-lloyd-v1"), configurationHash: sha.optional(), datasetHash: sha.optional(), preparationKey: sha.optional() }).strict();
 export const MethodResultSchema = z.object({ method: MethodSchema,
   initializationEvidence: InitializationEvidenceSchema.optional(),
-  common: z.object({ participantCount: z.number().int().min(100).max(2437), retainedVariables: z.array(z.string()).length(13),
+  common: z.object({ participantCount: z.number().int().min(100).max(2437), retainedVariables: z.array(z.string()).length(15),
     excludedVariables: z.array(z.string()), phaseCounts: z.record(z.number().int().nonnegative()),
     correlation: analysis.correlation.unwrap(), xy: z.array(z.tuple([finite, finite])),
-    pca: z.object({ pcaComponents: z.number().int().min(1).max(13), cumulativeExplainedVariance: finite.min(0.85).max(1.000000000001),
+    pca: z.object({ pcaComponents: z.number().int().min(1).max(15), cumulativeExplainedVariance: finite.min(0.85).max(1.000000000001),
       pcaVariance: analysis.enhanced.innerType().shape.pcaVariance, pcaLoadings: analysis.enhanced.innerType().shape.pcaLoadings.unwrap() }).strict()
   }).strict(), provenance: MethodProvenanceSchema,
   assignmentsHash: sha.optional(), nativeSpace: z.enum(["standardized_13", "retained_pcs"]).optional(),
@@ -113,7 +113,7 @@ export const MethodResultSchema = z.object({ method: MethodSchema,
   const totalVariance = pca.pcaVariance.reduce((sum, row) => sum + (row.eigenvalue ?? 0), 0);
   if (Object.values(result.common.phaseCounts).reduce((a,b) => a+b, 0) !== n ||
     pca.pcaLoadings.variables.some((variable, i) => variable !== result.common.retainedVariables[i]) ||
-    pca.pcaLoadings.components.length !== 13 ||
+    pca.pcaLoadings.components.length !== 15 ||
     pca.pcaVariance.some((row,i) => row.component !== i+1 || row.eigenvalue === undefined || totalVariance <= 0 ||
       Math.abs(row.eigenvalue / totalVariance - row.explainedVarianceRatio) > 1e-10)) fail("Incomplete PCA/preprocessing evidence.");
   if (result.method === "standard" && result.enhanced || result.method === "enhanced" && result.standard) fail("Mixed method result.");

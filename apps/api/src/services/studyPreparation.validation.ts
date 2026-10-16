@@ -27,7 +27,7 @@ const store=new StudyPreparationStore(directory,async()=>{
   write(path.join(cache,'pca/scores.npy'),'scores');write(path.join(cache,'pca/pca.json'),'{}');
   write(path.join(cache,'pca/manifest.json'),{key:sha256(key+preprocessingHash),files:{'scores.npy':sha256('scores'),'pca.json':sha256('{}')}});
   return {sourcePath,cacheDirectory,state:{status:'ready',stage:'ready',error:null,...identity,key,dependenciesHash,
-    sourceHash:sha256('synthetic cohort'),preprocessingHash,pcaHash:sha256('scores'),participantCount:2437,retainedVariables:Array(13).fill('fixture')}} as PreparedStudy;
+    sourceHash:sha256('synthetic cohort'),preprocessingHash,pcaHash:sha256('scores'),participantCount:2437,retainedVariables:Array(15).fill('fixture')}} as PreparedStudy;
 });
 const finish=async()=>{for(let i=0;i<30&&!release;i++)await new Promise(resolve=>setTimeout(resolve,5));assert(release);release();release=undefined;
   for(let i=0;i<50&&store.get(ref)?.status==='preparing';i++)await new Promise(resolve=>setTimeout(resolve,5));};

@@ -41,31 +41,29 @@ export const CandidateVariables = ({ dataset }: { dataset: string }) => {
 
 const names: Record<string, string> = { ADAS13: "ADAS-Cog 13", LMI: "Logical Memory Immediate", LMD: "Logical Memory Delayed", TMT_A: "Trail Making Test A", TMT_B: "Trail Making Test B", CATEGORY_FLUENCY_ANIMALS: "Animal Fluency", BNT: "Boston Naming Test", CDRSB: "CDR-SB", NPIQ: "NPI-Q", RAVLT_IMMEDIATE: "RAVLT Immediate", RAVLT_DELAYED: "RAVLT Delayed", RAVLT_FORGETTING: "RAVLT Forgetting" };
 const rows = audit.rows.map(row => ({ ...row, label: names[row.variable] ?? row.variable }));
-const total = rows[0].total, threshold = rows[0].threshold;
-const excluded = rows.filter(row => row.excluded).length;
+const total = rows[0].total;
+const imputedCells = rows.reduce((sum, row) => sum + row.missing, 0);
 const x = (percent: number) => 240 + percent * 5;
 export const StudyEntrySummary = () => <>
   <section className="research-panel dataset-cohort rounded-md border border-line bg-panel" aria-labelledby="study-entry-cohort">
     <div><h2 id="study-entry-cohort" className="text-base font-semibold text-teal-800">Study-Entry Cohort</h2><p className="mt-1 text-xs text-muted">Eligible participants retained for preprocessing.</p></div>
-    <dl className="dataset-stats dataset-phase-stats">{[["participants", total], ["candidate variables", rows.length], ["retained", rows.length - excluded], ["excluded", excluded]].map(([label, value]) => <div key={label}><dt>{label}</dt><dd>{formatNumber(Number(value), "count")}</dd></div>)}</dl>
+    <dl className="dataset-stats dataset-phase-stats">{[["participants", total], ["variables", rows.length], ["retained", rows.length], ["median-imputed values", imputedCells]].map(([label, value]) => <div key={label}><dt>{label}</dt><dd>{formatNumber(Number(value), "count")}</dd></div>)}</dl>
   </section>
-  <Panel title="Missingness Screening" variant="surface" className="dataset-screening mt-4">
-    <p className="mb-4 text-xs text-muted">Variables above the {formatNumber(threshold, "count")}% missingness threshold are excluded.</p>
+  <Panel title="Missingness Profile" variant="surface" className="dataset-screening mt-4">
+    <p className="mb-4 text-xs text-muted">All {formatNumber(rows.length, "count")} variables are retained; each missing value is filled with that variable's observed median.</p>
     <svg className="dataset-missingness-chart" viewBox={`0 0 800 ${rows.length * 28 + 40}`} role="img" aria-label="Percent missing by candidate variable">
-      <line x1={x(threshold)} x2={x(threshold)} y1={24} y2={rows.length * 28 + 24} stroke="var(--research-comparison)" strokeDasharray="4 4" />
-      <text x={x(threshold) + 5} y={14}>{formatNumber(threshold, "count")}% threshold</text>
-      {rows.map((row, i) => <g key={row.variable}><title>{`${row.label}: ${formatNumber(row.percent, "percentage")} missing, ${row.excluded ? "Excluded" : "Retained"}`}</title>
-        <text x={230} y={i * 28 + 43} textAnchor="end">{row.label}</text><rect x={240} y={i * 28 + 28} width={row.percent * 5} height={20} rx={3} fill={row.excluded ? "var(--research-comparison)" : "var(--research-slate, #64748B)"} />
+      {rows.map((row, i) => <g key={row.variable}><title>{`${row.label}: ${formatNumber(row.percent, "percentage")} missing, Retained, median-imputed`}</title>
+        <text x={230} y={i * 28 + 43} textAnchor="end">{row.label}</text><rect x={240} y={i * 28 + 28} width={row.percent * 5} height={20} rx={3} fill="var(--research-slate, #64748B)" />
         <text x={x(row.percent) + 6} y={i * 28 + 43}>{formatNumber(row.percent, "percentage")}</text></g>)}
     </svg>
     <details><summary className="research-text-action">Show counts</summary>
       <div className="dataset-audit overflow-x-auto" role="region" aria-label="Variable Missingness Audit" tabIndex={0}><table className="research-table">
         <caption className="pb-2 text-left text-xs font-semibold text-ink">Variable Missingness Audit</caption>
         <thead><tr>{["Variable", "Non-missing records", "Missing records", "Total records", "Missingness %", "Decision"].map(label => <th scope="col" key={label}>{label}</th>)}</tr></thead>
-        <tbody>{rows.map(row => <tr key={row.variable} className={row.excluded ? "is-excluded" : undefined}><th scope="row">{row.label}</th><td>{formatNumber(row.observed, "count")}</td><td>{formatNumber(row.missing, "count")}</td><td>{formatNumber(row.total, "count")}</td><td>{formatNumber(row.percent, "percentage")}</td><td><span className={`research-badge dataset-decision ${row.excluded ? "is-excluded" : "is-valid"}`}>{row.excluded ? "Excluded" : "Retained"}</span></td></tr>)}</tbody>
+        <tbody>{rows.map(row => <tr key={row.variable}><th scope="row">{row.label}</th><td>{formatNumber(row.observed, "count")}</td><td>{formatNumber(row.missing, "count")}</td><td>{formatNumber(row.total, "count")}</td><td>{formatNumber(row.percent, "percentage")}</td><td><span className="research-badge dataset-decision is-valid">Retained</span></td></tr>)}</tbody>
       </table></div>
     </details>
-    <dl className="dataset-stats dataset-screening-stats mt-4"><div><dt>Candidate variables</dt><dd>{formatNumber(rows.length, "count")}</dd></div><div className="is-emphasized"><dt>Retained variables</dt><dd>{formatNumber(rows.length - excluded, "count")}</dd></div><div><dt>Excluded variables</dt><dd>{formatNumber(excluded, "count")}</dd></div></dl>
+    <dl className="dataset-stats dataset-screening-stats mt-4"><div><dt>Candidate variables</dt><dd>{formatNumber(rows.length, "count")}</dd></div><div className="is-emphasized"><dt>Retained variables</dt><dd>{formatNumber(rows.length, "count")}</dd></div><div><dt>Median-imputed values</dt><dd>{formatNumber(imputedCells, "count")}</dd></div></dl>
   </Panel>
   <section className="research-panel dataset-ready mt-4 rounded-md border bg-panel" aria-labelledby="analysis-ready-dataset"><div className="flex flex-wrap items-center gap-3"><h2 id="analysis-ready-dataset" className="text-base font-semibold text-teal-800">Study-Entry Dataset</h2><span className="research-badge is-valid dataset-ready-badge">Ready</span></div><Link to="/study-findings" className="research-primary-button shrink-0">Continue to Study Findings</Link></section>
 </>;

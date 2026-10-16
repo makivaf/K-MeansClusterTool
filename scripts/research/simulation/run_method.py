@@ -58,6 +58,27 @@ def seal_cache(directory, key, filenames):
     write_json(directory/'manifest.json', {'key': key, 'files': {name: digest((directory/name).read_bytes()) for name in filenames}})
 
 
+ADAS13_INDEX = list(prep.RETAINED_FEATURES).index('ADAS13')
+
+
+def canonical_labels(run, X):
+    """Renumber clusters so Cluster 0 has the lowest mean study-entry ADAS-Cog13 (labels are arbitrary).
+
+    A pure relabelling: the partition, metrics and ARI values are unchanged.
+    """
+    labels = np.asarray(run.labels)
+    k = int(labels.max()) + 1
+    order = np.argsort([X[labels == c, ADAS13_INDEX].mean() for c in range(k)], kind='stable')
+    mapping = np.empty(k, dtype=np.int64)
+    mapping[order] = np.arange(k)
+    changes = {'labels': mapping[labels].astype(np.int64)}
+    if hasattr(run, 'cluster_sizes'):
+        changes['cluster_sizes'] = tuple(int(v) for v in np.bincount(changes['labels'], minlength=k))
+    if hasattr(run, 'final_centroids'):
+        changes['final_centroids'] = np.asarray(run.final_centroids)[order]
+    return replace(run, **changes)
+
+
 def execute(request, workspace):
     if request.get('isolatedMethod') is not True or (workspace/'.git').exists():
         raise AssertionError('Private method workspace required')
@@ -83,7 +104,7 @@ def execute(request, workspace):
     xy = np.column_stack((Z[:, 0], Z[:, 1] if Z.shape[1] > 1 else np.zeros(n)))
     correlation = np.corrcoef(X, rowvar=False)
     common = {'participantCount': n, 'retainedVariables': list(prep.RETAINED_FEATURES),
-        'excludedVariables': ['BNT', 'NPIQ'], 'phaseCounts': info['phaseCounts'],
+        'excludedVariables': [], 'phaseCounts': info['phaseCounts'],
         'correlation': [[float(v) if np.isfinite(v) else None for v in row] for row in correlation],
         'pca': pca, 'xy': xy.tolist()}
     provenance = {'compatibilityKey': request['compatibilityKey'], 'sourceHash': request['sourceHash'],
@@ -111,6 +132,7 @@ def execute(request, workspace):
         stage('seed_evaluation')
         runs = measured('seed_evaluation', lambda: [replace(next(r for r in candidates if r.k == k), run_number=1)] +
                         [fit(k, seed) for seed in baseline.BASELINE_SEEDS[1:]])
+        runs = [canonical_labels(run, X) for run in runs]
         assert len(runs) == 30 and [r.seed for r in runs] == list(range(30))
         result['standard'] = {'participantCount': n, 'selectedK': k, 'silhouetteSelectedK': selected, 'initialization': 'random',
             'silhouetteByK': [{'k': r.k, 'silhouette': r.silhouette} for r in candidates], 'metrics': average(runs),
@@ -119,7 +141,7 @@ def execute(request, workspace):
             'ariBySeed': [{'seed': r.seed, 'adjustedRandIndex': float(adjusted_rand_score(runs[0].labels, r.labels))} for r in runs]}
         labels = runs[0].labels
         stage('evidence')
-        result['calculation'] = measured('evidence', lambda: evaluate.calculation(labels, ids, '13 standardized features', 0))
+        result['calculation'] = measured('evidence', lambda: evaluate.calculation(labels, ids, '15 standardized features', 0))
         np.savez(workspace/'partitions.npz', ids=np.array(ids), labels=np.array([r.labels for r in runs]))
         timings['validation'] = evaluate.seconds
     elif request['method'] == 'enhanced':
@@ -147,6 +169,7 @@ def execute(request, workspace):
         repetition_start = perf_counter()
         runs += measured('lloyd', lambda: fit_initializations(initializations[3:]))
         added_repetition_seconds += perf_counter() - repetition_start
+        runs = [canonical_labels(run, X) for run in runs]
         timings['additional_enhanced_repetitions'] = added_repetition_seconds
         timings['lloyd'] -= evaluate.seconds
         measured('validation', lambda: [enhanced.validate_reproducibility(runs[i:i+3]) for i in range(0, 30, 3)])
@@ -159,7 +182,7 @@ def execute(request, workspace):
         result['enhanced'] = {**pca, 'participantCount': n, 'selectedK': k, 'initialization': 'DPC',
             'iterations': r.iterations, 'convergedBeforeMaxIter': r.iterations < enhanced.MAX_ITER,
             'clusterSizes': np.bincount(labels).tolist(), 'metrics': metrics(r),
-            'retainedVariables': list(prep.RETAINED_FEATURES), 'excludedVariables': ['BNT', 'NPIQ'],
+            'retainedVariables': list(prep.RETAINED_FEATURES), 'excludedVariables': [],
             'nbclust': {'votes': [{'k': k, 'count': count} for k, count in selection.vote_counts],
                 'indices': [{'index': item.index, 'status': item.status, 'recommendedK': item.recommended_k} for item in selection.index_results],
                 'tieOccurred': len(selection.leaders)>1, 'reproducible': True},

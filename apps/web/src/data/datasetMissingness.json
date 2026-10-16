@@ -70,7 +70,7 @@
                      "threshold":  20,
                      "percent":  29.011079195732457,
                      "observed":  1730,
-                     "excluded":  true
+                     "excluded":  false
                  },
                  {
                      "variable":  "RAVLT_IMMEDIATE",
@@ -124,7 +124,7 @@
                      "threshold":  20,
                      "percent":  61.058678703323757,
                      "observed":  949,
-                     "excluded":  true
+                     "excluded":  false
                  },
                  {
                      "variable":  "GDS",

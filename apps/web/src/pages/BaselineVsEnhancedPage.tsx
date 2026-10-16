@@ -61,7 +61,7 @@ const Sop1View = ({ evaluation }: { evaluation: SopEvaluation }) => {
     <div className="sop-flow">
       <Stage number={1} title="Problem Demonstration">
         <div className="grid gap-5 lg:grid-cols-[1fr_1.35fr]">
-          <div><div className="sop-big-number">13</div><div className="text-sm font-semibold">standardized features</div><p className="mt-2 text-sm leading-6 text-muted">The original feature space contains overlapping cognitive and functional signals.</p></div>
+          <div><div className="sop-big-number">15</div><div className="text-sm font-semibold">standardized features</div><p className="mt-2 text-sm leading-6 text-muted">The original feature space contains overlapping cognitive and functional signals.</p></div>
           <div className="grid grid-cols-3 gap-3">
             <div className="sop-mini-stat"><span>{redundancy.pairCount}</span><small>feature pairs</small></div>
             <div className="sop-mini-stat"><span>{redundancy.pairsAtOrAbove070}</span><small>|r| ≥ 0.70</small></div>
@@ -71,7 +71,7 @@ const Sop1View = ({ evaluation }: { evaluation: SopEvaluation }) => {
       </Stage>
       <Stage number={2} title="Enhancement Applied">
         <div className="flex flex-wrap items-center gap-4">
-          <div className="sop-dimension-block"><strong>13D</strong><span>standardized</span></div>
+          <div className="sop-dimension-block"><strong>15D</strong><span>standardized</span></div>
           <ArrowRight className="text-slate-400" aria-hidden="true" />
           <div className="sop-dimension-block sop-dimension-block-active"><strong>6D</strong><span>PC1–PC6</span></div>
           <div className="min-w-[180px] flex-1 border-l border-line pl-4"><div className="text-2xl font-semibold tabular-nums text-teal-800">{(pca.varianceRetained * 100).toFixed(2)}%</div><div className="text-xs text-muted">variance retained</div></div>
@@ -87,7 +87,7 @@ const Sop1View = ({ evaluation }: { evaluation: SopEvaluation }) => {
             const DirectionIcon = metric === "davies_bouldin" ? ArrowDownRight : ArrowUpRight;
             return <div key={metric} className="grid gap-2 py-3 sm:grid-cols-[1.25fr_1fr_auto_1fr_1fr] sm:items-center">
               <div className="text-sm font-semibold">{labels[metric]}</div>
-              <div className="text-sm tabular-nums"><span className="mr-2 text-xs text-muted">13D</span>{formatMetric(metric, before)}</div>
+              <div className="text-sm tabular-nums"><span className="mr-2 text-xs text-muted">15D</span>{formatMetric(metric, before)}</div>
               <ArrowRight className="hidden text-slate-400 sm:block" size={15} aria-hidden="true" />
               <div className="text-sm font-semibold tabular-nums text-teal-800"><span className="mr-2 text-xs font-normal text-muted">6D</span>{formatMetric(metric, after)}</div>
               <div className="text-xs text-muted">Different evaluation spaces</div>

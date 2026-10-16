@@ -80,7 +80,7 @@ def main():
 
     # Canonical file loader validates the baseline schema; Enhanced uses the
     # canonical PCA table directly so its component count is data-derived.
-    _, baseline_ids, X = baseline.load_baseline_input(expected_shape=(len(ids), 13))
+    _, baseline_ids, X = baseline.load_baseline_input(expected_shape=(len(ids), 15))
     enhanced_ids = scores.RID.tolist()
     assert_membership(baseline_ids, ids)
     assert_membership(enhanced_ids, ids)
@@ -125,7 +125,7 @@ def main():
         'participantCount': len(ids), 'selectedK': selection.selected_k, 'initialization': 'DPC',
         'iterations': result.iterations, 'convergedBeforeMaxIter': result.iterations < enhanced.MAX_ITER,
         'clusterSizes': np.bincount(result.labels).tolist(), 'metrics': metrics(result),
-        'retainedVariables': list(prep.RETAINED_FEATURES), 'excludedVariables': ['BNT', 'NPIQ'],
+        'retainedVariables': list(prep.RETAINED_FEATURES), 'excludedVariables': [],
         'pcaComponents': components, 'cumulativeExplainedVariance': float(variance.iloc[components - 1].cumulative_explained_variance),
         'pcaLoadings': {'variables': loadings['variable'].tolist(),
                         'components': [column for column in loadings.columns if column != 'variable'],

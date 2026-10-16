@@ -16,8 +16,11 @@ def execute():
     verification = json.loads((ROOT / 'docs/verification/longitudinal.json').read_text())
     manifest = json.loads((ROOT / 'docs/verification/source_manifest.json').read_text())
     sources = verification['sources']
+    def digest(name):  # .py sources in canonical LF form (Windows checkouts may use CRLF)
+        data = (ROOT / name).read_bytes()
+        return hashlib.sha256(data.replace(b'\r\n', b'\n') if name.endswith('.py') else data).hexdigest()
     for name in sources.values():
-        assert hashlib.sha256((ROOT / name).read_bytes()).hexdigest() == manifest['sha256'][name]
+        assert digest(name) == manifest['sha256'][name]
     spec = importlib.util.spec_from_file_location('locked_lme', ROOT / sources['implementation'])
     module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(module)
@@ -34,8 +37,12 @@ def execute():
                          observationCount=len(group), meanElapsedYears=float(group.time_years.mean()),
                          meanAdas13=float(group.adas13.mean())))
     assert sum(row['observationCount'] for row in rows) == verification['observations']
-    history = [json.loads(p.read_text()) for p in (ROOT / 'data/processed/run-history').glob('*.json')]
-    stored = max(history, key=lambda run: run['created_at'])['longitudinal']['timeSeries']
+    current = ROOT / 'data/interim/unified_research_result.json'
+    if current.is_file():  # Oct 2026: the current consolidated artifact is the stored reference
+        stored = json.loads(current.read_text(encoding='utf-8'))['longitudinal']['timeSeries']
+    else:
+        history = [json.loads(p.read_text()) for p in (ROOT / 'data/processed/run-history').glob('*.json')]
+        stored = max(history, key=lambda run: run['created_at'])['longitudinal']['timeSeries']
     lookup = {(r['clusterId'], r['yearStart']): r for r in stored}
     matches = len(stored) == len(rows) and all(
         (row['clusterId'], row['yearStart']) in lookup and

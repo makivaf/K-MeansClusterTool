@@ -9,7 +9,7 @@ export const StudyPreparationSchema = z.object({
   cacheHit: z.boolean().optional(), timings: z.record(z.number().finite().nonnegative()).optional()
 }).strict().superRefine((value, ctx) => {
   if (value.status === 'ready' && (!value.key || !value.sourceFilesHash || !value.settingsHash || !value.codeHash || !value.dependenciesHash ||
-    !value.sourceHash || !value.preprocessingHash || !value.pcaHash || value.participantCount !== 2437 || value.retainedVariables?.length !== 13 || value.error !== null))
+    !value.sourceHash || !value.preprocessingHash || !value.pcaHash || value.participantCount !== 2437 || value.retainedVariables?.length !== 15 || value.error !== null))
     ctx.addIssue({code:z.ZodIssueCode.custom,message:'Incomplete prepared dataset evidence.'});
 });
 export type StudyPreparation = z.infer<typeof StudyPreparationSchema>;

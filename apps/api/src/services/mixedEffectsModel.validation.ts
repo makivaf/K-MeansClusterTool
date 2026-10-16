@@ -15,7 +15,7 @@ const model = UnifiedMixedEffectsModelSchema.parse(JSON.parse(fs.readFileSync(mo
 
 if (model.participantCount !== 1845 || model.observationCount !== 11111) throw new Error("Mixed-model frozen cohort counts disagree");
 const clusterCounts = [...model.participantCountsByOriginalCluster].sort((left, right) => left.clusterId - right.clusterId).map((entry) => entry.participantCount);
-if (clusterCounts[0] !== 1233 || clusterCounts[1] !== 612) throw new Error("Mixed-model original-cluster counts disagree");
+if (clusterCounts[0] !== 1239 || clusterCounts[1] !== 606) throw new Error("Mixed-model original-cluster counts disagree");
 if (!model.converged || !model.diagnostics.timeClusterEstimable || model.primaryResult.term !== "time_x_cluster") throw new Error("Primary mixed-model fit is not valid");
 if (model.provenance.longitudinalClusteringInvoked || !model.provenance.originalAssignmentsFixed) throw new Error("Mixed-model provenance violates fixed-assignment/no-clustering requirements");
 

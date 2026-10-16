@@ -4,7 +4,7 @@ import { metricDefinitions } from "../MetricComparisonTable";
 import { CalculationDetails } from "./CalculationDetails";
 import { T } from "./ui";
 type Condition = NonNullable<MethodResult["commonSpace"]>["spaces"][number]["conditions"]["standard"];
-export function RangePlot({ before, after, beforeLabel = "Standard", afterLabel = "Enhanced", spaceLabel = "13 standardized variables" }: { before: Condition; after: Condition; beforeLabel?: string; afterLabel?: string; spaceLabel?: string }) {
+export function RangePlot({ before, after, beforeLabel = "Standard", afterLabel = "Enhanced", spaceLabel = "15 standardized variables" }: { before: Condition; after: Condition; beforeLabel?: string; afterLabel?: string; spaceLabel?: string }) {
   return <div>{metricDefinitions.map(({ key, label, direction }) => {
     const values = [before.minimum[key], before.maximum[key], after.minimum[key], after.maximum[key]];
     const lo = Math.min(...values), hi = Math.max(...values), width = hi - lo || Math.abs(lo) * .01 || .01;

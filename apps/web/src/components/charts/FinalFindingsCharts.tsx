@@ -43,7 +43,7 @@ export const SilhouetteByKFigure = ({ sweep }: { sweep: BaselineCandidateSweep }
         <ReferenceDot x={selected.k} y={selected.silhouette} r={5} fill={teal} stroke={teal} />
       </LineChart></ResponsiveContainer>
     </div>
-    <figcaption className="mt-3 text-xs text-muted">Standard K-Means · 13 standardized variables · seed {sweep.seed}. Single-index maximum-Silhouette selection: k = {selected.k}.</figcaption>
+    <figcaption className="mt-3 text-xs text-muted">Standard K-Means · 15 standardized variables · seed {sweep.seed}. Single-index maximum-Silhouette selection: k = {selected.k}.</figcaption>
   </figure>;
 };
 

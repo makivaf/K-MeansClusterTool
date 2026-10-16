@@ -62,8 +62,13 @@ def prepare_data(request, workspace, measured, stage, hits):
                 raise AssertionError('Invalid participant membership')
             expected = prep.EXPECTED_PHASE_COUNTS if request['scope'] == 'study' else source.ENTRY_PHASE.value_counts().to_dict()
             retained = prep.build_retained_feature_table(source, expected_phase_counts=expected, expected_rows=len(ids))
-            missing = prep.EXPECTED_MISSING_COUNTS if request['scope'] == 'study' else {f: int(retained[f].isna().sum()) for f in prep.RETAINED_FEATURES}
-            imputed, summary = prep.median_impute_features(retained, expected_missing_counts=missing)
+            if request['scope'] == 'study':
+                # Full study: load the verified finalized 15-variable median-imputed dataset (no re-imputation).
+                imputed, summary = prep.load_finalized_imputed_features(retained)
+            else:
+                # Simulation subsets: medians of the subset's own observed scores.
+                missing = {f: int(retained[f].isna().sum()) for f in prep.RETAINED_FEATURES}
+                imputed, summary = prep.median_impute_features(retained, expected_missing_counts=missing)
             standardized, summary, _ = prep.standardize_features(imputed, summary)
             standardized.to_csv(cache/'standardized.csv', index=False, encoding='utf-8-sig')
             np.savez(cache/'preprocessing.npz', ptids=retained.PTID.to_numpy(dtype=str),

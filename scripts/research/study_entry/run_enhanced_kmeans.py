@@ -1,6 +1,6 @@
 """Run the frozen enhanced K-Means clustering stage.
 
-SOP 1 supplies the six-dimensional PCA space, SOP 2 supplies ``k``, and SOP 3
+SOP 1 supplies the retained-PC space (85% rule), SOP 2 supplies ``k``, and SOP 3
 supplies observation-based initial centroids. The Lloyd assignment/update loop
 is standard sklearn K-Means; only its input space, k selection, and seeds are
 the enhanced path. No random-initialization baseline is run in this module.
@@ -30,6 +30,24 @@ from sklearn.metrics import (
 
 ROOT = Path(__file__).resolve().parents[3]
 INTERIM = ROOT / "data" / "interim"
+PCA_VARIANCE_PATH = INTERIM / "clustering_pca_explained_variance.csv"
+
+
+def _retained_pca_count() -> int:
+    """Number of PCs kept by the SOP 1 85% rule, read from the preprocessing artifact."""
+    with PCA_VARIANCE_PATH.open("r", encoding="utf-8-sig", newline="") as handle:
+        rows = list(csv.DictReader(handle))
+    count = sum(row["retained_for_85_percent"] == "True" for row in rows)
+    if count < 1:
+        raise AssertionError("PCA variance artifact retains no components")
+    return count
+
+
+# Live method runs import this module without the stage artifact; pipeline stages
+# always run after preprocessing, so a missing file there fails loudly (0 PCs).
+N_PCS = _retained_pca_count() if PCA_VARIANCE_PATH.is_file() else 0
+FEATURES = tuple(f"PC{number}" for number in range(1, N_PCS + 1))
+EXPECTED_SHAPE = (2437, N_PCS)
 PCA_PATH = INTERIM / "clustering_pca_scores.csv"
 SELECTED_K_PATH = INTERIM / "clustering_selected_k.csv"
 DPC_CENTROIDS_PATH = INTERIM / "clustering_dpc_selected_centroids.csv"
@@ -41,9 +59,7 @@ RUN_SUMMARY_PATH = INTERIM / "enhanced_kmeans_run_summary.csv"
 REPRODUCIBILITY_PATH = INTERIM / "enhanced_kmeans_reproducibility.csv"
 
 IDENTIFIERS = ("PTID", "RID")
-FEATURES = tuple(f"PC{number}" for number in range(1, 7))
-EXPECTED_SHAPE = (2437, 6)
-EXPECTED_CURRENT_K = 2
+
 K_RANGE = range(2, 11)
 
 N_INIT = 1
@@ -129,10 +145,6 @@ def load_locked_inputs() -> tuple[list[str], list[str], np.ndarray, int, np.ndar
         raise AssertionError("selected_k is not an integer") from exc
     if selected_k not in K_RANGE:
         raise AssertionError(f"selected_k={selected_k} is outside 2-10")
-    if selected_k != EXPECTED_CURRENT_K:
-        raise AssertionError(
-            f"Current validated SOP 2 result must be k=2; observed {selected_k}"
-        )
 
     if not DPC_CENTROIDS_PATH.is_file():
         raise FileNotFoundError(DPC_CENTROIDS_PATH)

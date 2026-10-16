@@ -1,9 +1,16 @@
 """Fit the pre-specified longitudinal random-intercept mixed-effects model.
 
 The original enhanced K-Means assignments are fixed before this stage. This
-script uses all 11,111 eligible repeated ADAS-Cog13 observations and never
+script uses all eligible repeated ADAS-Cog13 observations (1,845 participants /
+11,111 observations, independent of the clustering) and never
 clusters longitudinal observations or participant slopes. Outputs are
 aggregate-only and contain no participant identifiers or rows.
+
+Oct 2026 (15-variable revision): K-Means cluster numbers are arbitrary, so the
+model reference is the LESS IMPAIRED enhanced cluster, identified as the cluster
+with the lower mean study-entry ADAS-Cog13 in the finalized input matrix. The
+model coding is 0 = less impaired (reference), 1 = more impaired; the mapping to
+the pipeline's original cluster labels is recorded in the JSON artifact.
 """
 
 from __future__ import annotations
@@ -24,15 +31,15 @@ ROOT = Path(__file__).resolve().parents[3]
 INTERIM = ROOT / "data" / "interim"
 ASSIGNMENTS_PATH = INTERIM / "unified_cluster_assignments.csv"
 LONGITUDINAL_COHORT_PATH = INTERIM / "unified_longitudinal_cohort.csv"
+ENTRY_FEATURES_PATH = INTERIM / "clustering_features_imputed.csv"
 MODEL_JSON_PATH = INTERIM / "unified_longitudinal_mixed_model.json"
 MODEL_CSV_PATH = INTERIM / "unified_longitudinal_mixed_model.csv"
 
 IDENTIFIERS = ["PTID", "RID"]
 EXPECTED_PARENT_N = 2437
-EXPECTED_PARENT_CLUSTERS = {0: 1553, 1: 884}
 EXPECTED_ELIGIBLE_N = 1845
-EXPECTED_ELIGIBLE_CLUSTERS = {0: 1233, 1: 612}
 EXPECTED_OBSERVATIONS = 11111
+MODEL_CODING: dict[str, Any] = {}
 ALPHA = 0.05
 OPTIMIZERS = ("lbfgs", "bfgs", "cg")
 IMPLEMENTATION_FORMULA = "adas13 ~ time_years * original_cluster"
@@ -67,9 +74,25 @@ def validate_and_prepare_model_data() -> pd.DataFrame:
         raise AssertionError("The frozen parent assignment count or composite-key uniqueness drifted")
     if assignments["PTID"].duplicated().any() or assignments["RID"].duplicated().any():
         raise AssertionError("PTID/RID one-to-one linkage failed in the authoritative assignment artifact")
-    parent_counts = assignments["cluster_label"].value_counts().to_dict()
-    if parent_counts != EXPECTED_PARENT_CLUSTERS:
-        raise AssertionError(f"Frozen parent cluster counts drifted: {parent_counts}")
+    parent_counts = {int(k): int(v) for k, v in assignments["cluster_label"].value_counts().items()}
+    if sorted(parent_counts) != [0, 1] or sum(parent_counts.values()) != EXPECTED_PARENT_N:
+        raise AssertionError(f"Expected exactly two enhanced clusters covering all participants: {parent_counts}")
+    entry = pd.read_csv(ENTRY_FEATURES_PATH, dtype={"PTID": str, "RID": str})[[*IDENTIFIERS, "ADAS13"]]
+    linked = assignments.merge(entry, on=IDENTIFIERS, how="left", validate="one_to_one")
+    if linked["ADAS13"].isna().any():
+        raise AssertionError("A clustered participant has no study-entry ADAS13 in the finalized input matrix")
+    entry_means = linked.groupby("cluster_label")["ADAS13"].mean()
+    less_impaired = int(entry_means.idxmin())
+    more_impaired = 1 - less_impaired
+    assignments["model_cluster"] = (assignments["cluster_label"] == more_impaired).astype(int)
+    MODEL_CODING.update({
+        "rule": "reference = enhanced cluster with the lower mean study-entry ADAS-Cog13",
+        "referenceModelCluster": 0,
+        "modelCluster0": {"meaning": "less impaired (reference)", "pipelineClusterLabel": less_impaired,
+                          "studyEntryMeanADAS13": float(entry_means[less_impaired]), "parentCount": parent_counts[less_impaired]},
+        "modelCluster1": {"meaning": "more impaired", "pipelineClusterLabel": more_impaired,
+                          "studyEntryMeanADAS13": float(entry_means[more_impaired]), "parentCount": parent_counts[more_impaired]},
+    })
 
     cohort = pd.read_csv(
         LONGITUDINAL_COHORT_PATH,
@@ -101,7 +124,7 @@ def validate_and_prepare_model_data() -> pd.DataFrame:
         .loc[lambda frame: frame["calculated_elapsed_days"].ge(365.25), IDENTIFIERS]
     )
     eligible = cohort.merge(eligible_keys, on=IDENTIFIERS, how="inner", validate="many_to_one")
-    eligible = eligible.merge(assignments, on=IDENTIFIERS, how="left", validate="many_to_one")
+    eligible = eligible.merge(assignments[[*IDENTIFIERS, "cluster_label", "model_cluster"]], on=IDENTIFIERS, how="left", validate="many_to_one")
     if eligible["cluster_label"].isna().any():
         raise AssertionError("A mixed-model participant did not link to an original enhanced cluster")
     if eligible.groupby(IDENTIFIERS)["cluster_label"].nunique().gt(1).any():
@@ -109,16 +132,18 @@ def validate_and_prepare_model_data() -> pd.DataFrame:
 
     participant_count = eligible[IDENTIFIERS].drop_duplicates().shape[0]
     cluster_participants = (
-        eligible[[*IDENTIFIERS, "cluster_label"]]
+        eligible[[*IDENTIFIERS, "model_cluster"]]
         .drop_duplicates()
-        ["cluster_label"]
+        ["model_cluster"]
         .value_counts()
         .to_dict()
     )
+    cluster_participants = {int(k): int(v) for k, v in cluster_participants.items()}
     if participant_count != EXPECTED_ELIGIBLE_N:
         raise AssertionError(f"Final longitudinal participant count drifted: {participant_count}")
-    if cluster_participants != EXPECTED_ELIGIBLE_CLUSTERS:
-        raise AssertionError(f"Final longitudinal cluster counts drifted: {cluster_participants}")
+    if sorted(cluster_participants) != [0, 1] or sum(cluster_participants.values()) != EXPECTED_ELIGIBLE_N:
+        raise AssertionError(f"Eligible participants do not cover both clusters: {cluster_participants}")
+    MODEL_CODING["eligibleParticipantsByModelCluster"] = cluster_participants
     if len(eligible) != EXPECTED_OBSERVATIONS:
         raise AssertionError(f"Final longitudinal observation count drifted: {len(eligible)}")
 
@@ -126,7 +151,7 @@ def validate_and_prepare_model_data() -> pd.DataFrame:
         "adas13": eligible["TOTAL13"].astype(float),
         "time_years": eligible["calculated_elapsed_days"].astype(float) / 365.25,
         "original_cluster": pd.Categorical(
-            eligible["cluster_label"].astype(int), categories=[0, 1], ordered=False
+            eligible["model_cluster"].astype(int), categories=[0, 1], ordered=False
         ),
         "participant_group": eligible["PTID"].astype(str) + "|" + eligible["RID"].astype(str),
     })
@@ -247,9 +272,9 @@ def main() -> None:
     else:
         conclusion = "The analysis did not provide sufficient statistical evidence that the longitudinal rates differed between the two original clusters."
     interpretation = (
-        f"{conclusion} The Time × Cluster estimate indicates that original Cluster 1 had an estimated "
+        f"{conclusion} The Time × Cluster estimate indicates that the more impaired cluster had an estimated "
         f"{abs(primary['estimate']):.6f}-point/year {interaction_direction} annual ADAS-Cog13 change than "
-        "original Cluster 0. This is an observational group comparison and does not establish causation."
+        "the less impaired (reference) cluster. This is an observational group comparison and does not establish causation."
     )
 
     random_intercept_variance = finite(result.cov_re.iloc[0, 0], "random-intercept variance")
@@ -274,10 +299,11 @@ def main() -> None:
         "alpha": ALPHA,
         "confidenceLevel": 0.95,
         "referenceCluster": 0,
+        "clusterCoding": MODEL_CODING,
         "participantCount": EXPECTED_ELIGIBLE_N,
         "participantCountsByOriginalCluster": [
-            {"clusterId": 0, "participantCount": EXPECTED_ELIGIBLE_CLUSTERS[0]},
-            {"clusterId": 1, "participantCount": EXPECTED_ELIGIBLE_CLUSTERS[1]},
+            {"clusterId": 0, "participantCount": MODEL_CODING["eligibleParticipantsByModelCluster"][0]},
+            {"clusterId": 1, "participantCount": MODEL_CODING["eligibleParticipantsByModelCluster"][1]},
         ],
         "observationCount": EXPECTED_OBSERVATIONS,
         "groupingVariable": "private participant composite key (not exported)",
@@ -290,7 +316,7 @@ def main() -> None:
         "primaryResult": {
             **primary,
             "significantAtAlpha": primary_significant,
-            "coefficientMeaning": "Difference in annual ADAS-Cog13 change for original Cluster 1 relative to original Cluster 0",
+            "coefficientMeaning": "Difference in annual ADAS-Cog13 change for the more impaired cluster (model 1) relative to the less impaired reference cluster (model 0)",
         },
         "estimatedAnnualChangeByOriginalCluster": [
             {"clusterId": 0, "estimate": coefficient_lookup["time"]["estimate"], "unit": "ADAS-Cog13 points/year"},

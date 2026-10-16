@@ -126,8 +126,8 @@ export const InitializationComparison = ({ standard, enhanced, randomRuns, dpcRu
         </table>
       </div>
     </details>
-    {controlled && baseline && <details className="sop3-disclosure"><summary>Original Standard 13D baseline reproducibility</summary>
-      <p className="sop3-note text-xs text-muted">Separate baseline: 30 random seeds in 13 standardized features. Its modal partition and seed-0 reference are distinct definitions.</p>
+    {controlled && baseline && <details className="sop3-disclosure"><summary>Original Standard 15D baseline reproducibility</summary>
+      <p className="sop3-note text-xs text-muted">Separate baseline: 30 random seeds in 15 standardized features. Its modal partition and seed-0 reference are distinct definitions.</p>
       <dl className="sop3-summary">{metrics.map(metric => <div key={metric.label}><dt>{metric.label}</dt><dd>{metric.value(baseline)}</dd></div>)}</dl>
       <PartitionFrequencyChart rows={baseline.partitionFrequencies} />
       <AriChart runs={baseline.modalPartitionAri} axisLabel="Random seed" minimum={minimum} />
