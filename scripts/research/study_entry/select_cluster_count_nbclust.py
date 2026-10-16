@@ -23,14 +23,31 @@ from rpy2.robjects.packages import importr
 ROOT = Path(__file__).resolve().parents[3]
 INPUT_PATH = ROOT / "data" / "interim" / "clustering_pca_scores.csv"
 INTERIM = ROOT / "data" / "interim"
+PCA_VARIANCE_PATH = INTERIM / "clustering_pca_explained_variance.csv"
+
+
+def _retained_pca_count() -> int:
+    """Number of PCs kept by the SOP 1 85% rule, read from the preprocessing artifact."""
+    with PCA_VARIANCE_PATH.open("r", encoding="utf-8-sig", newline="") as handle:
+        rows = list(csv.DictReader(handle))
+    count = sum(row["retained_for_85_percent"] == "True" for row in rows)
+    if count < 1:
+        raise AssertionError("PCA variance artifact retains no components")
+    return count
+
+
+# Live method runs import this module without the stage artifact; pipeline stages
+# always run after preprocessing, so a missing file there fails loudly (0 PCs).
+N_PCS = _retained_pca_count() if PCA_VARIANCE_PATH.is_file() else 0
+FEATURES = tuple(f"PC{number}" for number in range(1, N_PCS + 1))
+EXPECTED_SHAPE = (2437, N_PCS)
 VOTES_PATH = INTERIM / "clustering_nbclust_votes.csv"
 SUMMARY_PATH = INTERIM / "clustering_nbclust_summary.csv"
 TIE_BREAK_PATH = INTERIM / "clustering_nbclust_tie_break.csv"
 SELECTED_K_PATH = INTERIM / "clustering_selected_k.csv"
 
 IDENTIFIERS = ("PTID", "RID")
-FEATURES = tuple(f"PC{number}" for number in range(1, 7))
-EXPECTED_SHAPE = (2437, 6)
+
 CANDIDATE_K = tuple(range(2, 11))
 DISTANCE = "euclidean"
 METHOD = "kmeans"
@@ -347,7 +364,7 @@ def select_k_nbclust(
 ) -> SelectionResult:
     """Run the existing voting rule; controlled ablations may explicitly set input shape.
 
-    The default remains the frozen six-PC contract used by the official pipeline.
+    The default is the retained-PC contract (85% rule) used by the official pipeline.
     """
     shape = (len(matrix), len(matrix[0]) if matrix else 0)
     if shape != expected_shape:

@@ -16,7 +16,7 @@ const navItems = researchPages.map((page, index) => ({ ...page, icon: navIcons[i
 type AppShellProps = { children: ReactNode };
 
 const navigationClass = ({ isActive }: { isActive: boolean }) => [
-  "flex min-w-0 items-center gap-2 border-l-2 px-3 py-2.5 text-sm font-medium transition",
+  "flex min-w-0 items-center gap-2 border-l-2 px-3 py-3 text-sm font-medium transition",
   isActive ? "border-teal-600 bg-teal-50/70 text-teal-900" : "border-transparent text-slate-600 hover:border-slate-300 hover:bg-slate-50 hover:text-ink"
 ].join(" ");
 
@@ -49,7 +49,7 @@ export const AppShell = ({ children }: AppShellProps) => {
           {navItems.map(({ path, step, label, icon: Icon }) => (
             <NavLink key={path} to={path} className={sidebarCollapsed ? collapsedNavigationClass : navigationClass} title={sidebarCollapsed ? `${step} ${label}` : undefined}>
               <Icon size={18} strokeWidth={1.9} />
-              <span className={sidebarCollapsed ? "sr-only" : "truncate"}><span className="mr-2 text-[11px] tabular-nums text-muted">{step}</span>{label}</span>
+              <span className={sidebarCollapsed ? "sr-only" : "truncate"}><span className="mr-2 text-xs tabular-nums text-muted">{step}</span>{label}</span>
             </NavLink>
           ))}
         </nav>
@@ -77,7 +77,7 @@ export const AppShell = ({ children }: AppShellProps) => {
         {navItems.map(({ path, step, label, icon: Icon }) => (
           <NavLink key={path} to={path} className={navigationClass} onClick={() => setMobileNavOpen(false)}>
             <Icon size={18} strokeWidth={1.9} />
-            <span className="truncate"><span className="mr-2 text-[11px] tabular-nums text-muted">{step}</span>{label}</span>
+            <span className="truncate"><span className="mr-2 text-xs tabular-nums text-muted">{step}</span>{label}</span>
           </NavLink>
         ))}
       </nav>
@@ -85,7 +85,7 @@ export const AppShell = ({ children }: AppShellProps) => {
 
     <main className={`min-h-screen min-w-0 transition-[margin] duration-200 ${mainOffsetClass}`}>
       <header className="sticky top-0 z-10 border-b border-line bg-white lg:hidden">
-        <div className="mx-auto flex min-h-16 max-w-[1320px] items-center justify-between gap-3 px-4 py-2.5 sm:gap-5 sm:px-6 lg:h-[72px] lg:py-0">
+        <div className="mx-auto flex min-h-16 max-w-[1320px] items-center justify-between gap-3 px-4 py-3 sm:gap-5 sm:px-6 lg:h-[72px] lg:py-0">
           <div className="flex min-w-0 items-center gap-3">
             <button type="button" className="flex h-9 w-9 shrink-0 items-center justify-center rounded-sm bg-teal-700 text-white lg:hidden" onClick={() => setMobileNavOpen(true)} aria-label="Open navigation menu">
               <Menu size={19} />

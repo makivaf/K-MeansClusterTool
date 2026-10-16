@@ -28,7 +28,7 @@ def attach_evidence(output, matrix, eigenvalues, standard_labels, enhanced_label
     output['enhanced']['dpc']['ariByRun'] = [
         {'seed': run, 'adjustedRandIndex': float(adjusted_rand_score(enhanced_labels[0], labels))}
         for run, labels in enumerate(enhanced_labels, 1)]
-    assert len(eigenvalues) == len(output['enhanced']['pcaVariance']) == 13
+    assert len(eigenvalues) == len(output['enhanced']['pcaVariance']) == 15
     for row, eigenvalue in zip(output['enhanced']['pcaVariance'], eigenvalues):
         row['eigenvalue'] = float(eigenvalue)
     # Same k, seeds 0..29, n_init=1, tolerance and Lloyd procedure on both

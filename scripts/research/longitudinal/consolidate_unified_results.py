@@ -1,7 +1,13 @@
 """Build the unified aggregate research artifact and longitudinal continuation.
 
 This stage deliberately preserves the final enhanced K-Means assignments and
-compares those same Cluster 0/Cluster 1 participants over time. It never selects
+compares those same Cluster 0/Cluster 1 participants over time.
+
+Oct 2026 (15-variable revision): K-Means label indices are arbitrary, so the
+aggregate artifact numbers the clusters for display as Cluster 0 = lower mean
+study-entry ADAS-Cog13 (less impaired, mixed-model reference) and Cluster 1 =
+more impaired. The mapping to the pipeline's raw labels is recorded under
+``enhancedClustering.displayCoding`` and must agree with the mixed-model artifact. It never selects
 another k and never clusters participant slopes.
 
 Participant-level outputs remain in the gitignored local data workspace. The
@@ -59,33 +65,45 @@ RETAINED_FEATURES = [
     "TMT_A",
     "TMT_B",
     "CATEGORY_FLUENCY_ANIMALS",
+    "BNT",
     "RAVLT_IMMEDIATE",
     "RAVLT_DELAYED",
     "RAVLT_FORGETTING",
     "CDRSB",
     "FAQ",
+    "NPIQ",
     "GDS",
 ]
+
+# 15-variable study values (Mariel's finalized median-imputed dataset, Oct 2026).
+ENHANCED_SILHOUETTE = 0.36585555865630814
+ENHANCED_DB = 1.1466893790502524
+ENHANCED_CH = 1583.2634117295058
+BASELINE_SILHOUETTE = 0.3212570204468658
+BASELINE_DB = 1.3158138327132245
+BASELINE_CH = 1248.2956431531677
 
 FROZEN = {
     "parent_n": 2437,
     "phase_counts": {"ADNI1": 819, "ADNIGO": 130, "ADNI2": 789, "ADNI3": 699},
-    "cluster_sizes": {0: 1553, 1: 884},
-    "pca_components": 6,
-    "pca_cumulative_variance": 0.8747945923377831,
+    # Display coding: 0 = less impaired, 1 = more impaired (see module docstring).
+    "cluster_sizes": {0: 1564, 1: 873},
+    "eligible_cluster_counts": {0: 1239, 1: 606},
+    "pca_components": 7,
+    "pca_cumulative_variance": 0.8596412880637428,
     "selected_k": 2,
     "baseline_selected_k": 2,
-    "nbclust_votes_for_k2": 9,
+    "nbclust_votes_for_k2": 10,
     "nbclust_usable_votes": 24,
     "enhanced_metrics": {
-        "silhouette": 0.3727004724250328,
-        "daviesBouldin": 1.0758850311620256,
-        "calinskiHarabasz": 1800.0249578026046,
+        "silhouette": ENHANCED_SILHOUETTE,
+        "daviesBouldin": ENHANCED_DB,
+        "calinskiHarabasz": ENHANCED_CH,
     },
     "baseline_metrics": {
-        "silhouette": 0.33187500971522454,
-        "daviesBouldin": 1.2241160774005175,
-        "calinskiHarabasz": 1442.0231320417006,
+        "silhouette": BASELINE_SILHOUETTE,
+        "daviesBouldin": BASELINE_DB,
+        "calinskiHarabasz": BASELINE_CH,
     },
 }
 
@@ -134,7 +152,7 @@ def validate_mixed_model_artifact(document: dict[str, Any]) -> None:
         int(row["clusterId"]): int(row["participantCount"])
         for row in document.get("participantCountsByOriginalCluster", [])
     }
-    if cluster_counts != {0: 1233, 1: 612}:
+    if cluster_counts != FROZEN["eligible_cluster_counts"]:
         raise AssertionError(f"The mixed-effects model original-cluster counts drifted: {cluster_counts}")
     if document.get("primaryTerm") != "time_x_cluster" or not document.get("converged"):
         raise AssertionError("The primary Time × Cluster result is unavailable")
@@ -321,6 +339,19 @@ def main() -> None:
         raise AssertionError("Final enhanced assignment artifact does not contain 2,437 participants")
     if assignments.duplicated(IDENTIFIERS).any() or assignments["PTID"].duplicated().any() or assignments["RID"].duplicated().any():
         raise AssertionError("Final enhanced assignment participant keys are not one-to-one")
+    # Renumber raw K-Means labels for display: 0 = lower mean study-entry ADAS-Cog13.
+    entry_adas = pd.read_csv(IMPUTED_PATH, dtype={"PTID": str, "RID": str})[[*IDENTIFIERS, "ADAS13"]]
+    entry_linked = assignments.merge(entry_adas, on=IDENTIFIERS, how="left", validate="one_to_one")
+    if entry_linked["ADAS13"].isna().any():
+        raise AssertionError("A clustered participant has no study-entry ADAS13")
+    entry_means = entry_linked.groupby("cluster_label")["ADAS13"].mean()
+    less_impaired_raw = int(entry_means.idxmin())
+    display_of_raw = {less_impaired_raw: 0, 1 - less_impaired_raw: 1}
+    coding = mixed_model.get("clusterCoding", {})
+    if (coding.get("modelCluster0", {}).get("pipelineClusterLabel") != less_impaired_raw
+            or coding.get("modelCluster1", {}).get("pipelineClusterLabel") != 1 - less_impaired_raw):
+        raise AssertionError("Display cluster coding disagrees with the mixed-model reference coding")
+    assignments["cluster_label"] = assignments["cluster_label"].map(display_of_raw).astype(int)
     observed_cluster_sizes = {int(key): int(value) for key, value in assignments["cluster_label"].value_counts().sort_index().items()}
     if observed_cluster_sizes != FROZEN["cluster_sizes"]:
         raise AssertionError(f"Frozen enhanced cluster sizes disagree: {observed_cluster_sizes}")
@@ -333,10 +364,12 @@ def main() -> None:
 
     preprocessing = pd.read_csv(PREPROCESSING_PATH)
     exclusions = pd.read_csv(EXCLUSIONS_PATH)
-    if preprocessing["variable"].tolist() != RETAINED_FEATURES or len(preprocessing) != 13:
-        raise AssertionError("Retained feature artifact does not match the frozen 13-variable contract")
+    if preprocessing["variable"].tolist() != RETAINED_FEATURES or len(preprocessing) != 15:
+        raise AssertionError("Retained feature artifact does not match the 15-variable contract")
+    # The >20% missingness audit still flags BNT and NPI-Q, but under the revised
+    # protocol they are retained and median-imputed rather than excluded.
     if set(exclusions["candidate_variable"]) != {"BNT", "NPIQ"}:
-        raise AssertionError("Frozen feature exclusions disagree")
+        raise AssertionError("Missingness audit for BNT/NPI-Q disagrees")
 
     pca = pd.read_csv(PCA_PATH)
     pca_loadings = pd.read_csv(PCA_LOADINGS_PATH)
@@ -545,17 +578,16 @@ def main() -> None:
             "linkageChecks": cohort_audit["checks"],
         },
         "preprocessing": {
-            "candidateFeatures": RETAINED_FEATURES + ["BNT", "NPIQ"],
-            "excludedFeatures": [
+            "candidateFeatures": RETAINED_FEATURES,
+            "excludedFeatures": [],
+            "retainedFeatures": RETAINED_FEATURES,
+            "highMissingnessRetained": [
                 {
                     "feature": str(row.candidate_variable),
                     "missingPercent": float(row.missing_percentage),
-                    "reason": str(row.explanation),
                 }
                 for row in exclusions.itertuples(index=False)
             ],
-            "retainedFeatures": RETAINED_FEATURES,
-            "missingnessThresholdPercent": 20.0,
             "imputation": "Median imputation",
             "standardization": "Z-score standardization",
         },
@@ -606,7 +638,7 @@ def main() -> None:
                     "rho": float(row.rho),
                     "delta": float(row.delta),
                     "gamma": float(row.gamma),
-                    "assignedCluster": index,
+                    "assignedCluster": display_of_raw[index],
                 }
                 for index, row in enumerate(dpc_centroids.itertuples(index=False))
             ],
@@ -615,7 +647,12 @@ def main() -> None:
         },
         "enhancedClustering": {
             "algorithm": "Lloyd K-Means",
-            "representation": "Six retained principal components",
+            "representation": f"{len(retained_pca)} retained principal components",
+            "displayCoding": {
+                "rule": "Cluster 0 = lower mean study-entry ADAS-Cog13 (less impaired); Cluster 1 = more impaired",
+                "pipelineLabelOfCluster0": less_impaired_raw,
+                "pipelineLabelOfCluster1": 1 - less_impaired_raw,
+            },
             "clusterSizes": [{"clusterId": key, "nMembers": value} for key, value in observed_cluster_sizes.items()],
             "metrics": enhanced_metrics,
             "iterations": int(enhanced_summary["iterations"]),
@@ -629,7 +666,7 @@ def main() -> None:
         },
         "baselineComparison": {
             "baselineMethod": {
-                "representation": "13 standardized original variables; no PCA",
+                "representation": "15 standardized original variables; no PCA",
                 "kSelection": "Maximum Silhouette over k=2..10",
                 "selectedK": baseline_selected_k,
                 "initialization": "Random initialization across seeds 0-29",
@@ -637,7 +674,7 @@ def main() -> None:
                 "runCount": int(baseline_summary.iloc[0]["run_count"]),
             },
             "enhancedMethod": {
-                "representation": "Six-component PCA representation",
+                "representation": f"{len(retained_pca)}-component PCA representation",
                 "kSelection": "NbClust index voting",
                 "initialization": "Deterministic DPC-derived centroids",
                 "algorithm": "Lloyd K-Means",
@@ -645,7 +682,7 @@ def main() -> None:
             "metrics": comparison_metrics,
             "caution": "The baseline-versus-enhanced comparison evaluates the complete integrated enhancement. Differences cannot be attributed independently to PCA, NbClust, or DPC initialization without component-wise ablation.",
             "controlledDpcInitializationComparison": {
-                "scope": "Same participants, six-PC representation, k=2, and Lloyd settings; initialization differs.",
+                "scope": f"Same participants, {len(retained_pca)}-PC representation, k=2, and Lloyd settings; initialization differs.",
                 "purpose": "DPC is evaluated primarily as a deterministic and reproducible initializer, not as universally improving cluster geometry.",
                 "metrics": dpc_comparison,
             },

@@ -35,7 +35,7 @@ const scatter = children.filter(node => node.props.data);
 assert.deepEqual(scatter.flatMap(node => node.props.data).slice(0, points.length), points);
 assert.equal(scatter.at(-1).props.data, centers);
 assert.equal(scatter.at(-1).props.shape, "diamond");
-assert.match(scatter[0].props.fill, /087f8c/);
+assert.equal(scatter[0].props.fill, 'var(--research-primary)');
 const html = renderToStaticMarkup(React.createElement(PartitionProjection, props));
 assert.match(html, /Cluster 0/); assert.match(html, /Cluster 2/);
 assert.doesNotMatch(html, /Cluster 1|impairment/);

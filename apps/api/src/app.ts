@@ -12,6 +12,9 @@ import { loadStudyEvidence } from "./services/studyEvidenceArtifact";
 import { SimulationCapabilitiesSchema } from "../../../packages/shared/src/simulation";
 import { createSimulationMetadataRouter } from "./routes/simulations";
 import { simulationCapabilities } from "./services/simulationExecution";
+import { createMethodRunsRouter } from "./routes/methodRuns";
+import { createStudyPreparationsRouter } from './routes/studyPreparations';
+import { loadFinalUiEvidence } from './services/finalUiEvidence';
 
 export const app = express();
 
@@ -42,6 +45,11 @@ app.get("/api/health", (_request, response) => {
 });
 
 app.use("/api/simulations", createSimulationMetadataRouter());
+app.use("/api/method-runs", createMethodRunsRouter());
+app.use('/api/study-preparations', createStudyPreparationsRouter());
+app.get('/api/study-final-ui', async (_request, response, next) => {
+  try { response.json(await loadFinalUiEvidence()); } catch (error) { next(error); }
+});
 
 // Read-only capability discovery. The full-cohort research endpoint must never
 // be presented as a subsample simulation runner.

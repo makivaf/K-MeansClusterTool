@@ -1,0 +1,177 @@
+{
+  "field": "result.standard.silhouetteByK",
+  "jobs": [
+    {
+      "jobSource": "apps/api/private/method-runs/1667c343-313f-4555-80be-655824db686a/job.json",
+      "resultSource": "apps/api/private/method-runs/1667c343-313f-4555-80be-655824db686a/result.json",
+      "participantCount": 2437,
+      "kValues": [
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10
+      ],
+      "presentAtStoredComplete": true,
+      "jobResultEqualsResultFile": true
+    },
+    {
+      "jobSource": "apps/api/private/method-runs/2e56b21e-586a-4305-8b85-d396fae3a71e/job.json",
+      "resultSource": "apps/api/private/method-runs/2e56b21e-586a-4305-8b85-d396fae3a71e/result.json",
+      "participantCount": 100,
+      "kValues": [
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10
+      ],
+      "presentAtStoredComplete": true,
+      "jobResultEqualsResultFile": true
+    },
+    {
+      "jobSource": "apps/api/private/method-runs/399ce11f-b786-4f0d-9f3a-c97328f84bb3/job.json",
+      "resultSource": "apps/api/private/method-runs/399ce11f-b786-4f0d-9f3a-c97328f84bb3/result.json",
+      "participantCount": 2437,
+      "kValues": [
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10
+      ],
+      "presentAtStoredComplete": true,
+      "jobResultEqualsResultFile": true
+    },
+    {
+      "jobSource": "apps/api/private/method-runs/a21710b2-cabb-435e-b943-ee752bb8ee7a/job.json",
+      "resultSource": "apps/api/private/method-runs/a21710b2-cabb-435e-b943-ee752bb8ee7a/result.json",
+      "participantCount": 2437,
+      "kValues": [
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10
+      ],
+      "presentAtStoredComplete": true,
+      "jobResultEqualsResultFile": true
+    },
+    {
+      "jobSource": "apps/api/private/method-runs/bb20d664-2229-4fa8-8592-3272ae65e04a/job.json",
+      "resultSource": "apps/api/private/method-runs/bb20d664-2229-4fa8-8592-3272ae65e04a/result.json",
+      "participantCount": 100,
+      "kValues": [
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10
+      ],
+      "presentAtStoredComplete": true,
+      "jobResultEqualsResultFile": true
+    },
+    {
+      "jobSource": "apps/api/private/method-runs/eb728b68-dd53-4940-9242-510f0d51eace/job.json",
+      "resultSource": "apps/api/private/method-runs/eb728b68-dd53-4940-9242-510f0d51eace/result.json",
+      "participantCount": 2437,
+      "kValues": [
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10
+      ],
+      "presentAtStoredComplete": true,
+      "jobResultEqualsResultFile": true
+    },
+    {
+      "jobSource": "apps/api/private/method-runs/f6e67c3b-901f-4a89-a867-91b4777d222b/job.json",
+      "resultSource": "apps/api/private/method-runs/f6e67c3b-901f-4a89-a867-91b4777d222b/result.json",
+      "participantCount": 2437,
+      "kValues": [
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10
+      ],
+      "presentAtStoredComplete": true,
+      "jobResultEqualsResultFile": true
+    },
+    {
+      "jobSource": "apps/api/private/method-runs/fbb96dda-1518-4b97-9af4-21c4a1ab21ad/job.json",
+      "resultSource": "apps/api/private/method-runs/fbb96dda-1518-4b97-9af4-21c4a1ab21ad/result.json",
+      "participantCount": 2437,
+      "kValues": [
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10
+      ],
+      "presentAtStoredComplete": true,
+      "jobResultEqualsResultFile": true
+    }
+  ],
+  "sourceOrder": [
+    "scripts/research/simulation/run_method.py: construct standard.silhouetteByK",
+    "scripts/research/simulation/run_method.py: atomic write result.json",
+    "apps/api/src/services/methodExecution.ts: executeMethod parses and validates result, writes timing-enriched result.json, returns",
+    "apps/api/src/services/methodExecution.ts: drain saves job.json with status complete and result"
+  ],
+  "sourceLineEvidence": {
+    "scripts/research/simulation/run_method.py": {
+      "'silhouetteByK':": [
+        115
+      ],
+      "write_json(workspace/'result.json', result)": [
+        241
+      ]
+    },
+    "apps/api/src/services/methodExecution.ts": {
+      "status: \"complete\", stage: \"complete\", result": [
+        129
+      ],
+      "const result = MethodResultSchema.parse(JSON.parse": [
+        295
+      ],
+      "atomic(path.join(directory, \"result.json\"), result);": [
+        301,
+        306
+      ]
+    }
+  }
+}

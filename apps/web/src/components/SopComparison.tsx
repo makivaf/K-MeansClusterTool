@@ -1,3 +1,5 @@
+import { ExpandPanel } from "./ExpandPanel";
+import { formatNumber } from "../utils/formatNumber";
 import { formatContinuous, formatPercent, formatInteger } from "../utils/numberFormatting";
 import { Fragment, useId, useState, type ReactNode } from "react";
 import { ChevronDown } from "lucide-react";
@@ -8,11 +10,11 @@ import type { CalculationEvidence } from "../../../../packages/shared/src/calcul
 import "./SopComparison.css";
 
 // Presentation only: each page supplies its own evidence and chart bindings.
-export const MethodCard = ({ title, enhanced = false, children, simulation = false }: {
-  title: string; enhanced?: boolean; children: ReactNode; simulation?: boolean;
+export const MethodCard = ({ title, enhanced = false, children, simulation = false, methodLabel }: {
+  title?: string; enhanced?: boolean; children: ReactNode; simulation?: boolean; methodLabel?: string;
 }) => <section className={`sop-method-card ${simulation ? "simulation-chart" : "study-method-card"} ${enhanced ? "is-enhanced simulation-enhanced" : ""}`}>
-  <span className={`research-badge ${enhanced ? "is-valid" : ""}`}>{enhanced ? "Enhanced K-Means" : "Standard K-Means"}</span>
-  <h3 className="card-title mb-3 mt-3">{title}</h3>
+  <span className={`research-badge ${enhanced ? "is-valid" : ""}`}>{methodLabel ?? (enhanced ? "Enhanced K-Means" : "Standard K-Means")}</span>
+  {title && <h3 className="card-title mb-3 mt-3">{title}</h3>}
   {children}
 </section>;
 
@@ -35,7 +37,7 @@ export const VarianceSummary = ({ rows, retained, loadingData }: {
 }) => {
   const [expanded, setExpanded] = useState<number | null>(null);
   const disclosureId = useId();
-  return <section className="sop-support-card">
+  return <ExpandPanel title="PC variance table"><section className="sop-support-card">
   <h3 className="card-title mb-4">Principal Components — Variance Summary</h3>
   <div className="overflow-x-auto"><table className="research-table sop-table pca-variance-table">
     <thead><tr><th>PC</th><th>Eigenvalue</th><th>Cumulative Var.</th></tr></thead>
@@ -47,38 +49,37 @@ export const VarianceSummary = ({ rows, retained, loadingData }: {
       return <Fragment key={row.component}><tr className={open || row.component === retained ? "sop-selected-row" : undefined}>
       <th scope="row"><button type="button" className="pca-variance-toggle" aria-expanded={open} aria-controls={`${disclosureId}-${row.component}`}
         onClick={() => setExpanded(current => current === row.component ? null : row.component)}>
-        {label}{row.component === retained ? " ★" : ""}<ChevronDown size={14} aria-hidden="true" />
+        {label}<ChevronDown size={14} aria-hidden="true" />
       </button></th>
-      <td>{row.eigenvalue === undefined ? "Unavailable" : formatContinuous(row.eigenvalue)}</td>
+      <td>{row.eigenvalue === undefined ? "Unavailable" : formatNumber(row.eigenvalue, "eigenvalue")}</td>
       <td>{formatPercent(row.cumulativeVariance * 100)}</td>
     </tr><tr id={`${disclosureId}-${row.component}`} hidden={!open} className="pca-variance-details"><td colSpan={3}>
       <h4 className="text-xs font-semibold text-muted">Top Absolute Loadings</h4>
       {loadingData && contributors.length ? <ul className="pca-top-loadings">{contributors.map(index => {
         const value = loadingData.values[index][column];
-        return <li key={loadingData.variables[index]}><span className="research-badge is-valid">{loadingData.variables[index]}</span><strong className="tabular-nums">{value > 0 ? "+" : ""}{formatContinuous(value)}</strong></li>;
+        return <li key={loadingData.variables[index]}><span className="research-badge is-valid">{loadingData.variables[index]}</span><strong className="tabular-nums">{value > 0 ? "+" : ""}{formatNumber(value, "loading")}</strong></li>;
       })}</ul> : <p className="mt-2 text-xs text-muted">Loading values will appear when PCA loading data is available.</p>}
     </td></tr></Fragment>;
     })}</tbody>
   </table></div>
-  <p className="mt-3 text-xs text-muted">★ Retained at ≥ 85.00% cumulative explained variance.{rows.some(row => row.eigenvalue === undefined) ? " Eigenvalues are not supplied for this run." : ""}</p>
-</section>;
+  {rows.some(row => row.eigenvalue === undefined) && <p className="mt-3 text-xs text-muted">Eigenvalues are not supplied for this run.</p>}
+</section></ExpandPanel>;
 };
 
-export const PcaContribution = ({ dimensions, components, existing, enhanced, relativeChange, note, n, k, calculations, runCount }: {
+export const PcaContribution = ({ dimensions, components, existing, enhanced, relativeChange, note, n, k, calculations, runCount, evidence }: {
   dimensions: number; components: number; existing?: Partial<Record<MetricKey, number>>;
   enhanced?: Partial<Record<MetricKey, number>>; relativeChange?: Partial<Record<MetricKey, number>>; note: string;
   n?: number; k?: number;
   calculations?: { existing?: CalculationEvidence; enhanced?: CalculationEvidence };
   runCount?: number;
+  evidence?: ReactNode;
 }) => <section className="sop-support-card">
-  <h3 className="card-title mb-2">Controlled PCA Contribution to Clustering</h3>
-  <p className="mb-4 text-sm text-muted">{dimensions} standardized variables vs {components} principal components.</p>
-  <MetricComparisonTable existing={existing} enhanced={enhanced} relativeChange={relativeChange ?? {}}
-    metrics={["silhouette"]} footerNote={note} />
+  <h3 className="card-title mb-2">PCA Contribution</h3>
+  {evidence ?? <p className="text-xs text-muted" role="status">Not available — this legacy payload does not contain the common-space experiment.</p>}
   <PcaCalculationDetails n={n} k={k} representations={[
     { label: `${dimensions} Features`, description: `${dimensions} standardized features`, silhouette: existing?.silhouette, calculation: calculations?.existing, runCount },
     { label: `${components} PCs`, description: `${components} principal components`, silhouette: enhanced?.silhouette, calculation: calculations?.enhanced, runCount }
-  ]} />
+  ]} notes={note} />
 </section>;
 
 export const ClusterDistribution = ({ sizes, participants, title, metadata, interpretations, unavailableMessage }: {

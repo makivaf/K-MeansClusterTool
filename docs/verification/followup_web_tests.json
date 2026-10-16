@@ -1,0 +1,82 @@
+﻿[
+    {
+        "file":  "calculationArithmetic.test.mjs",
+        "exitCode":  0
+    },
+    {
+        "file":  "calculationRows.test.mjs",
+        "exitCode":  0
+    },
+    {
+        "file":  "clusterDistribution.test.mjs",
+        "exitCode":  0
+    },
+    {
+        "file":  "datasetSetup.test.mjs",
+        "exitCode":  0
+    },
+    {
+        "file":  "expandPanel.test.mjs",
+        "exitCode":  0
+    },
+    {
+        "file":  "finalPresentation.test.mjs",
+        "exitCode":  0
+    },
+    {
+        "file":  "finalUiPass.test.mjs",
+        "exitCode":  0
+    },
+    {
+        "file":  "formatNumber.test.mjs",
+        "exitCode":  0
+    },
+    {
+        "file":  "independentJobs.test.mjs",
+        "exitCode":  0
+    },
+    {
+        "file":  "initializationComparison.test.mjs",
+        "exitCode":  0
+    },
+    {
+        "file":  "lmeCard.test.mjs",
+        "exitCode":  0
+    },
+    {
+        "file":  "marielBackendIntegration.test.mjs",
+        "exitCode":  0
+    },
+    {
+        "file":  "metricComparison.test.mjs",
+        "exitCode":  0
+    },
+    {
+        "file":  "nbclust.test.mjs",
+        "exitCode":  0
+    },
+    {
+        "file":  "partitionProjection.test.mjs",
+        "exitCode":  0
+    },
+    {
+        "file":  "pcaLoadingMatrix.test.mjs",
+        "exitCode":  0
+    },
+    {
+        "file":  "runProgress.test.mjs",
+        "exitCode":  0
+    },
+    {
+        "file":  "silhouetteCalculation.test.mjs",
+        "exitCode":  0
+    },
+    {
+        "file":  "studyFindings.test.mjs",
+        "exitCode":  0
+    },
+    {
+        "file":  "varianceSummary.test.mjs",
+        "exitCode":  0
+    }
+]

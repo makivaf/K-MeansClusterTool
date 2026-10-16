@@ -1,0 +1,187 @@
+{
+  "sources": {
+    "input": "data/interim/unified_longitudinal_cohort.csv",
+    "assignments": "data/interim/unified_cluster_assignments.csv",
+    "reference": "data/interim/unified_longitudinal_mixed_model.json",
+    "implementation": "scripts/research/longitudinal/fit_longitudinal_mixed_model.py"
+  },
+  "participants": 1845,
+  "observations": 11111,
+  "randomIntercept": {
+    "formula": "adas13 ~ time_years * original_cluster",
+    "randomFormula": "1",
+    "estimation": "ML",
+    "optimizerAttempts": [
+      {
+        "optimizer": "lbfgs",
+        "converged": true,
+        "warnings": []
+      }
+    ],
+    "converged": true,
+    "fixedEffects": {
+      "Intercept": {
+        "estimate": 9.888634448221145,
+        "standardError": 0.20442653985739528,
+        "ci95": [
+          9.487965792616508,
+          10.289303103825782
+        ],
+        "pValue": 0.0
+      },
+      "original_cluster[T.1]": {
+        "estimate": 15.582313044877852,
+        "standardError": 0.35891708333254135,
+        "ci95": [
+          14.87884848810991,
+          16.285777601645794
+        ],
+        "pValue": 0.0
+      },
+      "time_years": {
+        "estimate": 0.5687828019581643,
+        "standardError": 0.01831686615371491,
+        "ci95": [
+          0.5328824039872424,
+          0.6046831999290863
+        ],
+        "pValue": 1.058581426431952e-211
+      },
+      "time_years:original_cluster[T.1]": {
+        "estimate": 1.5026884504470615,
+        "standardError": 0.0545742837330301,
+        "ci95": [
+          1.3957248198482524,
+          1.6096520810458705
+        ],
+        "pValue": 6.741856864078681e-167
+      }
+    },
+    "randomCovariance": [
+      [
+        43.744676863905944
+      ]
+    ],
+    "randomVariances": [
+      43.744676863905944
+    ],
+    "randomCorrelation": null,
+    "covarianceEigenvalues": [
+      43.744676863905944
+    ],
+    "singularFit": false,
+    "singularCriterion": "minimum covariance eigenvalue <= 1e-8; diagnostic, not a changed fitting threshold",
+    "residualVariance": 24.89467036198628,
+    "logLikelihood": -35808.59142292438,
+    "AIC": 71629.18284584876,
+    "BIC": 71673.07699117427,
+    "parameterCountIncludingResidual": 6
+  },
+  "randomSlope": {
+    "formula": "adas13 ~ time_years * original_cluster",
+    "randomFormula": "1 + time_years",
+    "estimation": "ML",
+    "optimizerAttempts": [
+      {
+        "optimizer": "lbfgs",
+        "converged": true,
+        "warnings": []
+      }
+    ],
+    "converged": true,
+    "fixedEffects": {
+      "Intercept": {
+        "estimate": 9.673136491641953,
+        "standardError": 0.15943126002238905,
+        "ci95": [
+          9.36065696398823,
+          9.985616019295676
+        ],
+        "pValue": 0.0
+      },
+      "original_cluster[T.1]": {
+        "estimate": 14.110106255233111,
+        "standardError": 0.2805264295071164,
+        "ci95": [
+          13.560284556687549,
+          14.659927953778674
+        ],
+        "pValue": 0.0
+      },
+      "time_years": {
+        "estimate": 0.7110629900980358,
+        "standardError": 0.05820199577120125,
+        "ci95": [
+          0.5969891745581288,
+          0.8251368056379427
+        ],
+        "pValue": 2.5173129940323593e-34
+      },
+      "time_years:original_cluster[T.1]": {
+        "estimate": 3.1374068830592847,
+        "standardError": 0.11684407216916902,
+        "ci95": [
+          2.9083967098007144,
+          3.366417056317855
+        ],
+        "pValue": 8.160521900273623e-159
+      }
+    },
+    "randomCovariance": [
+      [
+        26.504396494259,
+        3.5879012315754433
+      ],
+      [
+        3.5879012315754433,
+        3.3499898824688286
+      ]
+    ],
+    "randomVariances": [
+      26.504396494259,
+      3.3499898824688286
+    ],
+    "randomCorrelation": 0.3807674114934198,
+    "covarianceEigenvalues": [
+      2.8067694485118837,
+      27.047616928215945
+    ],
+    "singularFit": false,
+    "singularCriterion": "minimum covariance eigenvalue <= 1e-8; diagnostic, not a changed fitting threshold",
+    "residualVariance": 11.771109389379951,
+    "logLikelihood": -33554.10198739088,
+    "AIC": 67124.20397478176,
+    "BIC": 67182.72950188244,
+    "parameterCountIncludingResidual": 8
+  },
+  "referenceErrors": {
+    "intercept": {
+      "estimate": -1.7763568394002505e-15,
+      "standardError": 0.0,
+      "pValue": 0.0
+    },
+    "time": {
+      "estimate": -1.1102230246251565e-16,
+      "standardError": 0.0,
+      "pValue": 1.810925369528923e-224
+    },
+    "cluster": {
+      "estimate": -1.0658141036401503e-14,
+      "standardError": 0.0,
+      "pValue": 0.0
+    },
+    "time_x_cluster": {
+      "estimate": 4.440892098500626e-16,
+      "standardError": -1.3877787807814457e-17,
+      "pValue": -3.0681292282591093e-179
+    }
+  },
+  "referenceMaxAbsoluteError": 1.0658141036401503e-14,
+  "referenceMatchesAt1e8": true,
+  "likelihoodRatio": {
+    "statistic": 4508.978871066996,
+    "nominalDegreesFreedom": 2,
+    "nominalChiSquareP": 0.0,
+    "note": "Nominal chi-square only: zero slope variance is on the boundary and slope/intercept covariance is unidentified under the null. Ordinary chi-square calibration is not exact; no calibrated bootstrap or mixture test was performed."
+  }
+}

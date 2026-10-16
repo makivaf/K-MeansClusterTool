@@ -10,11 +10,11 @@ import { StaticRouter } from 'react-router-dom/server.js';
 
 const root = fileURLToPath(new URL('../../../', import.meta.url));
 const bundle = await build({ absWorkingDir: root, entryPoints: ['apps/web/src/pages/StudyFindingsPage.tsx'],
-  bundle: true, write: false, platform: 'node', format: 'cjs', packages: 'external', loader: { '.css': 'empty' },
+  bundle: true, write: false, platform: 'node', format: 'cjs', packages: 'external', loader: { '.css': 'empty' }, define: { 'import.meta.env.VITE_API_URL': 'undefined' },
   plugins: [{ name: 'lme-ui-test', setup(b) {
     b.onLoad({ filter: /useSopEvaluation\.ts$/ }, () => ({ contents: 'export const useSopEvaluation = () => ({ dpcStatus: "unavailable" });', loader: 'ts' }));
     b.onLoad({ filter: /StudyFindingsPage\.tsx$/ }, args => ({
-      contents: readFileSync(args.path, 'utf8').replace('useState("sop1")', 'useState("final")'), loader: 'tsx'
+      contents: readFileSync(args.path, 'utf8').replace('useState(initialTab)', 'useState("final")'), loader: 'tsx'
     }));
   } }] });
 const require = createRequire(import.meta.url), module = { exports: {} };
@@ -25,7 +25,7 @@ for (const values of [
   { n: 321, observations: 987, lower: 0.123456, higher: 1.654321, effect: 1.530865, ci: [1.250001, 1.811729], p: 0.024321 }
 ]) {
   // Controlled UI inputs only; no analytical execution or artifact changes.
-  const run = { cohort: { parentN: 2437 }, preprocessing: { retainedFeatures: [] },
+  const run = { title: 'Historical fixture', run_id: 'historical-fixture', created_at: '2026-10-11T00:00:00Z', cohort: { parentN: 2437 }, preprocessing: { retainedFeatures: [] },
     baselineComparison: { metrics: [], baselineMethod: { selectedK: 2, runCount: 30 } },
     enhancedClustering: { metrics: {}, clusterSizes: [] }, kSelection: { candidateK: [2, 3], selectedK: 2 },
     pca: { components: 1, cumulativeExplainedVariance: 0.9 }, clusterProfiles: { profiles: [], smdRanking: [] },
@@ -42,18 +42,21 @@ for (const values of [
   })));
   const lme = html.match(/<section class="research-panel[^"]*study-lme">[\s\S]*?<\/dl><\/section><\/div><\/section>/)?.[0];
   assert.ok(lme);
-  assert.ok(lme.includes(`${values.n.toLocaleString('en-US')} eligible participants · ${values.observations.toLocaleString('en-US')} repeated ADAS-Cog13 observations`));
-  assert.match(lme, /Maximum likelihood \(ML\) · Random intercept only/);
+  assert.ok(lme.includes(`${values.n.toLocaleString('en-US')} eligible participants, ${values.observations.toLocaleString('en-US')} observations`));
+  assert.match(lme, /Random intercept only, maximum likelihood/);
   assert.match(lme, /Annual ADAS-Cog13 Change/);
   assert.ok(lme.indexOf('Cluster 0') < lme.indexOf('Cluster 1'));
   assert.match(lme, /Lower impairment/); assert.match(lme, /Higher impairment/);
-  for (const value of [values.lower, values.higher, values.effect, ...values.ci]) assert.ok(lme.includes(value.toFixed(6)));
-  assert.ok(lme.includes(values.p < 0.001 ? '&lt;0.001' : values.p.toFixed(6)));
+  for (const value of [values.lower, values.higher, values.effect, ...values.ci]) assert.ok(lme.includes(value.toLocaleString('en-US', {minimumFractionDigits:5, maximumFractionDigits:5})));
+  assert.ok(lme.includes(values.p.toFixed(5)));
   assert.equal((lme.match(/ADAS-Cog13 points\/year/g) ?? []).length, 2);
   assert.equal((lme.match(/study-lme-slope-value/g) ?? []).length, 2);
   assert.doesNotMatch(lme, /<table|<svg|Cluster 1 shows a greater annual increase/);
   assert.doesNotMatch(html, /LME results table/);
   assert.match(html, /ADAS-Cog13 Longitudinal Progression/);
+  assert.match(html, /Historical validated model; fresh K-Means executions do not refit it/);
+  assert.match(html, /Source run: Historical fixture/);
+  assert.equal((html.match(/Linear Mixed-Effects Model \(LME\)/g) ?? []).length, 1);
   assert.doesNotMatch(html, /Observed means by elapsed-year bin; bars describe available observations, not fitted model predictions/);
 }
 console.log('PASS dynamic LME metadata, slopes, effect, CI and both p-value formats; ordered cards; preserved chart context; no duplicate table or info strip');

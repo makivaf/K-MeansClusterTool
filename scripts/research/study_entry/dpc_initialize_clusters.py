@@ -18,6 +18,24 @@ from typing import Any, Iterable, Sequence
 
 ROOT = Path(__file__).resolve().parents[3]
 INTERIM = ROOT / "data" / "interim"
+PCA_VARIANCE_PATH = INTERIM / "clustering_pca_explained_variance.csv"
+
+
+def _retained_pca_count() -> int:
+    """Number of PCs kept by the SOP 1 85% rule, read from the preprocessing artifact."""
+    with PCA_VARIANCE_PATH.open("r", encoding="utf-8-sig", newline="") as handle:
+        rows = list(csv.DictReader(handle))
+    count = sum(row["retained_for_85_percent"] == "True" for row in rows)
+    if count < 1:
+        raise AssertionError("PCA variance artifact retains no components")
+    return count
+
+
+# Live method runs import this module without the stage artifact; pipeline stages
+# always run after preprocessing, so a missing file there fails loudly (0 PCs).
+N_PCS = _retained_pca_count() if PCA_VARIANCE_PATH.is_file() else 0
+FEATURES = tuple(f"PC{number}" for number in range(1, N_PCS + 1))
+EXPECTED_SHAPE = (2437, N_PCS)
 PCA_PATH = INTERIM / "clustering_pca_scores.csv"
 SELECTED_K_PATH = INTERIM / "clustering_selected_k.csv"
 SCORES_PATH = INTERIM / "clustering_dpc_scores.csv"
@@ -26,8 +44,7 @@ SUMMARY_PATH = INTERIM / "clustering_dpc_summary.csv"
 DETERMINISM_PATH = INTERIM / "clustering_dpc_determinism_check.csv"
 
 IDENTIFIERS = ("PTID", "RID")
-FEATURES = tuple(f"PC{number}" for number in range(1, 7))
-EXPECTED_SHAPE = (2437, 6)
+
 CANDIDATE_K_RANGE = range(2, 11)
 
 # Current provisional Chapter 3 study parameter; it is not data-optimized.
@@ -222,8 +239,8 @@ def load_clustering_inputs() -> tuple[list[str], list[str], list[tuple[float, ..
                 values = tuple(float(row[feature]) for feature in FEATURES)
             except (TypeError, ValueError) as exc:
                 raise AssertionError(f"Invalid PCA score at CSV line {csv_line}") from exc
-            if len(values) != 6 or not all(math.isfinite(value) for value in values):
-                raise AssertionError(f"Invalid six-dimensional PCA row at CSV line {csv_line}")
+            if len(values) != N_PCS or not all(math.isfinite(value) for value in values):
+                raise AssertionError(f"Invalid {N_PCS}-dimensional PCA row at CSV line {csv_line}")
             ptids.append(ptid)
             rids.append(rid)
             matrix.append(values)

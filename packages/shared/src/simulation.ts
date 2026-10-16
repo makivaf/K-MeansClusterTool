@@ -66,10 +66,10 @@ export const SimulationAnalysisSchema = z.object({
   }).strict().refine(value => value.runs.every(run => run.clusterSizes.length === value.selectedK && run.clusterSizes.reduce((a, b) => a + b, 0) === value.participantCount)),
   enhanced: z.object({ participantCount: z.number().int().min(100).max(2437), selectedK: z.number().int().min(2).max(10), initialization: z.literal("DPC"),
     iterations: z.number().int().positive(), convergedBeforeMaxIter: z.boolean(), clusterSizes: sizes, metrics: SimulationMetricsSchema,
-    retainedVariables: z.array(z.string()).length(13), excludedVariables: z.array(z.string()),
-    pcaComponents: z.number().int().min(1).max(13), cumulativeExplainedVariance: finite.min(0.85).max(1.000000000001),
+    retainedVariables: z.array(z.string()).length(15), excludedVariables: z.array(z.string()),
+    pcaComponents: z.number().int().min(1).max(15), cumulativeExplainedVariance: finite.min(0.85).max(1.000000000001),
     pcaLoadings: PcaLoadingEvidenceSchema.optional(),
-    pcaVariance: z.array(z.object({ component: count, eigenvalue: finite.nonnegative().optional(), explainedVarianceRatio: finite, cumulativeExplainedVariance: finite }).strict()).length(13),
+    pcaVariance: z.array(z.object({ component: count, eigenvalue: finite.nonnegative().optional(), explainedVarianceRatio: finite, cumulativeExplainedVariance: finite }).strict()).length(15),
     nbclust: z.object({ votes: z.array(z.object({ k: count, count }).strict()),
       indices: z.array(z.object({ index: z.string(), status: z.string(), recommendedK: count.nullable() }).strict()),
       tieOccurred: z.boolean(), reproducible: z.literal(true) }).strict(),
@@ -79,7 +79,7 @@ export const SimulationAnalysisSchema = z.object({
       decisionGraph: z.array(z.object({ rho: count, delta: finite, gamma: finite, selected: z.boolean() }).strict()).optional(),
       randomControl: SimulationDpcControlSchema.optional() }).strict()
   }).strict().refine(value => value.clusterSizes.reduce((a, b) => a + b, 0) === value.participantCount && value.clusterSizes.length === value.selectedK && value.dpc.centroidCount === value.selectedK && value.dpc.centers.length === value.selectedK && value.dpc.dimensions === value.pcaComponents),
-  correlation: z.array(z.array(finite.nullable()).length(13)).length(13).optional(),
+  correlation: z.array(z.array(finite.nullable()).length(15)).length(15).optional(),
   pcaContribution: z.object({ k: z.number().int().min(2).max(10), runCount: z.literal(30),
     existing: SimulationMetricsSchema, enhanced: SimulationMetricsSchema,
     relativeChange: z.object({ silhouette: finite.nullable(), davies_bouldin: finite.nullable(), calinski_harabasz: finite.nullable() }).strict()

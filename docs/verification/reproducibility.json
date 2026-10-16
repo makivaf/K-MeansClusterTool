@@ -1,0 +1,445 @@
+{
+  "standard": {
+    "executions": 30,
+    "pairwiseCount": 435,
+    "pairwiseAriMean": 0.9966654488269036,
+    "pairwiseAriMin": 0.9917583536346767,
+    "pairwiseAriMax": 1.0,
+    "distinctPartitions": 2,
+    "partitionFrequencies": [
+      22,
+      8
+    ],
+    "referenceIndex": 0,
+    "seed0ExactIncludingSelf": 22,
+    "seed0ExactExcludingSelf": 21,
+    "excludingSelfDenominator": 29,
+    "modalExact": 22
+  },
+  "pcaRandom": {
+    "executions": 30,
+    "pairwiseCount": 435,
+    "pairwiseAriMean": 0.9976378643414556,
+    "pairwiseAriMin": 0.99340465973853,
+    "pairwiseAriMax": 1.0,
+    "distinctPartitions": 3,
+    "partitionFrequencies": [
+      21,
+      7,
+      2
+    ],
+    "referenceIndex": 0,
+    "seed0ExactIncludingSelf": 21,
+    "seed0ExactExcludingSelf": 20,
+    "excludingSelfDenominator": 29,
+    "modalExact": 21
+  },
+  "enhanced": {
+    "executions": 3,
+    "pairwiseCount": 3,
+    "pairwiseAriMean": 1.0,
+    "pairwiseAriMin": 1.0,
+    "pairwiseAriMax": 1.0,
+    "distinctPartitions": 1,
+    "partitionFrequencies": [
+      3
+    ],
+    "referenceIndex": 0,
+    "seed0ExactIncludingSelf": 3,
+    "seed0ExactExcludingSelf": 2,
+    "excludingSelfDenominator": 2,
+    "modalExact": 3
+  },
+  "standardVersusEnhanced": {
+    "seed0": {
+      "seed": 0,
+      "ari": 0.9983493014482632,
+      "alignedMatchCount": 2436,
+      "alignedDifferenceCount": 1
+    },
+    "perSeed": [
+      {
+        "seed": 0,
+        "ari": 0.9983493014482632,
+        "alignedMatchCount": 2436,
+        "alignedDifferenceCount": 1
+      },
+      {
+        "seed": 1,
+        "ari": 0.9983493014482632,
+        "alignedMatchCount": 2436,
+        "alignedDifferenceCount": 1
+      },
+      {
+        "seed": 2,
+        "ari": 0.9983493014482632,
+        "alignedMatchCount": 2436,
+        "alignedDifferenceCount": 1
+      },
+      {
+        "seed": 3,
+        "ari": 0.9983493014482632,
+        "alignedMatchCount": 2436,
+        "alignedDifferenceCount": 1
+      },
+      {
+        "seed": 4,
+        "ari": 0.9901144398062053,
+        "alignedMatchCount": 2431,
+        "alignedDifferenceCount": 6
+      },
+      {
+        "seed": 5,
+        "ari": 0.9901144398062053,
+        "alignedMatchCount": 2431,
+        "alignedDifferenceCount": 6
+      },
+      {
+        "seed": 6,
+        "ari": 0.9983493014482632,
+        "alignedMatchCount": 2436,
+        "alignedDifferenceCount": 1
+      },
+      {
+        "seed": 7,
+        "ari": 0.9983493014482632,
+        "alignedMatchCount": 2436,
+        "alignedDifferenceCount": 1
+      },
+      {
+        "seed": 8,
+        "ari": 0.9983493014482632,
+        "alignedMatchCount": 2436,
+        "alignedDifferenceCount": 1
+      },
+      {
+        "seed": 9,
+        "ari": 0.9983493014482632,
+        "alignedMatchCount": 2436,
+        "alignedDifferenceCount": 1
+      },
+      {
+        "seed": 10,
+        "ari": 0.9983493014482632,
+        "alignedMatchCount": 2436,
+        "alignedDifferenceCount": 1
+      },
+      {
+        "seed": 11,
+        "ari": 0.9983493014482632,
+        "alignedMatchCount": 2436,
+        "alignedDifferenceCount": 1
+      },
+      {
+        "seed": 12,
+        "ari": 0.9983493014482632,
+        "alignedMatchCount": 2436,
+        "alignedDifferenceCount": 1
+      },
+      {
+        "seed": 13,
+        "ari": 0.9983493014482632,
+        "alignedMatchCount": 2436,
+        "alignedDifferenceCount": 1
+      },
+      {
+        "seed": 14,
+        "ari": 0.9983493014482632,
+        "alignedMatchCount": 2436,
+        "alignedDifferenceCount": 1
+      },
+      {
+        "seed": 15,
+        "ari": 0.9983493014482632,
+        "alignedMatchCount": 2436,
+        "alignedDifferenceCount": 1
+      },
+      {
+        "seed": 16,
+        "ari": 0.9901144398062053,
+        "alignedMatchCount": 2431,
+        "alignedDifferenceCount": 6
+      },
+      {
+        "seed": 17,
+        "ari": 0.9983493014482632,
+        "alignedMatchCount": 2436,
+        "alignedDifferenceCount": 1
+      },
+      {
+        "seed": 18,
+        "ari": 0.9901144398062053,
+        "alignedMatchCount": 2431,
+        "alignedDifferenceCount": 6
+      },
+      {
+        "seed": 19,
+        "ari": 0.9983493014482632,
+        "alignedMatchCount": 2436,
+        "alignedDifferenceCount": 1
+      },
+      {
+        "seed": 20,
+        "ari": 0.9983493014482632,
+        "alignedMatchCount": 2436,
+        "alignedDifferenceCount": 1
+      },
+      {
+        "seed": 21,
+        "ari": 0.9983493014482632,
+        "alignedMatchCount": 2436,
+        "alignedDifferenceCount": 1
+      },
+      {
+        "seed": 22,
+        "ari": 0.9901144398062053,
+        "alignedMatchCount": 2431,
+        "alignedDifferenceCount": 6
+      },
+      {
+        "seed": 23,
+        "ari": 0.9901144398062053,
+        "alignedMatchCount": 2431,
+        "alignedDifferenceCount": 6
+      },
+      {
+        "seed": 24,
+        "ari": 0.9983493014482632,
+        "alignedMatchCount": 2436,
+        "alignedDifferenceCount": 1
+      },
+      {
+        "seed": 25,
+        "ari": 0.9901144398062053,
+        "alignedMatchCount": 2431,
+        "alignedDifferenceCount": 6
+      },
+      {
+        "seed": 26,
+        "ari": 0.9983493014482632,
+        "alignedMatchCount": 2436,
+        "alignedDifferenceCount": 1
+      },
+      {
+        "seed": 27,
+        "ari": 0.9901144398062053,
+        "alignedMatchCount": 2431,
+        "alignedDifferenceCount": 6
+      },
+      {
+        "seed": 28,
+        "ari": 0.9983493014482632,
+        "alignedMatchCount": 2436,
+        "alignedDifferenceCount": 1
+      },
+      {
+        "seed": 29,
+        "ari": 0.9983493014482632,
+        "alignedMatchCount": 2436,
+        "alignedDifferenceCount": 1
+      }
+    ],
+    "minARI": 0.9901144398062053,
+    "exactMatches": 0
+  },
+  "pcaRandomVersusEnhanced": {
+    "exactMatches": 21,
+    "perSeed": [
+      {
+        "seed": 0,
+        "ari": 1.0,
+        "alignedMatchCount": 2437,
+        "alignedDifferenceCount": 0
+      },
+      {
+        "seed": 1,
+        "ari": 1.0,
+        "alignedMatchCount": 2437,
+        "alignedDifferenceCount": 0
+      },
+      {
+        "seed": 2,
+        "ari": 1.0,
+        "alignedMatchCount": 2437,
+        "alignedDifferenceCount": 0
+      },
+      {
+        "seed": 3,
+        "ari": 1.0,
+        "alignedMatchCount": 2437,
+        "alignedDifferenceCount": 0
+      },
+      {
+        "seed": 4,
+        "ari": 0.99340465973853,
+        "alignedMatchCount": 2433,
+        "alignedDifferenceCount": 4
+      },
+      {
+        "seed": 5,
+        "ari": 0.9950516316927642,
+        "alignedMatchCount": 2434,
+        "alignedDifferenceCount": 3
+      },
+      {
+        "seed": 6,
+        "ari": 1.0,
+        "alignedMatchCount": 2437,
+        "alignedDifferenceCount": 0
+      },
+      {
+        "seed": 7,
+        "ari": 1.0,
+        "alignedMatchCount": 2437,
+        "alignedDifferenceCount": 0
+      },
+      {
+        "seed": 8,
+        "ari": 1.0,
+        "alignedMatchCount": 2437,
+        "alignedDifferenceCount": 0
+      },
+      {
+        "seed": 9,
+        "ari": 1.0,
+        "alignedMatchCount": 2437,
+        "alignedDifferenceCount": 0
+      },
+      {
+        "seed": 10,
+        "ari": 1.0,
+        "alignedMatchCount": 2437,
+        "alignedDifferenceCount": 0
+      },
+      {
+        "seed": 11,
+        "ari": 1.0,
+        "alignedMatchCount": 2437,
+        "alignedDifferenceCount": 0
+      },
+      {
+        "seed": 12,
+        "ari": 1.0,
+        "alignedMatchCount": 2437,
+        "alignedDifferenceCount": 0
+      },
+      {
+        "seed": 13,
+        "ari": 1.0,
+        "alignedMatchCount": 2437,
+        "alignedDifferenceCount": 0
+      },
+      {
+        "seed": 14,
+        "ari": 1.0,
+        "alignedMatchCount": 2437,
+        "alignedDifferenceCount": 0
+      },
+      {
+        "seed": 15,
+        "ari": 1.0,
+        "alignedMatchCount": 2437,
+        "alignedDifferenceCount": 0
+      },
+      {
+        "seed": 16,
+        "ari": 0.99340465973853,
+        "alignedMatchCount": 2433,
+        "alignedDifferenceCount": 4
+      },
+      {
+        "seed": 17,
+        "ari": 1.0,
+        "alignedMatchCount": 2437,
+        "alignedDifferenceCount": 0
+      },
+      {
+        "seed": 18,
+        "ari": 0.9950516316927642,
+        "alignedMatchCount": 2434,
+        "alignedDifferenceCount": 3
+      },
+      {
+        "seed": 19,
+        "ari": 0.9950516316927642,
+        "alignedMatchCount": 2434,
+        "alignedDifferenceCount": 3
+      },
+      {
+        "seed": 20,
+        "ari": 1.0,
+        "alignedMatchCount": 2437,
+        "alignedDifferenceCount": 0
+      },
+      {
+        "seed": 21,
+        "ari": 1.0,
+        "alignedMatchCount": 2437,
+        "alignedDifferenceCount": 0
+      },
+      {
+        "seed": 22,
+        "ari": 0.9950516316927642,
+        "alignedMatchCount": 2434,
+        "alignedDifferenceCount": 3
+      },
+      {
+        "seed": 23,
+        "ari": 0.9950516316927642,
+        "alignedMatchCount": 2434,
+        "alignedDifferenceCount": 3
+      },
+      {
+        "seed": 24,
+        "ari": 1.0,
+        "alignedMatchCount": 2437,
+        "alignedDifferenceCount": 0
+      },
+      {
+        "seed": 25,
+        "ari": 0.9950516316927642,
+        "alignedMatchCount": 2434,
+        "alignedDifferenceCount": 3
+      },
+      {
+        "seed": 26,
+        "ari": 1.0,
+        "alignedMatchCount": 2437,
+        "alignedDifferenceCount": 0
+      },
+      {
+        "seed": 27,
+        "ari": 0.9950516316927642,
+        "alignedMatchCount": 2434,
+        "alignedDifferenceCount": 3
+      },
+      {
+        "seed": 28,
+        "ari": 1.0,
+        "alignedMatchCount": 2437,
+        "alignedDifferenceCount": 0
+      },
+      {
+        "seed": 29,
+        "ari": 1.0,
+        "alignedMatchCount": 2437,
+        "alignedDifferenceCount": 0
+      }
+    ]
+  },
+  "assignmentLinkage": {
+    "fullCohort": {
+      "ari": 1.0,
+      "alignedMatchCount": 2437,
+      "alignedDifferenceCount": 0
+    },
+    "literalLabelMatches": 2437,
+    "allEnhancedRepetitionsMatchModel": true
+  },
+  "sources": {
+    "standard": "data/interim/baseline_kmeans_assignments.csv",
+    "pcaRandom": "data/interim/dpc_comparison_random_assignments.csv",
+    "enhanced": "apps/api/private/method-runs/9313513c-93d0-407b-9647-0570ad9fa54a/partitions.npz",
+    "modelAssignments": "apps/api/private/longitudinal-refresh/4b3dca3d-b435-4485-ac2b-18a0e442a624/data/interim/unified_cluster_assignments.csv"
+  }
+}

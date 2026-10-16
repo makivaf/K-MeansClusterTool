@@ -1,0 +1,8 @@
+{
+  "existingWorkspaceUnchanged": true,
+  "metricComparisonMismatches": 0,
+  "referenceCIsMatch": true,
+  "completePayloadsHaveFullSeries": true,
+  "nbclustLedgerConfirmed": true,
+  "storedVoteSummaryMatches": true
+}

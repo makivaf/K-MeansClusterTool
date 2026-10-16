@@ -1,18 +1,18 @@
 .internal-validation { min-width: 0; }
 .internal-validation > .card-title,
 .research-page .internal-validation > .card-title,
-.simulation-page .internal-validation > .card-title { margin: 0 0 4px; }
-.internal-validation-helper { margin: 0 0 20px; color: var(--research-muted); font-size: 12px; }
-.internal-validation-table { width: 100%; min-width: 760px; border-collapse: collapse; table-layout: auto; font-size: 14px; line-height: 1.5; }
+.simulation-page .internal-validation > .card-title { margin: 0 0 var(--research-space-1); }
+.internal-validation-helper { margin: 0 0 var(--research-space-5); color: var(--research-muted); font-size: var(--research-caption-size); }
+.internal-validation-table { width: 100%; min-width: 760px; border-collapse: collapse; table-layout: auto; font-size: var(--research-body-size); line-height: 1.5; }
 .internal-validation-table.is-standard-only { min-width: 440px; }
-.internal-validation-table :is(th, td) { text-align: left; vertical-align: middle; padding: 16px; border-bottom: 1px solid var(--research-border); overflow-wrap: anywhere; }
+.internal-validation-table :is(th, td) { text-align: left; vertical-align: middle; padding: var(--research-space-4); border-bottom: 1px solid var(--research-border); overflow-wrap: anywhere; }
 .internal-validation-table :is(th, td):first-child { width: 36%; }
 .internal-validation-table :is(th, td):not(:first-child) { text-align: right; white-space: nowrap; overflow-wrap: normal; font-variant-numeric: tabular-nums; }
-.internal-validation-table thead th { padding-top: 14px; padding-bottom: 14px; color: var(--research-muted); font-size: 14px; font-weight: 600; }
-.internal-validation-table tbody th { font-size: 15px; font-weight: 400; }
+.internal-validation-table thead th { padding-top: var(--research-space-3); padding-bottom: var(--research-space-3); color: var(--research-muted); font-size: var(--research-body-size); font-weight: 600; }
+.internal-validation-table tbody th { font-size: var(--research-body-size); font-weight: 400; }
 .internal-validation-table tbody td { font-weight: 500; }
 .internal-validation-table tbody td.internal-validation-enhanced { font-weight: 600; }
 .internal-validation-table tbody tr:last-child > * { border-bottom: 0; }
-.internal-validation-hint { display: block; margin-top: 5px; color: var(--research-muted); font-size: 12px; }
+.internal-validation-hint { display: block; margin-top: var(--research-space-1); color: var(--research-muted); font-size: var(--research-caption-size); }
 .internal-validation-direction, .internal-validation-table .internal-validation-enhanced { color: var(--research-primary); }
-.internal-validation-note { margin-top: 20px; color: var(--research-muted); font-size: 12px; line-height: 1.6; font-style: italic; }
+.internal-validation-note { margin-top: var(--research-space-5); color: var(--research-muted); font-size: var(--research-caption-size); line-height: 1.6; font-style: italic; }

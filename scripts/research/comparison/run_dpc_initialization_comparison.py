@@ -27,6 +27,24 @@ from sklearn.metrics import (
 
 ROOT = Path(__file__).resolve().parents[3]
 INTERIM = ROOT / "data" / "interim"
+PCA_VARIANCE_PATH = INTERIM / "clustering_pca_explained_variance.csv"
+
+
+def _retained_pca_count() -> int:
+    """Number of PCs kept by the SOP 1 85% rule, read from the preprocessing artifact."""
+    with PCA_VARIANCE_PATH.open("r", encoding="utf-8-sig", newline="") as handle:
+        rows = list(csv.DictReader(handle))
+    count = sum(row["retained_for_85_percent"] == "True" for row in rows)
+    if count < 1:
+        raise AssertionError("PCA variance artifact retains no components")
+    return count
+
+
+# Live method runs import this module without the stage artifact; pipeline stages
+# always run after preprocessing, so a missing file there fails loudly (0 PCs).
+N_PCS = _retained_pca_count() if PCA_VARIANCE_PATH.is_file() else 0
+FEATURES = tuple(f"PC{number}" for number in range(1, N_PCS + 1))
+EXPECTED_SHAPE = (2437, N_PCS)
 PCA_PATH = INTERIM / "clustering_pca_scores.csv"
 SELECTED_K_PATH = INTERIM / "clustering_selected_k.csv"
 ENHANCED_METRICS_PATH = INTERIM / "enhanced_kmeans_metrics.csv"
@@ -40,9 +58,7 @@ STABILITY_PATH = INTERIM / "dpc_comparison_random_stability.csv"
 COMPARISON_PATH = INTERIM / "dpc_initialization_comparison.csv"
 
 IDENTIFIERS = ("PTID", "RID")
-FEATURES = tuple(f"PC{number}" for number in range(1, 7))
-EXPECTED_SHAPE = (2437, 6)
-EXPECTED_K = 2
+
 SEEDS = tuple(range(30))
 N_INIT = 1
 MAX_ITER = 300
@@ -106,8 +122,8 @@ def load_locked_inputs() -> tuple[list[str], list[str], np.ndarray, int, dict[st
     if len(k_rows) != 1 or "selected_k" not in k_rows[0]:
         raise AssertionError("Selected-k artifact must contain exactly one selected_k row")
     selected_k = int(k_rows[0]["selected_k"])
-    if selected_k != EXPECTED_K:
-        raise AssertionError(f"SOP 3 ablation requires locked k=2; observed {selected_k}")
+    if not 2 <= selected_k <= 10:
+        raise AssertionError(f"selected_k={selected_k} is outside 2-10")
 
     with ENHANCED_METRICS_PATH.open("r", encoding="utf-8-sig", newline="") as handle:
         metric_rows = list(csv.DictReader(handle))
@@ -124,15 +140,13 @@ def load_locked_inputs() -> tuple[list[str], list[str], np.ndarray, int, dict[st
     with ENHANCED_SUMMARY_PATH.open("r", encoding="utf-8-sig", newline="") as handle:
         dpc_summary = {row["metric"]: row["value"] for row in csv.DictReader(handle)}
     if (
-        dpc_summary.get("selected_k") != "2"
-        or dpc_summary.get("input_rows") != "2437"
-        or dpc_summary.get("input_features") != "6"
-        or dpc_summary.get("iterations") != "12"
-        or dpc_summary.get("cluster_0_size") != "1553"
-        or dpc_summary.get("cluster_1_size") != "884"
+        dpc_summary.get("selected_k") != str(selected_k)
+        or dpc_summary.get("input_rows") != str(EXPECTED_SHAPE[0])
+        or dpc_summary.get("input_features") != str(N_PCS)
+        or sum(int(dpc_summary.get(f"cluster_{i}_size", "0")) for i in range(selected_k)) != EXPECTED_SHAPE[0]
         or dpc_summary.get("reproducibility_passed") != "True"
     ):
-        raise AssertionError("Published DPC run summary differs from the locked state")
+        raise AssertionError("Published DPC run summary is inconsistent with the current inputs")
 
     with ENHANCED_REPRO_PATH.open("r", encoding="utf-8-sig", newline="") as handle:
         repro_rows = list(csv.DictReader(handle))
@@ -143,7 +157,7 @@ def load_locked_inputs() -> tuple[list[str], list[str], np.ndarray, int, dict[st
 
 def fit_random_pca_kmeans(X: np.ndarray, seed: int, run_number: int, *,
                           expected_shape: tuple[int, int] = EXPECTED_SHAPE,
-                          selected_k: int = EXPECTED_K) -> RandomPCARun:
+                          selected_k: int) -> RandomPCARun:
     """Fit one retained PCA-space random-initialization comparator run."""
     if X.shape != expected_shape:
         raise AssertionError(f"PCA matrix shape is {X.shape}; expected {expected_shape}")
@@ -252,7 +266,7 @@ def write_outputs(
             {
                 "run_number": run.run_number,
                 "seed": run.seed,
-                "k": EXPECTED_K,
+                "k": len(run.cluster_sizes),
                 "init": "random",
                 "n_init": N_INIT,
                 "max_iter": MAX_ITER,
@@ -475,7 +489,7 @@ def main() -> None:
     print(f"validated_pca_shape={X.shape}", flush=True)
     print(f"selected_k={selected_k}", flush=True)
     runs = [
-        fit_random_pca_kmeans(X, seed, run_number)
+        fit_random_pca_kmeans(X, seed, run_number, selected_k=selected_k)
         for run_number, seed in enumerate(SEEDS, start=1)
     ]
     if len(runs) != 30 or tuple(run.seed for run in runs) != SEEDS:

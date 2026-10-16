@@ -1,0 +1,13 @@
+import assert from 'node:assert/strict'; import fs from 'node:fs'; import vm from 'node:vm'; import ts from 'typescript';
+const source=fs.readFileSync(new URL('../src/components/ExpandPanel.tsx',import.meta.url),'utf8');
+let cursor=0,effects=[],state=[],refs=[],shown=0,closed=0,focused=0;
+const react={createElement:(type,props,...children)=>({type,props:{...props,children}}),useState:initial=>{const i=cursor++;if(!(i in state))state[i]=initial;return[state[i],v=>state[i]=v]},useRef:()=>{const i=cursor++;return refs[i]??={current:null}},useEffect:fn=>effects.push(fn)};
+const module={exports:{}};vm.runInNewContext(ts.transpileModule(source,{compilerOptions:{module:ts.ModuleKind.CommonJS,jsx:ts.JsxEmit.React,target:ts.ScriptTarget.ES2020}}).outputText,{exports:module.exports,React:react,require:n=>n==='react'?react:{Maximize2:'expand-icon',X:'close-icon'}});
+const render=()=>{cursor=0;const tree=module.exports.ExpandPanel({title:'Heatmap',children:'same-data'});return tree};
+let tree=render(),button=tree.props.children[0],dialog=tree.props.children[2];
+button.props.ref.current={focus:()=>focused++};dialog.props.ref.current={showModal:()=>shown++,close:()=>{closed++;dialog.props.onClose()}};
+assert.equal(button.props['aria-label'],'Expand');button.props.onClick();tree=render();effects.splice(0).forEach(fn=>fn());assert.equal(shown,1);
+dialog=tree.props.children[2];assert.equal(dialog.type,'dialog');assert.equal(dialog.props['aria-label'],'Heatmap');assert.equal(dialog.props.children[0].props.children[1].props.children[0],'same-data');
+dialog.props.children[0].props.children[0].props.children[1].props.onClick();assert.equal(closed,1);assert.equal(focused,1);
+button.props.onClick();tree=render();tree.props.children[2].props.onCancel();assert.equal(focused,2,'Escape returns focus to trigger');
+console.log('PASS native showModal, same content, close button, Escape cancellation and focus restoration');

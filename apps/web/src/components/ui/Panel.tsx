@@ -11,7 +11,7 @@ type PanelProps = {
 const panelStyles = {
   legacy: "rounded-md border border-line bg-panel shadow-panel",
   surface: "rounded-md border border-line bg-panel",
-  result: "rounded-md border border-teal-100 bg-panel shadow-[inset_3px_0_0_#0f7977]",
+  result: "rounded-md border border-teal-100 bg-panel shadow-[inset_3px_0_0_var(--research-primary)]",
   section: "border-t border-line bg-transparent"
 };
 

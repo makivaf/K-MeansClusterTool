@@ -292,9 +292,8 @@ def resolve_direct(
         return None, "UNRESOLVED_DUPLICATE_QC", None, duplicate
 
     if valid_positions:
-        valid_candidates = candidates.iloc[valid_positions]
-        selected_index = min(valid_candidates.index, key=lambda index: source_sort_key(candidates.loc[index]))
-        selected = candidates.loc[selected_index]
+        rows = candidate_records(candidates)
+        selected = min((rows[position] for position in valid_positions), key=source_sort_key)
         if len(candidates) > 1:
             resolution = "RESOLVED_IDENTICAL_VALID_VALUES" if len(valid_positions) > 1 else "RESOLVED_UNIQUE_VALID_VALUE"
             duplicate = duplicate_record(
@@ -310,7 +309,18 @@ def resolve_direct(
             rid, ptid, spec, entry_phase, candidates, 0, 0,
             "NO_VALID_VALUE", f"SET_MISSING_{missing_reason}",
         )
-    return None, missing_reason, min((row for _, row in candidates.iterrows()), key=source_sort_key), duplicate
+    return None, missing_reason, min(candidate_records(candidates), key=source_sort_key), duplicate
+
+
+def candidate_records(candidates: pd.DataFrame) -> list[dict]:
+    """Extract immutable candidate values once per participant/instrument/visit.
+
+    Column-wise records avoid repeated mixed-dtype Series construction; original
+    candidate order, scalars and the existing date/ID/source-row tie-break remain.
+    """
+    if '_candidate_records' not in candidates.attrs:
+        candidates.attrs['_candidate_records'] = candidates.to_dict(orient='records')
+    return candidates.attrs['_candidate_records']
 
 
 def derive_value(spec: VariableSpec, values: tuple[float, ...]) -> float:
@@ -335,7 +345,8 @@ def resolve_derived(
     filename = FILES[spec.file_key]
     component_rows: list[tuple[tuple[float, ...] | None, list[str]]] = []
     complete_positions: list[int] = []
-    for position, (_, row) in enumerate(candidates.iterrows()):
+    rows = candidate_records(candidates)
+    for position, row in enumerate(rows):
         normalized = [normalize_value(row[field], filename, field, missing_policy) for field in spec.fields]
         reasons = [reason for _, reason in normalized]
         if all(reason == "VALID" for reason in reasons):
@@ -359,9 +370,7 @@ def resolve_derived(
         return None, "UNRESOLVED_DUPLICATE_QC", None, duplicate
 
     if distinct_vectors:
-        complete_candidates = candidates.iloc[complete_positions]
-        selected_index = min(complete_candidates.index, key=lambda index: source_sort_key(candidates.loc[index]))
-        selected = candidates.loc[selected_index]
+        selected = min((rows[position] for position in complete_positions), key=source_sort_key)
         if len(candidates) > 1:
             resolution = "RESOLVED_IDENTICAL_COMPLETE_COMPONENTS" if len(complete_positions) > 1 else "RESOLVED_UNIQUE_COMPLETE_COMPONENT_ROW"
             duplicate = duplicate_record(
@@ -375,7 +384,7 @@ def resolve_derived(
             rid, ptid, spec, entry_phase, candidates, 0, 0,
             "NO_COMPLETE_COMPONENT_ROW", "SET_MISSING_FAILED_DERIVATION",
         )
-    selected = min((row for _, row in candidates.iterrows()), key=source_sort_key)
+    selected = min(rows, key=source_sort_key)
     return None, "FAILED_DERIVATION", selected, duplicate
 
 
@@ -460,12 +469,15 @@ def construct_table(
     candidate_indexes: dict[str, dict[tuple[str, str, str], pd.DataFrame]] = {}
     for file_key, frame in frames.items():
         relevant = frame.loc[frame["_VISIT_CLASS"].isin(SCREENING_CLASSES | BASELINE_CLASSES)]
+        records = dict(zip(relevant.index, relevant.to_dict(orient='records')))
         candidate_indexes[file_key] = {
             (rid.strip(), phase.strip(), visit_class): group
             for (rid, phase, visit_class), group in relevant.groupby(
                 ["RID", "PHASE", "_VISIT_CLASS"], sort=False
             )
         }
+        for group in candidate_indexes[file_key].values():
+            group.attrs['_candidate_records'] = [records[index] for index in group.index]
 
     for participant_number, enrollment in enumerate(enrollment_rows, start=1):
         if participant_number % 500 == 0:
@@ -486,6 +498,7 @@ def construct_table(
                 matching_groups = [group for group in matching_groups if group is not None]
                 if matching_groups:
                     candidates = pd.concat(matching_groups, axis=0) if len(matching_groups) > 1 else matching_groups[0]
+                    candidates.attrs['_candidate_records'] = [row for group in matching_groups for row in candidate_records(group)]
                 else:
                     candidates = empty_frames[spec.file_key]
                 participant_candidate_cache[cache_key] = candidates

@@ -1,14 +1,14 @@
-.internal-calculation-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; margin-top: 12px; }
+.internal-calculation-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--research-space-3); margin-top: var(--research-space-3); }
 .internal-calculation-grid > .silhouette-calculation { grid-column: 1 / -1; }
-.internal-calculation-card { display: flex; flex-direction: column; min-width: 0; padding: 14px; border: 1px solid var(--research-border); border-radius: 7px; }
-.internal-calculation-card h5 { font-size: 13px; font-weight: 600; }
-.internal-calculation-fields { flex: 1; margin-top: 12px; }
-.internal-calculation-fields p { margin-bottom: 10px; font-size: 11px; }
-.internal-calculation-card dl > div { display: flex; justify-content: space-between; gap: 12px; padding: 3px 0; font-size: 12px; }
+.internal-calculation-card { display: flex; flex-direction: column; min-width: 0; padding: var(--research-space-5) var(--research-space-6); border: 1px solid var(--research-border); border-radius: var(--research-card-radius); }
+.internal-calculation-card h5 { font-size: var(--research-body-size); font-weight: 600; }
+.internal-calculation-fields { flex: 1; margin-top: var(--research-space-3); }
+.internal-calculation-fields p { margin-bottom: var(--research-space-3); font-size: var(--research-caption-size); }
+.internal-calculation-card dl > div { display: flex; justify-content: space-between; gap: var(--research-space-3); padding: var(--research-space-1) 0; font-size: var(--research-caption-size); }
 .internal-calculation-fields dt, .internal-calculation-card small { color: var(--research-muted); }
 .internal-calculation-card dt { flex: 1; min-width: 0; }
 .internal-calculation-card dd { flex-shrink: 0; white-space: nowrap; text-align: right; font-variant-numeric: tabular-nums; }
-.internal-calculation-total { margin-top: 3px; padding-top: 8px; border-top: 1px solid var(--research-border); font-weight: 600; }
+.internal-calculation-total { margin-top: var(--research-space-1); padding-top: var(--research-space-2); border-top: 1px solid var(--research-border); font-weight: 600; }
 .internal-calculation-total dd { color: var(--research-primary); }
-.internal-calculation-card small { display: block; margin-top: 3px; font-size: 11px; }
+.internal-calculation-card small { display: block; margin-top: var(--research-space-1); font-size: var(--research-caption-size); }
 @media (max-width: 900px) { .internal-calculation-grid { grid-template-columns: 1fr; } }

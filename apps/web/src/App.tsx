@@ -2,18 +2,19 @@ import { lazy, Suspense, useEffect, useState } from "react";
 import { Navigate, Route, Routes, useLocation } from "react-router-dom";
 import type { UploadResponse } from "../../../packages/shared/src";
 import { AppShell } from "./components/layout/AppShell";
-import { useStudyFindings } from "./hooks/useStudyFindings";
+import { ENABLE_KMEANS_COMPARISON } from "./config/api";
+import { useStudyExecution } from "./hooks/useMethodJobs";
 import { DATASETS, readValidatedDataset, readValidatedFilenames, saveValidatedDataset, saveValidatedFilenames } from "./utils/validatedDataset";
 
 const DatasetSetup = lazy(() => import("./pages/UploadAndCluster").then((module) => ({ default: module.UploadAndCluster })));
-const StudyFindings = lazy(() => import("./pages/StudyFindingsPage").then((module) => ({ default: module.StudyFindingsPage })));
+const StudyFindings = lazy(() => import("./pages/StudyFindingsPage").then((module) => ({ default: module.StudyExecutionPage })));
 const SimulationRuns = lazy(() => import("./pages/SimulationRunsPage").then((module) => ({ default: module.SimulationRunsPage })));
 
 export default function App() {
   const { pathname } = useLocation();
   const [simulationVisited, setSimulationVisited] = useState(false);
   useEffect(() => {
-    if (pathname === "/simulation-runs") setSimulationVisited(true);
+    if (ENABLE_KMEANS_COMPARISON && pathname === "/simulation-runs") setSimulationVisited(true);
   }, [pathname]);
   // Restore metadata synchronously; raw browser Files remain memory-only.
   const [dataset, setDataset] = useState<UploadResponse | null>(readValidatedDataset);
@@ -22,10 +23,12 @@ export default function App() {
   const [files, setFiles] = useState<Record<string, File>>({});
   const [invalidFiles, setInvalidFiles] = useState<string[]>([]);
   const [datasetRevision, setDatasetRevision] = useState(0);
-  const analysis = useStudyFindings(dataset);
+  const analysis = useStudyExecution(dataset);
   const onValidated = (value: UploadResponse | null) => {
-    analysis.reset();
-    setDatasetRevision(revision => revision + 1);
+    if (value?.upload_ref !== dataset?.upload_ref) {
+      analysis.reset();
+      setDatasetRevision(revision => revision + 1);
+    }
     setDataset(value);
     const filenames = value ? Object.fromEntries(DATASETS.map(([, name]) => [name, files[name]?.name ?? name])) : {};
     if (value) setValidatedFiles(filenames);
@@ -39,14 +42,14 @@ export default function App() {
         validatedFiles={validatedFiles} setValidatedFiles={setValidatedFiles} /></div>
       {/* Keep the visited simulation mounted, as with Dataset Setup, so route
           changes preserve configuration, results, and in-flight polling. */}
-      {(simulationVisited || pathname === "/simulation-runs") && <div hidden={pathname !== "/simulation-runs"}><SimulationRuns key={datasetRevision} /></div>}
+      {ENABLE_KMEANS_COMPARISON && (simulationVisited || pathname === "/simulation-runs") && <div hidden={pathname !== "/simulation-runs"}><SimulationRuns key={datasetRevision} /></div>}
       <Routes>
         <Route path="/" element={<Navigate to="/dataset-setup" replace />} />
         <Route path="/dataset-setup" element={null} />
-        <Route path="/study-findings" element={<StudyFindings analysis={analysis} dataset={dataset} />} />
-        <Route path="/simulation-runs" element={null} />
+        <Route path="/study-findings" element={<StudyFindings jobs={analysis} dataset={dataset} />} />
+        <Route path="/simulation-runs" element={ENABLE_KMEANS_COMPARISON ? null : <Navigate to="/study-findings" replace />} />
         <Route path="/upload-run" element={<Navigate to="/dataset-setup" replace />} />
-        <Route path="/run-history" element={<Navigate to="/simulation-runs" replace />} />
+        <Route path="/run-history" element={<Navigate to={ENABLE_KMEANS_COMPARISON ? "/simulation-runs" : "/study-findings"} replace />} />
         {/* Retired URLs never select historical or simulation results. */}
         {["existing-algorithm", "enhanced-algorithm", "summary-of-findings", "overview", "enhanced-kmeans", "cluster-findings", "enhancement-evaluation", "longitudinal-follow-up", "clusters", "baseline-vs-enhanced", "longitudinal", "validation"].map((path) =>
           <Route key={path} path={`/${path}`} element={<Navigate to="/study-findings" replace />} />)}

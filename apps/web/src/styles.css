@@ -1,20 +1,69 @@
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap");
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 :root {
+  --research-panel: #FFFFFF;
+  --research-panel-rgb: 255 255 255;
+  --research-selected-bg: var(--research-success);
+  --research-primary-rgb: 15 118 110;
+  --research-primary-hover-rgb: 11 98 92;
+  --research-success-rgb: 238 247 246;
+  --research-selected-border-rgb: 183 217 213;
+  --research-comparison-rgb: 229 138 0;
+  --research-ink-rgb: 26 26 26;
+  --research-muted-rgb: 79 102 114;
+  --research-canvas-rgb: 244 246 248;
+  --research-border-rgb: 226 232 236;
+  --research-caption-size: 12px;
+  --research-body-size: 13px;
+  --research-space-2: 8px;
+  --research-space-1: 4px;
+  --research-space-3: 12px;
+  --research-space-4: 16px;
+  --research-space-5: 20px;
+  --research-space-6: 24px;
+  --research-space-7: 28px;
+  --research-space-8: 32px;
+  --research-space-9: 36px;
+  --research-space-10: 40px;
+  --research-space-11: 44px;
+  --research-space-12: 48px;
+  --research-space-13: 52px;
+  --research-space-14: 56px;
+  --research-space-15: 60px;
+  --research-space-16: 64px;
+  --research-space-17: 68px;
+  --research-space-18: 72px;
+  --research-space-19: 76px;
+  --research-space-20: 80px;
+  --research-space-21: 84px;
+  --research-space-22: 88px;
+  --research-space-23: 92px;
+  --research-space-24: 96px;
+  --research-cluster-3: #7866b0;
+  --research-cluster-4: #d76673;
+  --research-cluster-5: #559a54;
+  --research-cluster-6: #3675b5;
+  --research-cluster-7: #a27850;
+  --research-cluster-8: #aa57a1;
+  --research-cluster-9: #718333;
+  --research-cluster-10: #607785;
+  --simulation-teal: var(--research-primary);
+  font-variant-numeric: tabular-nums;
   --research-primary: #0f766e;
   --research-primary-hover: #0b625c;
-  --research-ink: #1e1e1e;
+  --research-ink: #1A1A1A;
   --research-muted: #4f6672;
-  --research-canvas: #f6f9fa;
-  --research-border: #e5edef;
-  --research-control-border: #dce6e9;
+  --research-canvas: #F4F6F8;
+  --research-border: #E2E8EC;
+  --research-control-border: var(--research-border);
   --research-selected-border: #b7d9d5;
-  --research-success: #edf8f5;
+  --research-success: #EEF7F6;
   --research-comparison: #e58a00;
-  --research-card-radius: 12px;
-  --research-control-radius: 8px;
+  --research-card-radius: 10px;
+  --research-control-radius: 6px;
   color: var(--research-ink);
   background: var(--research-canvas);
   font-family:
@@ -25,6 +74,7 @@
 
 body {
   margin: 0;
+  font-size: var(--research-body-size);
   min-width: 320px;
   min-height: 100vh;
   line-height: 1.5;
@@ -32,8 +82,8 @@ body {
 }
 
 ::selection {
-  background: #c9ebe8;
-  color: #083c3d;
+  background: var(--research-border);
+  color: var(--research-primary-hover);
 }
 
 button,
@@ -46,47 +96,47 @@ a:focus-visible,
 select:focus-visible,
 summary:focus-visible,
 input:focus-visible {
-  outline: 3px solid rgba(15, 121, 119, 0.28);
+  outline: 3px solid rgb(var(--research-primary-rgb) / 0.28);
   outline-offset: 2px;
 }
 
 .recharts-wrapper text {
   fill: var(--research-muted);
-  font-size: 11px;
+  font-size: var(--research-caption-size);
 }
 
 /* Shared research surfaces follow Simulation Runs and the Figma design guide. */
-.research-page { font-size: 14px; }
-.research-page .page-heading { border: 0; padding: 0 6px; margin-bottom: 24px; }
+.research-page { font-size: var(--research-body-size); }
+.research-page .page-heading { border: 0; padding: 0 var(--research-space-2); margin-bottom: var(--research-space-6); }
 .research-page .research-panel { border-radius: var(--research-card-radius); }
-.research-page .research-panel-heading { flex-wrap: wrap; gap: 16px; padding: 24px 24px 0; border: 0; }
-.research-page .research-panel-body { padding: 24px; }
-.research-page .research-table thead { background: transparent; border-top: 0; font-size: 12px; text-transform: none; letter-spacing: normal; }
-.research-page .research-table th { font-weight: 400; padding: 12px; }
-.research-page .research-table td { padding: 16px 12px; vertical-align: middle; }
+.research-page .research-panel-heading { flex-wrap: wrap; gap: var(--research-space-4); padding: var(--research-space-6) var(--research-space-6) 0; border: 0; }
+.research-page .research-panel-body { padding: var(--research-space-5) var(--research-space-6); }
+.research-page .research-table thead { background: transparent; border-top: 0; font-size: var(--research-caption-size); text-transform: none; letter-spacing: normal; }
+.research-page .research-table th { font-weight: 400; padding: var(--research-space-3); }
+.research-page .research-table td { padding: var(--research-space-4) var(--research-space-3); vertical-align: middle; }
 /* Opt in only tables whose row-heading cells need the same dividers as data cells. */
 .research-row-dividers > tbody > tr > :is(th, td) { border-bottom: 1px solid var(--research-border); }
 .research-row-dividers > tbody > tr:last-child > :is(th, td) { border-bottom: 0; }
-.research-primary-button, .research-secondary-button { display: inline-flex; min-height: 42px; align-items: center; justify-content: center; gap: 10px; border-radius: var(--research-control-radius); padding: 10px 20px; font-size: 14px; font-weight: 600; transition: background-color 150ms; }
+.research-primary-button, .research-secondary-button { display: inline-flex; min-height: 42px; align-items: center; justify-content: center; gap: var(--research-space-3); border-radius: var(--research-control-radius); padding: var(--research-space-3) var(--research-space-4); font-size: var(--research-body-size); font-weight: 600; transition: background-color 150ms; }
 .research-primary-button { background: var(--research-primary); color: white; }
 .research-primary-button:hover { background: var(--research-primary-hover); }
-.research-primary-button:disabled { cursor: not-allowed; background: #e2e8f0; color: var(--research-muted); }
+.research-primary-button:disabled { cursor: not-allowed; background: var(--research-border); color: var(--research-muted); }
 .research-secondary-button { border: 1px solid var(--research-control-border); background: white; color: var(--research-primary); }
-.research-secondary-button:hover { background: #f3f9f8; border-color: var(--research-selected-border); }
-.research-text-action { color: var(--research-primary); font-size: 12px; font-weight: 600; }
+.research-secondary-button:hover { background: var(--research-canvas); border-color: var(--research-selected-border); }
+.research-text-action { color: var(--research-primary); font-size: var(--research-caption-size); font-weight: 600; }
 .research-text-action:hover { color: var(--research-primary-hover); text-decoration: underline; }
 .research-file-action { cursor: pointer; }
 .research-file-action:focus-within { outline: 3px solid var(--research-selected-border); outline-offset: 3px; }
 .research-file-action[aria-disabled="true"] { cursor: not-allowed; opacity: 0.55; }
-.research-badge { display: inline-flex; align-items: center; gap: 6px; border-radius: 7px; padding: 6px 10px; background: var(--research-canvas); color: var(--research-muted); font-size: 12px; font-weight: 600; white-space: nowrap; }
+.research-badge { display: inline-flex; align-items: center; gap: var(--research-space-2); border-radius: var(--research-control-radius); padding: var(--research-space-2) var(--research-space-3); background: var(--research-canvas); color: var(--research-muted); font-size: var(--research-caption-size); font-weight: 600; white-space: nowrap; }
 .research-badge.is-valid { background: var(--research-success); color: var(--research-primary-hover); }
-.research-badge.is-invalid { background: #fef2f2; color: #b91c1c; }
-.study-readiness { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 24px; padding-block: 8px; }
-.research-status-icon { display: inline-flex; flex-shrink: 0; padding: 10px; border-radius: var(--research-control-radius); background: var(--research-success); color: var(--research-primary); }
+.research-badge.is-invalid { background: var(--research-canvas); color: var(--research-comparison); }
+.study-readiness { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--research-space-6); padding-block: var(--research-space-2); }
+.research-status-icon { display: inline-flex; flex-shrink: 0; padding: var(--research-space-3); border-radius: var(--research-control-radius); background: var(--research-success); color: var(--research-primary); }
 @media (max-width: 767px) {
-  .research-page .research-panel-heading { padding: 16px 16px 0; }
-  .research-page .research-panel-body { padding: 16px; }
-  .research-page .research-table th, .research-page .research-table td { padding-inline: 8px; }
+  .research-page .research-panel-heading { padding: var(--research-space-4) var(--research-space-4) 0; }
+  .research-page .research-panel-body { padding: var(--research-space-4); }
+  .research-page .research-table th, .research-page .research-table td { padding-inline: var(--research-space-2); }
 }
 
 @layer components {
@@ -95,7 +145,7 @@ input:focus-visible {
   }
 
   .research-disclosure > summary {
-    @apply cursor-pointer py-3.5 text-sm font-semibold text-ink transition hover:text-teal-700;
+    @apply cursor-pointer py-4 text-sm font-semibold text-ink transition hover:text-teal-700;
   }
 
   .research-disclosure[open] > summary {
@@ -171,7 +221,7 @@ input:focus-visible {
   }
 
   .sop-mini-stat small {
-    @apply mt-0.5 block text-[11px] leading-4 text-muted;
+    @apply mt-1 block text-[11px] leading-4 text-muted;
   }
 
   .sop-dimension-block {
@@ -195,7 +245,7 @@ input:focus-visible {
   }
 
   .sop-conclusion svg {
-    @apply mt-0.5 shrink-0;
+    @apply mt-1 shrink-0;
   }
 
   .sop-k-card {
@@ -219,7 +269,7 @@ input:focus-visible {
   }
 
   .sop-k-card dd {
-    @apply mt-0.5 font-semibold tabular-nums;
+    @apply mt-1 font-semibold tabular-nums;
   }
 
   .sop-selection {
@@ -345,7 +395,7 @@ input:focus-visible {
 
   .baseline-k-slider {
     @apply h-3 w-full cursor-pointer appearance-none rounded-full bg-slate-200;
-    background-image: linear-gradient(90deg, #0f7977 var(--slider-fill), #e2e8f0 var(--slider-fill));
+    background-image: linear-gradient(90deg, var(--research-primary) var(--slider-fill), var(--research-border) var(--slider-fill));
   }
 
   .baseline-k-slider::-webkit-slider-thumb {
@@ -455,14 +505,14 @@ input:focus-visible {
   }
 
   .existing-scatter-plot {
-    @apply relative h-[22rem] overflow-hidden rounded-md border border-line bg-slate-50 shadow-[inset_0_0_0_1px_rgba(255,255,255,0.75)] sm:h-[30rem] lg:h-[34rem];
+    @apply relative h-[22rem] overflow-hidden rounded-md border border-line bg-slate-50 shadow-[inset_0_0_0_1px_rgb(var(--research-panel-rgb)/0.75)] sm:h-[30rem] lg:h-[34rem];
   }
 
   .existing-scatter-grid {
     @apply absolute inset-0 opacity-70;
     background-image:
-      linear-gradient(#dbe4e4 1px, transparent 1px),
-      linear-gradient(90deg, #dbe4e4 1px, transparent 1px);
+      linear-gradient(var(--research-border) 1px, transparent 1px),
+      linear-gradient(90deg, var(--research-border) 1px, transparent 1px);
     background-size: 48px 48px;
   }
 
@@ -508,7 +558,7 @@ input:focus-visible {
   }
 
   .existing-run-details div {
-    @apply bg-white p-2.5;
+    @apply bg-white p-3;
   }
 
   .existing-run-details span {
@@ -529,7 +579,7 @@ input:focus-visible {
   }
 
   .existing-cluster-legend div {
-    @apply inline-flex items-center gap-1.5 py-1;
+    @apply inline-flex items-center gap-2 py-1;
   }
 
   .existing-cluster-legend span {
@@ -566,7 +616,7 @@ input:focus-visible {
   }
 
   .existing-metrics div {
-    @apply min-w-0 border-l-2 border-teal-700 bg-teal-50/50 px-3.5 py-3;
+    @apply min-w-0 border-l-2 border-teal-700 bg-teal-50/50 px-4 py-3;
   }
 
   .existing-metrics span {
@@ -598,7 +648,7 @@ input:focus-visible {
   }
 
   .summary-tabs small {
-    @apply mt-0.5 block text-[10px] font-semibold uppercase tracking-[0.08em] text-muted;
+    @apply mt-1 block text-[10px] font-semibold uppercase tracking-[0.08em] text-muted;
   }
 
   .summary-tab-panel {
@@ -678,7 +728,7 @@ input:focus-visible {
   }
 
   .summary-nbclust-facts div {
-    @apply bg-white px-4 py-3.5;
+    @apply bg-white px-4 py-4;
   }
 
   .summary-nbclust-facts span,
@@ -700,7 +750,7 @@ input:focus-visible {
   }
 
   .summary-nbclust-metrics div {
-    @apply min-h-24 rounded-sm border border-line bg-slate-50/70 px-4 py-3.5;
+    @apply min-h-24 rounded-sm border border-line bg-slate-50/70 px-4 py-4;
   }
 
   .summary-nbclust-metrics strong {
@@ -1062,11 +1112,11 @@ input:focus-visible {
   }
 
   .summary-sop-metric-row small {
-    @apply mt-0.5 block text-[10px] text-muted;
+    @apply mt-1 block text-[10px] text-muted;
   }
 
   .summary-sop-metric-row em {
-    @apply mt-1 inline-flex rounded-full bg-emerald-100 px-2 py-0.5 text-[11px] font-semibold not-italic text-emerald-800;
+    @apply mt-1 inline-flex rounded-full bg-emerald-100 px-2 py-1 text-[11px] font-semibold not-italic text-emerald-800;
   }
 
   .summary-metric-grid {
@@ -1118,7 +1168,7 @@ input:focus-visible {
   }
 
   .summary-comparison-values div {
-    @apply min-w-0 rounded-sm border border-line bg-slate-50 px-3 py-2.5;
+    @apply min-w-0 rounded-sm border border-line bg-slate-50 px-3 py-3;
   }
 
   .summary-comparison-values small {
@@ -1292,3 +1342,31 @@ input:focus-visible {
     }
   }
 }
+
+body, input, textarea, button, select { font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; font-variant-numeric: tabular-nums; }
+.research-panel, .simulation-surface, .sop-method-card { border-radius: var(--research-card-radius); }
+.research-panel-body, .simulation-results-section, .sop-method-card { padding: var(--research-space-5) var(--research-space-6); }
+.study-correlation-table { min-width: 640px; }
+.correlation-legend { display: flex; align-items: center; gap: var(--research-space-2); margin-top: var(--research-space-3); font-size: var(--research-caption-size); }
+.correlation-legend-scale { width: 160px; height: 12px; background: linear-gradient(to right, var(--research-comparison), white, var(--research-primary)); }
+
+.research-page .research-panel-body { padding: var(--research-space-5) var(--research-space-6); }
+.study-sop-tabs { gap: var(--research-space-3); }
+
+/* Uniform card tokens; retain each existing layout and chart geometry. */
+.research-page .research-panel-body, .simulation-surface, .research-page .simulation-chart, .research-page .sop-method-card, .research-page .sop-support-card, .dataset-cohort, .dataset-ready { padding: var(--research-space-5) var(--research-space-6); border-radius: var(--research-card-radius); }
+code, pre { font-family: inherit; font-variant-numeric: tabular-nums; }
+
+.expand-panel { position: relative; min-width: 0; }
+.expand-panel-button { position: absolute; right: 8px; top: 8px; z-index: 1; padding: 8px; border: 1px solid var(--research-border); border-radius: var(--research-control-radius); background: var(--research-panel); }
+.expanded-panel-dialog { width: 90vw; height: 85vh; max-width: 90vw; max-height: 85vh; padding: 20px 24px; border: 1px solid var(--research-border); border-radius: var(--research-card-radius); }
+.expanded-panel-dialog::backdrop { background: rgb(var(--research-ink-rgb) / .4); }
+.expanded-panel-dialog > header { display: flex; justify-content: space-between; gap: 16px; margin-bottom: 16px; }
+.expanded-panel-content { height: calc(100% - 48px); overflow: auto; }
+.expanded-panel-content .study-correlation-table { width: 100%; }
+.expanded-panel-content .study-correlation-table :is(th, td) { height: 44px; padding: 8px; }
+.expanded-panel-content .simulation-chart-plot { min-height: 55vh; }
+
+.calculation-chips { display:flex; flex-wrap:wrap; gap:8px; margin:12px 0; } .calculation-chips > span { padding:4px 8px; background:var(--research-canvas); border:1px solid var(--research-border); border-radius:var(--research-control-radius); font-size:var(--research-caption-size); } .internal-calculation-card { margin-top:16px; } .internal-calculation-card dl { display:flex; flex-wrap:wrap; gap:16px; } .internal-calculation-card [data-formula] { font-variant-numeric:tabular-nums; margin-top:12px; }
+
+.expanded-panel-content .recharts-responsive-container { height: 60vh !important; } .expanded-panel-content .recharts-wrapper { height:100% !important; } .expanded-panel-content svg.recharts-surface { width:100%; height:100%; }
