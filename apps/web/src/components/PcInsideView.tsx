@@ -1,7 +1,6 @@
 import { useId, useMemo, useState } from "react";
 import type { PcaLoadingEvidence } from "../utils/pcaLoadings";
 import { getMeasureLabel } from "../utils/measureLabels";
-import { formatNumber } from "../utils/formatNumber";
 import { formatPercent } from "../utils/numberFormatting";
 import "./PcInsideView.css";
 
@@ -10,7 +9,7 @@ const shortName: Record<string, string> = {
   RAVLT_FORGETTING: "RAVLT Forgetting", TMT_A: "TMT-A", TMT_B: "TMT-B", ADAS13: "ADAS-Cog13", CDRSB: "CDR-SB", NPIQ: "NPI-Q"
 };
 const nameOf = (variable: string) => shortName[variable] ?? variable;
-export const STRONG_LOADING = 0.3;
+export const STRONG_LOADING = 0.4;
 
 export type ScreeRow = { component: number; eigenvalue?: number; individualVariance?: number; cumulativeVariance: number };
 
@@ -34,33 +33,36 @@ export const PcInsideView = ({ loadings, scree, retained }: {
   const kept = scree.find(row => row.component === retained)?.cumulativeVariance;
   if (retained < 1 || loadings.components.length < retained) return null;
   const column = Math.min(selected, retained - 1);
-  const bars = loadings.variables.map((variable, index) => ({ variable, value: loadings.values[index][column] }))
+  const eigenvalue = scree.find(row => row.component === column + 1)?.eigenvalue;
+  if (eigenvalue === undefined || !Number.isFinite(eigenvalue) || eigenvalue < 0) return null;
+  const bars = loadings.variables.map((variable, index) => ({ variable, value: loadings.values[index][column] * Math.sqrt(scree.find(row => row.component === column + 1)!.individualVariance! * loadings.variables.length) }))
     .sort((a, b) => Math.abs(b.value) - Math.abs(a.value));
-  const scale = Math.max(STRONG_LOADING, ...bars.map(bar => Math.abs(bar.value)));
+  const scale = 1;
   const shares = share ? loadings.variables.map((variable, index) => ({ variable, share: share[index] }))
     .sort((a, b) => a.share - b.share) : [];
 
   return <section className="sop-support-card pc-inside" aria-labelledby={headingId}>
     <h3 id={headingId} className="card-title mb-1">What Is Inside Each Principal Component</h3>
-    <p className="text-xs text-muted mb-3">Bars show each test's loading; bold rows are |loading| ≥ {STRONG_LOADING.toFixed(2)}.</p>
+    <p className="text-xs text-muted mb-3">Bars show loadings (correlation between each standardized variable and the component). Bold rows are |loading| ≥ 0.40. Component signs are arbitrary; only relative signs within a component are interpretable.</p>
 
     <div className="pc-inside-tabs" role="tablist" aria-label="Retained principal components">
       {loadings.components.slice(0, retained).map((label, index) => {
         const variance = scree.find(entry => entry.component === index + 1)?.individualVariance;
         return <button key={label} type="button" role="tab" aria-selected={column === index}
           className={column === index ? "is-active" : undefined} onClick={() => setSelected(index)}>
-          <strong>{label}</strong>{variance !== undefined && <span>{formatPercent(variance * 100)}</span>}
+          <strong>{label}</strong>{variance !== undefined && <span>{(variance * 100).toFixed(2)}%</span>}
         </button>;
       })}
     </div>
 
+    <p className="text-xs text-muted">PC{column + 1}: {bars.filter(bar => Math.abs(bar.value) >= STRONG_LOADING).length} of {bars.length} |loading| ≥ {STRONG_LOADING.toFixed(2)}</p>
     <div className="pc-inside-body" role="tabpanel" aria-label={`PC${column + 1} contents`}>
-      <ol className="pc-inside-bars" aria-label={`Loadings on PC${column + 1}, largest first`}>
+      <ol className="pc-inside-bars" aria-label={`Loadings on PC${column + 1}, largest first; axis range -1 to 1`}>
         {bars.map(bar => {
           const width = 50 * Math.abs(bar.value) / scale;
           const isStrong = Math.abs(bar.value) >= STRONG_LOADING;
           return <li key={bar.variable} className={isStrong ? "is-strong" : undefined}
-            title={`${getMeasureLabel(bar.variable)} · loading ${bar.value > 0 ? "+" : ""}${formatNumber(bar.value, "loading")}`}>
+            title={`${getMeasureLabel(bar.variable)} · loading ${bar.value > 0 ? "+" : ""}${bar.value.toFixed(3)}`}>
             <span className="pc-inside-name">{nameOf(bar.variable)}</span>
             <span className="pc-inside-track" aria-hidden="true">
               <i className="pc-inside-axis" />
@@ -69,7 +71,7 @@ export const PcInsideView = ({ loadings, scree, retained }: {
               <b className={bar.value < 0 ? "is-negative" : "is-positive"}
                 style={bar.value < 0 ? { right: "50%", width: `${width}%` } : { left: "50%", width: `${width}%` }} />
             </span>
-            <span className="pc-inside-value tabular-nums">{bar.value > 0 ? "+" : ""}{formatNumber(bar.value, "loading")}</span>
+            <span className="pc-inside-value tabular-nums">{bar.value > 0 ? "+" : ""}{bar.value.toFixed(3)}</span>
           </li>;
         })}
       </ol>
