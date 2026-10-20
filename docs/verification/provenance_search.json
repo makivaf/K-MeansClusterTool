@@ -1,0 +1,3063 @@
+{
+  "searchedReachableCommits": 102,
+  "refs": [
+    "refs/codex/turn-diffs/captures/1791776822876/fdeb0988-a51e-4de3-acc5-1b042a284648/base",
+    "refs/codex/turn-diffs/captures/1791776822876/fdeb0988-a51e-4de3-acc5-1b042a284648/head",
+    "refs/codex/turn-diffs/captures/1791795265641/17daa9e4-ae15-413c-ad20-dfe1a90f550e/base",
+    "refs/codex/turn-diffs/checkpoints/004890948c9632321e784595e74ccf1f/8477a62cadf69e6caf5666117b66387d/1791690737938/30af4f36-de1b-4242-a0af-ee1829f3dcad",
+    "refs/codex/turn-diffs/checkpoints/302ab746ff21f4abba833ce82160dfcf/f4d1fe01d5dea400d57efef2c5af1760/1791688265288/cde15e16-967e-40f2-b50a-b4ce66897d02",
+    "refs/codex/turn-diffs/checkpoints/32d5753341b3e1aa58eb4ac293c187b6/346c0dbcdc65f4636e78e7ef19a3a00d/1791621255601/759d3264-19f4-4869-a4cb-670dbc310be5",
+    "refs/codex/turn-diffs/checkpoints/6e42af815d67b4b3f79fb10e2d09bbd8/c3bbee44d79cd88dea1d05c8e5773212/1791723825154/16a2d06c-720a-4737-b108-4d4139ece4b4",
+    "refs/codex/turn-diffs/checkpoints/7355eecc818a8d1acfeebb38fb484f5c/63c77ca27c50350994ef6eee4bc0ec95/1791732672221/db53f36b-981e-4a71-af03-7dc6547f9474",
+    "refs/codex/turn-diffs/checkpoints/943a2e38cf0cc05930704dfa61c02954/c80df890ceb52a0156e8135839fd68fc/1791776754620/1bf93d9e-504f-446b-967c-4133589ccd7d",
+    "refs/codex/turn-diffs/checkpoints/e80bad66be28aaaaab3757664d7ba3f2/9b1c2dfbf28604b7c54f98b3032d3109/1791795146814/9ef7fb24-1b65-4b9d-8668-f58f74d65cf6",
+    "refs/codex/turn-diffs/checkpoints/faf7dcb6ea7274182efad5dd3c11b2f2/3b183f222649251c9640041bc9ccc530/1791720738616/93a87e1b-5c82-4815-835b-dd17ca338790",
+    "refs/heads/backup/backend-before-mariel-oct11",
+    "refs/heads/backup/integrated-before-rebuild-oct11",
+    "refs/heads/feat/backend-integration-runtime",
+    "refs/heads/feat/chapter1-empirical-evidence",
+    "refs/heads/feat/final-study-findings-ui",
+    "refs/heads/feat/simulation-backend-integration",
+    "refs/heads/fix/final-backend-integration",
+    "refs/heads/fix/final-consultation-integration",
+    "refs/heads/fix/separate-kmeans-execution-validation",
+    "refs/heads/fix/silhouette-representative-participant",
+    "refs/heads/integration/final-mariel-backend-oct11",
+    "refs/heads/integration/mariel-first-oct11",
+    "refs/heads/main",
+    "refs/heads/recovery/batch1-oct11",
+    "refs/remotes/origin/HEAD",
+    "refs/remotes/origin/feat/backend-integration-runtime",
+    "refs/remotes/origin/feat/calculation-details-ui",
+    "refs/remotes/origin/feat/enhanced-frontend-ui",
+    "refs/remotes/origin/feat/final-defense-ui",
+    "refs/remotes/origin/feat/final-kmeans-comparison-ui",
+    "refs/remotes/origin/feat/final-study-findings-ui",
+    "refs/remotes/origin/feat/frontend-backend-integration",
+    "refs/remotes/origin/feat/frontend-sop-ui-enhancements",
+    "refs/remotes/origin/feat/simulation-backend-integration",
+    "refs/remotes/origin/feat/simulation-dpc-reproducibility",
+    "refs/remotes/origin/feat/simulation-runs-ui",
+    "refs/remotes/origin/feat/simulation-runs-ui-refinement",
+    "refs/remotes/origin/fix/consistent-numeric-formatting",
+    "refs/remotes/origin/fix/defense-system-revisions",
+    "refs/remotes/origin/fix/final-backend-integration",
+    "refs/remotes/origin/fix/final-consultation-integration",
+    "refs/remotes/origin/fix/silhouette-representative-participant",
+    "refs/remotes/origin/fix/sop2-nbclust-controlled-comparison",
+    "refs/remotes/origin/fix/unified-pipeline-runtime",
+    "refs/remotes/origin/frontend-enhancement-oct10",
+    "refs/remotes/origin/frontend-enhancement/oct11",
+    "refs/remotes/origin/integration-research-orchestration",
+    "refs/remotes/origin/integration-system-integration",
+    "refs/remotes/origin/main",
+    "refs/remotes/origin/pr-29",
+    "refs/remotes/origin/refactor/defense-ui-redesign",
+    "refs/remotes/origin/refactor/final-defense-ui",
+    "refs/remotes/origin/refactor/research-structure",
+    "refs/remotes/origin/refactor/unified-longitudinal-pipeline",
+    "refs/remotes/origin/research/axis-b-longitudinal",
+    "refs/remotes/origin/research/data-audit",
+    "refs/stash"
+  ],
+  "historicalMatches": [
+    {
+      "commit": "7f1cc6edd1f0cc306da8f6ced61d314fe88be170",
+      "path": "apps/api/artifacts/sop_evaluation_summary.json",
+      "occurrences": {
+        "1.224116": 1,
+        "1442.023132": 1
+      }
+    },
+    {
+      "commit": "7f1cc6edd1f0cc306da8f6ced61d314fe88be170",
+      "path": "apps/api/src/services/currentFrontendIntegration.validation.ts",
+      "occurrences": {
+        "1.224116": 1,
+        "1442.023132": 1
+      }
+    },
+    {
+      "commit": "7f1cc6edd1f0cc306da8f6ced61d314fe88be170",
+      "path": "docs/UNIFIED_RESULTS_AUDIT.md",
+      "occurrences": {
+        "1.224116": 1,
+        "1442.023132": 1
+      }
+    },
+    {
+      "commit": "7f1cc6edd1f0cc306da8f6ced61d314fe88be170",
+      "path": "packages/shared/src/schema.ts",
+      "occurrences": {
+        "1.224116": 1,
+        "1442.023132": 1
+      }
+    },
+    {
+      "commit": "7f1cc6edd1f0cc306da8f6ced61d314fe88be170",
+      "path": "scripts/research/longitudinal/consolidate_unified_results.py",
+      "occurrences": {
+        "1.224116": 1,
+        "1442.023132": 1
+      }
+    },
+    {
+      "commit": "1ec34facd437aa2e94f5d8d953393839eeb991c4",
+      "path": "apps/api/artifacts/sop_evaluation_summary.json",
+      "occurrences": {
+        "1.224116": 1,
+        "1442.023132": 1
+      }
+    },
+    {
+      "commit": "1ec34facd437aa2e94f5d8d953393839eeb991c4",
+      "path": "apps/api/src/services/currentFrontendIntegration.validation.ts",
+      "occurrences": {
+        "1.224116": 1,
+        "1442.023132": 1
+      }
+    },
+    {
+      "commit": "1ec34facd437aa2e94f5d8d953393839eeb991c4",
+      "path": "docs/INDEPENDENT_KMEANS_EXECUTION.md",
+      "occurrences": {
+        "1.22567": 1,
+        "1443.226": 1,
+        "1.224116": 1,
+        "1442.023132": 1
+      }
+    },
+    {
+      "commit": "1ec34facd437aa2e94f5d8d953393839eeb991c4",
+      "path": "docs/UNIFIED_RESULTS_AUDIT.md",
+      "occurrences": {
+        "1.224116": 1,
+        "1442.023132": 1
+      }
+    },
+    {
+      "commit": "1ec34facd437aa2e94f5d8d953393839eeb991c4",
+      "path": "packages/shared/src/schema.ts",
+      "occurrences": {
+        "1.224116": 1,
+        "1442.023132": 1
+      }
+    },
+    {
+      "commit": "1ec34facd437aa2e94f5d8d953393839eeb991c4",
+      "path": "scripts/research/longitudinal/consolidate_unified_results.py",
+      "occurrences": {
+        "1.224116": 1,
+        "1442.023132": 1
+      }
+    },
+    {
+      "commit": "dafc3a7f1da59b48d2efe79a83bf6c0e54527ab2",
+      "path": "apps/api/artifacts/sop_evaluation_summary.json",
+      "occurrences": {
+        "1.224116": 1,
+        "1442.023132": 1
+      }
+    },
+    {
+      "commit": "dafc3a7f1da59b48d2efe79a83bf6c0e54527ab2",
+      "path": "apps/api/src/services/currentFrontendIntegration.validation.ts",
+      "occurrences": {
+        "1.224116": 1,
+        "1442.023132": 1
+      }
+    },
+    {
+      "commit": "dafc3a7f1da59b48d2efe79a83bf6c0e54527ab2",
+      "path": "docs/INDEPENDENT_KMEANS_EXECUTION.md",
+      "occurrences": {
+        "1.22567": 1,
+        "1443.226": 1,
+        "1.224116": 1,
+        "1442.023132": 1
+      }
+    },
+    {
+      "commit": "dafc3a7f1da59b48d2efe79a83bf6c0e54527ab2",
+      "path": "docs/UNIFIED_RESULTS_AUDIT.md",
+      "occurrences": {
+        "1.224116": 1,
+        "1442.023132": 1
+      }
+    },
+    {
+      "commit": "dafc3a7f1da59b48d2efe79a83bf6c0e54527ab2",
+      "path": "packages/shared/src/schema.ts",
+      "occurrences": {
+        "1.224116": 1,
+        "1442.023132": 1
+      }
+    },
+    {
+      "commit": "dafc3a7f1da59b48d2efe79a83bf6c0e54527ab2",
+      "path": "scripts/research/longitudinal/consolidate_unified_results.py",
+      "occurrences": {
+        "1.224116": 1,
+        "1442.023132": 1
+      }
+    },
+    {
+      "commit": "40079312a53f31a90323b2eb094d214fde1a8b9b",
+      "path": "apps/api/artifacts/sop_evaluation_summary.json",
+      "occurrences": {
+        "1.224116": 1,
+        "1442.023132": 1
+      }
+    },
+    {
+      "commit": "40079312a53f31a90323b2eb094d214fde1a8b9b",
+      "path": "apps/api/src/services/currentFrontendIntegration.validation.ts",
+      "occurrences": {
+        "1.224116": 1,
+        "1442.023132": 1
+      }
+    },
+    {
+      "commit": "40079312a53f31a90323b2eb094d214fde1a8b9b",
+      "path": "docs/INDEPENDENT_KMEANS_EXECUTION.md",
+      "occurrences": {
+        "1.22567": 1,
+        "1443.226": 1,
+        "1.224116": 1,
+        "1442.023132": 1
+      }
+    },
+    {
+      "commit": "40079312a53f31a90323b2eb094d214fde1a8b9b",
+      "path": "docs/UNIFIED_RESULTS_AUDIT.md",
+      "occurrences": {
+        "1.224116": 1,
+        "1442.023132": 1
+      }
+    },
+    {
+      "commit": "40079312a53f31a90323b2eb094d214fde1a8b9b",
+      "path": "packages/shared/src/schema.ts",
+      "occurrences": {
+        "1.224116": 1,
+        "1442.023132": 1
+      }
+    },
+    {
+      "commit": "40079312a53f31a90323b2eb094d214fde1a8b9b",
+      "path": "scripts/research/longitudinal/consolidate_unified_results.py",
+      "occurrences": {
+        "1.224116": 1,
+        "1442.023132": 1
+      }
+    },
+    {
+      "commit": "883c919a2db2bad8f7187c4b10aeb7fd67c6027e",
+      "path": "apps/api/artifacts/sop_evaluation_summary.json",
+      "occurrences": {
+        "1.224116": 1,
+        "1442.023132": 1
+      }
+    },
+    {
+      "commit": "883c919a2db2bad8f7187c4b10aeb7fd67c6027e",
+      "path": "apps/api/src/services/currentFrontendIntegration.validation.ts",
+      "occurrences": {
+        "1.224116": 1,
+        "1442.023132": 1
+      }
+    },
+    {
+      "commit": "883c919a2db2bad8f7187c4b10aeb7fd67c6027e",
+      "path": "docs/INDEPENDENT_KMEANS_EXECUTION.md",
+      "occurrences": {
+        "1.22567": 1,
+        "1443.226": 1,
+        "1.224116": 1,
+        "1442.023132": 1
+      }
+    },
+    {
+      "commit": "883c919a2db2bad8f7187c4b10aeb7fd67c6027e",
+      "path": "docs/UNIFIED_RESULTS_AUDIT.md",
+      "occurrences": {
+        "1.224116": 1,
+        "1442.023132": 1
+      }
+    },
+    {
+      "commit": "883c919a2db2bad8f7187c4b10aeb7fd67c6027e",
+      "path": "packages/shared/src/schema.ts",
+      "occurrences": {
+        "1.224116": 1,
+        "1442.023132": 1
+      }
+    },
+    {
+      "commit": "883c919a2db2bad8f7187c4b10aeb7fd67c6027e",
+      "path": "scripts/research/longitudinal/consolidate_unified_results.py",
+      "occurrences": {
+        "1.224116": 1,
+        "1442.023132": 1
+      }
+    },
+    {
+      "commit": "7fb911b4ac68d03eabde50bf7cafd6166fdaf619",
+      "path": "apps/api/artifacts/sop_evaluation_summary.json",
+      "occurrences": {
+        "1.224116": 1,
+        "1442.023132": 1
+      }
+    },
+    {
+      "commit": "7fb911b4ac68d03eabde50bf7cafd6166fdaf619",
+      "path": "apps/api/src/services/currentFrontendIntegration.validation.ts",
+      "occurrences": {
+        "1.224116": 1,
+        "1442.023132": 1
+      }
+    },
+    {
+      "commit": "7fb911b4ac68d03eabde50bf7cafd6166fdaf619",
+      "path": "docs/INDEPENDENT_KMEANS_EXECUTION.md",
+      "occurrences": {
+        "1.22567": 1,
+        "1443.226": 1,
+        "1.224116": 1,
+        "1442.023132": 1
+      }
+    },
+    {
+      "commit": "7fb911b4ac68d03eabde50bf7cafd6166fdaf619",
+      "path": "docs/UNIFIED_RESULTS_AUDIT.md",
+      "occurrences": {
+        "1.224116": 1,
+        "1442.023132": 1
+      }
+    },
+    {
+      "commit": "7fb911b4ac68d03eabde50bf7cafd6166fdaf619",
+      "path": "packages/shared/src/schema.ts",
+      "occurrences": {
+        "1.224116": 1,
+        "1442.023132": 1
+      }
+    },
+    {
+      "commit": "7fb911b4ac68d03eabde50bf7cafd6166fdaf619",
+      "path": "scripts/research/longitudinal/consolidate_unified_results.py",
+      "occurrences": {
+        "1.224116": 1,
+        "1442.023132": 1
+      }
+    },
+    {
+      "commit": "e8c5050432fb37e62062a7e0eef68b16bc8e67af",
+      "path": "apps/api/artifacts/sop_evaluation_summary.json",
+      "occurrences": {
+        "1.224116": 1,
+        "1442.023132": 1
+      }
+    },
+    {
+      "commit": "e8c5050432fb37e62062a7e0eef68b16bc8e67af",
+      "path": "apps/api/src/services/currentFrontendIntegration.validation.ts",
+      "occurrences": {
+        "1.224116": 1,
+        "1442.023132": 1
+      }
+    },
+    {
+      "commit": "e8c5050432fb37e62062a7e0eef68b16bc8e67af",
+      "path": "docs/UNIFIED_RESULTS_AUDIT.md",
+      "occurrences": {
+        "1.224116": 1,
+        "1442.023132": 1
+      }
+    },
+    {
+      "commit": "e8c5050432fb37e62062a7e0eef68b16bc8e67af",
+      "path": "packages/shared/src/schema.ts",
+      "occurrences": {
+        "1.224116": 1,
+        "1442.023132": 1
+      }
+    },
+    {
+      "commit": "e8c5050432fb37e62062a7e0eef68b16bc8e67af",
+      "path": "scripts/research/longitudinal/consolidate_unified_results.py",
+      "occurrences": {
+        "1.224116": 1,
+        "1442.023132": 1
+      }
+    },
+    {
+      "commit": "7916d0dd897b1c8b966a5eddfebff3d8bd634061",
+      "path": "apps/api/artifacts/sop_evaluation_summary.json",
+      "occurrences": {
+        "1.224116": 1,
+        "1442.023132": 1
+      }
+    },
+    {
+      "commit": "7916d0dd897b1c8b966a5eddfebff3d8bd634061",
+      "path": "apps/api/src/services/currentFrontendIntegration.validation.ts",
+      "occurrences": {
+        "1.224116": 1,
+        "1442.023132": 1
+      }
+    },
+    {
+      "commit": "7916d0dd897b1c8b966a5eddfebff3d8bd634061",
+      "path": "docs/INDEPENDENT_KMEANS_EXECUTION.md",
+      "occurrences": {
+        "1.22567": 1,
+        "1443.226": 1,
+        "1.224116": 1,
+        "1442.023132": 1
+      }
+    },
+    {
+      "commit": "7916d0dd897b1c8b966a5eddfebff3d8bd634061",
+      "path": "docs/UNIFIED_RESULTS_AUDIT.md",
+      "occurrences": {
+        "1.224116": 1,
+        "1442.023132": 1
+      }
+    },
+    {
+      "commit": "7916d0dd897b1c8b966a5eddfebff3d8bd634061",
+      "path": "packages/shared/src/schema.ts",
+      "occurrences": {
+        "1.224116": 1,
+        "1442.023132": 1
+      }
+    },
+    {
+      "commit": "7916d0dd897b1c8b966a5eddfebff3d8bd634061",
+      "path": "scripts/research/longitudinal/consolidate_unified_results.py",
+      "occurrences": {
+        "1.224116": 1,
+        "1442.023132": 1
+      }
+    },
+    {
+      "commit": "81b99408148c3a585c1c4312d5e78630c1a45118",
+      "path": "apps/api/artifacts/sop_evaluation_summary.json",
+      "occurrences": {
+        "1.224116": 1,
+        "1442.023132": 1
+      }
+    },
+    {
+      "commit": "81b99408148c3a585c1c4312d5e78630c1a45118",
+      "path": "apps/api/src/services/currentFrontendIntegration.validation.ts",
+      "occurrences": {
+        "1.224116": 1,
+        "1442.023132": 1
+      }
+    },
+    {
+      "commit": "81b99408148c3a585c1c4312d5e78630c1a45118",
+      "path": "docs/UNIFIED_RESULTS_AUDIT.md",
+      "occurrences": {
+        "1.224116": 1,
+        "1442.023132": 1
+      }
+    },
+    {
+      "commit": "81b99408148c3a585c1c4312d5e78630c1a45118",
+      "path": "packages/shared/src/schema.ts",
+      "occurrences": {
+        "1.224116": 1,
+        "1442.023132": 1
+      }
+    },
+    {
+      "commit": "81b99408148c3a585c1c4312d5e78630c1a45118",
+      "path": "scripts/research/longitudinal/consolidate_unified_results.py",
+      "occurrences": {
+        "1.224116": 1,
+        "1442.023132": 1
+      }
+    },
+    {
+      "commit": "8b08f00be48dce1bea6b2b8528b720a6d038fc7f",
+      "path": "apps/api/artifacts/sop_evaluation_summary.json",
+      "occurrences": {
+        "1.224116": 1,
+        "1442.023132": 1
+      }
+    },
+    {
+      "commit": "8b08f00be48dce1bea6b2b8528b720a6d038fc7f",
+      "path": "apps/api/src/services/currentFrontendIntegration.validation.ts",
+      "occurrences": {
+        "1.224116": 1,
+        "1442.023132": 1
+      }
+    },
+    {
+      "commit": "8b08f00be48dce1bea6b2b8528b720a6d038fc7f",
+      "path": "docs/UNIFIED_RESULTS_AUDIT.md",
+      "occurrences": {
+        "1.224116": 1,
+        "1442.023132": 1
+      }
+    },
+    {
+      "commit": "8b08f00be48dce1bea6b2b8528b720a6d038fc7f",
+      "path": "packages/shared/src/schema.ts",
+      "occurrences": {
+        "1.224116": 1,
+        "1442.023132": 1
+      }
+    },
+    {
+      "commit": "8b08f00be48dce1bea6b2b8528b720a6d038fc7f",
+      "path": "scripts/research/longitudinal/consolidate_unified_results.py",
+      "occurrences": {
+        "1.224116": 1,
+        "1442.023132": 1
+      }
+    },
+    {
+      "commit": "3dc6b99eb1ced310856f0648be785dc80985c4eb",
+      "path": "apps/api/artifacts/sop_evaluation_summary.json",
+      "occurrences": {
+        "1.224116": 1,
+        "1442.023132": 1
+      }
+    },
+    {
+      "commit": "3dc6b99eb1ced310856f0648be785dc80985c4eb",
+      "path": "apps/api/src/services/currentFrontendIntegration.validation.ts",
+      "occurrences": {
+        "1.224116": 1,
+        "1442.023132": 1
+      }
+    },
+    {
+      "commit": "3dc6b99eb1ced310856f0648be785dc80985c4eb",
+      "path": "docs/UNIFIED_RESULTS_AUDIT.md",
+      "occurrences": {
+        "1.224116": 1,
+        "1442.023132": 1
+      }
+    },
+    {
+      "commit": "3dc6b99eb1ced310856f0648be785dc80985c4eb",
+      "path": "packages/shared/src/schema.ts",
+      "occurrences": {
+        "1.224116": 1,
+        "1442.023132": 1
+      }
+    },
+    {
+      "commit": "3dc6b99eb1ced310856f0648be785dc80985c4eb",
+      "path": "scripts/research/longitudinal/consolidate_unified_results.py",
+      "occurrences": {
+        "1.224116": 1,
+        "1442.023132": 1
+      }
+    },
+    {
+      "commit": "e72a609711bff5e65defdce5998f49579c88416e",
+      "path": "apps/api/artifacts/sop_evaluation_summary.json",
+      "occurrences": {
+        "1.224116": 1,
+        "1442.023132": 1
+      }
+    },
+    {
+      "commit": "e72a609711bff5e65defdce5998f49579c88416e",
+      "path": "apps/api/src/services/currentFrontendIntegration.validation.ts",
+      "occurrences": {
+        "1.224116": 1,
+        "1442.023132": 1
+      }
+    },
+    {
+      "commit": "e72a609711bff5e65defdce5998f49579c88416e",
+      "path": "docs/UNIFIED_RESULTS_AUDIT.md",
+      "occurrences": {
+        "1.224116": 1,
+        "1442.023132": 1
+      }
+    },
+    {
+      "commit": "e72a609711bff5e65defdce5998f49579c88416e",
+      "path": "packages/shared/src/schema.ts",
+      "occurrences": {
+        "1.224116": 1,
+        "1442.023132": 1
+      }
+    },
+    {
+      "commit": "e72a609711bff5e65defdce5998f49579c88416e",
+      "path": "scripts/research/longitudinal/consolidate_unified_results.py",
+      "occurrences": {
+        "1.224116": 1,
+        "1442.023132": 1
+      }
+    },
+    {
+      "commit": "53155b74e913a0f395eb9a3a0fdd0d3a0d879349",
+      "path": "apps/api/artifacts/sop_evaluation_summary.json",
+      "occurrences": {
+        "1.224116": 1,
+        "1442.023132": 1
+      }
+    },
+    {
+      "commit": "53155b74e913a0f395eb9a3a0fdd0d3a0d879349",
+      "path": "apps/api/src/services/currentFrontendIntegration.validation.ts",
+      "occurrences": {
+        "1.224116": 1,
+        "1442.023132": 1
+      }
+    },
+    {
+      "commit": "53155b74e913a0f395eb9a3a0fdd0d3a0d879349",
+      "path": "docs/UNIFIED_RESULTS_AUDIT.md",
+      "occurrences": {
+        "1.224116": 1,
+        "1442.023132": 1
+      }
+    },
+    {
+      "commit": "53155b74e913a0f395eb9a3a0fdd0d3a0d879349",
+      "path": "packages/shared/src/schema.ts",
+      "occurrences": {
+        "1.224116": 1,
+        "1442.023132": 1
+      }
+    },
+    {
+      "commit": "53155b74e913a0f395eb9a3a0fdd0d3a0d879349",
+      "path": "scripts/research/longitudinal/consolidate_unified_results.py",
+      "occurrences": {
+        "1.224116": 1,
+        "1442.023132": 1
+      }
+    },
+    {
+      "commit": "ad6b45fd6499c7e9f233d4cb7c3da2a9c21454f1",
+      "path": "apps/api/artifacts/sop_evaluation_summary.json",
+      "occurrences": {
+        "1.224116": 1,
+        "1442.023132": 1
+      }
+    },
+    {
+      "commit": "ad6b45fd6499c7e9f233d4cb7c3da2a9c21454f1",
+      "path": "apps/api/src/services/currentFrontendIntegration.validation.ts",
+      "occurrences": {
+        "1.224116": 1,
+        "1442.023132": 1
+      }
+    },
+    {
+      "commit": "ad6b45fd6499c7e9f233d4cb7c3da2a9c21454f1",
+      "path": "docs/UNIFIED_RESULTS_AUDIT.md",
+      "occurrences": {
+        "1.224116": 1,
+        "1442.023132": 1
+      }
+    },
+    {
+      "commit": "ad6b45fd6499c7e9f233d4cb7c3da2a9c21454f1",
+      "path": "packages/shared/src/schema.ts",
+      "occurrences": {
+        "1.224116": 1,
+        "1442.023132": 1
+      }
+    },
+    {
+      "commit": "ad6b45fd6499c7e9f233d4cb7c3da2a9c21454f1",
+      "path": "scripts/research/longitudinal/consolidate_unified_results.py",
+      "occurrences": {
+        "1.224116": 1,
+        "1442.023132": 1
+      }
+    },
+    {
+      "commit": "3f6f3e3caf4353758c520699cde16a37ad7c365e",
+      "path": "apps/api/artifacts/sop_evaluation_summary.json",
+      "occurrences": {
+        "1.224116": 1,
+        "1442.023132": 1
+      }
+    },
+    {
+      "commit": "3f6f3e3caf4353758c520699cde16a37ad7c365e",
+      "path": "apps/api/src/services/currentFrontendIntegration.validation.ts",
+      "occurrences": {
+        "1.224116": 1,
+        "1442.023132": 1
+      }
+    },
+    {
+      "commit": "3f6f3e3caf4353758c520699cde16a37ad7c365e",
+      "path": "docs/UNIFIED_RESULTS_AUDIT.md",
+      "occurrences": {
+        "1.224116": 1,
+        "1442.023132": 1
+      }
+    },
+    {
+      "commit": "3f6f3e3caf4353758c520699cde16a37ad7c365e",
+      "path": "packages/shared/src/schema.ts",
+      "occurrences": {
+        "1.224116": 1,
+        "1442.023132": 1
+      }
+    },
+    {
+      "commit": "3f6f3e3caf4353758c520699cde16a37ad7c365e",
+      "path": "scripts/research/longitudinal/consolidate_unified_results.py",
+      "occurrences": {
+        "1.224116": 1,
+        "1442.023132": 1
+      }
+    },
+    {
+      "commit": "f1bd7ea0f4001b7993793f2e025e04eb74dc6e5f",
+      "path": "apps/api/artifacts/sop_evaluation_summary.json",
+      "occurrences": {
+        "1.224116": 1,
+        "1442.023132": 1
+      }
+    },
+    {
+      "commit": "f1bd7ea0f4001b7993793f2e025e04eb74dc6e5f",
+      "path": "apps/api/src/services/currentFrontendIntegration.validation.ts",
+      "occurrences": {
+        "1.224116": 1,
+        "1442.023132": 1
+      }
+    },
+    {
+      "commit": "f1bd7ea0f4001b7993793f2e025e04eb74dc6e5f",
+      "path": "docs/UNIFIED_RESULTS_AUDIT.md",
+      "occurrences": {
+        "1.224116": 1,
+        "1442.023132": 1
+      }
+    },
+    {
+      "commit": "f1bd7ea0f4001b7993793f2e025e04eb74dc6e5f",
+      "path": "packages/shared/src/schema.ts",
+      "occurrences": {
+        "1.224116": 1,
+        "1442.023132": 1
+      }
+    },
+    {
+      "commit": "f1bd7ea0f4001b7993793f2e025e04eb74dc6e5f",
+      "path": "scripts/research/longitudinal/consolidate_unified_results.py",
+      "occurrences": {
+        "1.224116": 1,
+        "1442.023132": 1
+      }
+    },
+    {
+      "commit": "0fdfa10402cd8d1231b3bce77ab01a2d223d4090",
+      "path": "apps/api/artifacts/sop_evaluation_summary.json",
+      "occurrences": {
+        "1.224116": 1,
+        "1442.023132": 1
+      }
+    },
+    {
+      "commit": "0fdfa10402cd8d1231b3bce77ab01a2d223d4090",
+      "path": "apps/api/src/services/currentFrontendIntegration.validation.ts",
+      "occurrences": {
+        "1.224116": 1,
+        "1442.023132": 1
+      }
+    },
+    {
+      "commit": "0fdfa10402cd8d1231b3bce77ab01a2d223d4090",
+      "path": "docs/UNIFIED_RESULTS_AUDIT.md",
+      "occurrences": {
+        "1.224116": 1,
+        "1442.023132": 1
+      }
+    },
+    {
+      "commit": "0fdfa10402cd8d1231b3bce77ab01a2d223d4090",
+      "path": "packages/shared/src/schema.ts",
+      "occurrences": {
+        "1.224116": 1,
+        "1442.023132": 1
+      }
+    },
+    {
+      "commit": "0fdfa10402cd8d1231b3bce77ab01a2d223d4090",
+      "path": "scripts/research/longitudinal/consolidate_unified_results.py",
+      "occurrences": {
+        "1.224116": 1,
+        "1442.023132": 1
+      }
+    },
+    {
+      "commit": "f9570a2b1bd30075f574fad7651da9a86431fb4f",
+      "path": "apps/api/artifacts/sop_evaluation_summary.json",
+      "occurrences": {
+        "1.224116": 1,
+        "1442.023132": 1
+      }
+    },
+    {
+      "commit": "f9570a2b1bd30075f574fad7651da9a86431fb4f",
+      "path": "apps/api/src/services/currentFrontendIntegration.validation.ts",
+      "occurrences": {
+        "1.224116": 1,
+        "1442.023132": 1
+      }
+    },
+    {
+      "commit": "f9570a2b1bd30075f574fad7651da9a86431fb4f",
+      "path": "docs/UNIFIED_RESULTS_AUDIT.md",
+      "occurrences": {
+        "1.224116": 1,
+        "1442.023132": 1
+      }
+    },
+    {
+      "commit": "f9570a2b1bd30075f574fad7651da9a86431fb4f",
+      "path": "packages/shared/src/schema.ts",
+      "occurrences": {
+        "1.224116": 1,
+        "1442.023132": 1
+      }
+    },
+    {
+      "commit": "f9570a2b1bd30075f574fad7651da9a86431fb4f",
+      "path": "scripts/research/longitudinal/consolidate_unified_results.py",
+      "occurrences": {
+        "1.224116": 1,
+        "1442.023132": 1
+      }
+    },
+    {
+      "commit": "04b3865719edc2aab667f130b6e09269b4b0a186",
+      "path": "apps/api/artifacts/sop_evaluation_summary.json",
+      "occurrences": {
+        "1.224116": 1,
+        "1442.023132": 1
+      }
+    },
+    {
+      "commit": "04b3865719edc2aab667f130b6e09269b4b0a186",
+      "path": "apps/api/src/services/currentFrontendIntegration.validation.ts",
+      "occurrences": {
+        "1.224116": 1,
+        "1442.023132": 1
+      }
+    },
+    {
+      "commit": "04b3865719edc2aab667f130b6e09269b4b0a186",
+      "path": "docs/UNIFIED_RESULTS_AUDIT.md",
+      "occurrences": {
+        "1.224116": 1,
+        "1442.023132": 1
+      }
+    },
+    {
+      "commit": "04b3865719edc2aab667f130b6e09269b4b0a186",
+      "path": "packages/shared/src/schema.ts",
+      "occurrences": {
+        "1.224116": 1,
+        "1442.023132": 1
+      }
+    },
+    {
+      "commit": "04b3865719edc2aab667f130b6e09269b4b0a186",
+      "path": "scripts/research/longitudinal/consolidate_unified_results.py",
+      "occurrences": {
+        "1.224116": 1,
+        "1442.023132": 1
+      }
+    },
+    {
+      "commit": "a56bafee6aaa0662deb0e34cbc5c99b27b9e92a9",
+      "path": "apps/api/artifacts/sop_evaluation_summary.json",
+      "occurrences": {
+        "1.224116": 1,
+        "1442.023132": 1
+      }
+    },
+    {
+      "commit": "a56bafee6aaa0662deb0e34cbc5c99b27b9e92a9",
+      "path": "apps/api/src/services/currentFrontendIntegration.validation.ts",
+      "occurrences": {
+        "1.224116": 1,
+        "1442.023132": 1
+      }
+    },
+    {
+      "commit": "a56bafee6aaa0662deb0e34cbc5c99b27b9e92a9",
+      "path": "docs/UNIFIED_RESULTS_AUDIT.md",
+      "occurrences": {
+        "1.224116": 1,
+        "1442.023132": 1
+      }
+    },
+    {
+      "commit": "a56bafee6aaa0662deb0e34cbc5c99b27b9e92a9",
+      "path": "packages/shared/src/schema.ts",
+      "occurrences": {
+        "1.224116": 1,
+        "1442.023132": 1
+      }
+    },
+    {
+      "commit": "a56bafee6aaa0662deb0e34cbc5c99b27b9e92a9",
+      "path": "scripts/research/longitudinal/consolidate_unified_results.py",
+      "occurrences": {
+        "1.224116": 1,
+        "1442.023132": 1
+      }
+    },
+    {
+      "commit": "2b013213c259b7e37e9e56d1ffeda8506147515c",
+      "path": "apps/api/artifacts/sop_evaluation_summary.json",
+      "occurrences": {
+        "1.224116": 1,
+        "1442.023132": 1
+      }
+    },
+    {
+      "commit": "2b013213c259b7e37e9e56d1ffeda8506147515c",
+      "path": "apps/api/src/services/currentFrontendIntegration.validation.ts",
+      "occurrences": {
+        "1.224116": 1,
+        "1442.023132": 1
+      }
+    },
+    {
+      "commit": "2b013213c259b7e37e9e56d1ffeda8506147515c",
+      "path": "docs/UNIFIED_RESULTS_AUDIT.md",
+      "occurrences": {
+        "1.224116": 1,
+        "1442.023132": 1
+      }
+    },
+    {
+      "commit": "2b013213c259b7e37e9e56d1ffeda8506147515c",
+      "path": "packages/shared/src/schema.ts",
+      "occurrences": {
+        "1.224116": 1,
+        "1442.023132": 1
+      }
+    },
+    {
+      "commit": "2b013213c259b7e37e9e56d1ffeda8506147515c",
+      "path": "scripts/research/longitudinal/consolidate_unified_results.py",
+      "occurrences": {
+        "1.224116": 1,
+        "1442.023132": 1
+      }
+    },
+    {
+      "commit": "1f0b211a656cea7330af9d4e376a3d9a4fc3eac7",
+      "path": "apps/api/artifacts/sop_evaluation_summary.json",
+      "occurrences": {
+        "1.224116": 1,
+        "1442.023132": 1
+      }
+    },
+    {
+      "commit": "1f0b211a656cea7330af9d4e376a3d9a4fc3eac7",
+      "path": "apps/api/src/services/currentFrontendIntegration.validation.ts",
+      "occurrences": {
+        "1.224116": 1,
+        "1442.023132": 1
+      }
+    },
+    {
+      "commit": "1f0b211a656cea7330af9d4e376a3d9a4fc3eac7",
+      "path": "docs/UNIFIED_RESULTS_AUDIT.md",
+      "occurrences": {
+        "1.224116": 1,
+        "1442.023132": 1
+      }
+    },
+    {
+      "commit": "1f0b211a656cea7330af9d4e376a3d9a4fc3eac7",
+      "path": "packages/shared/src/schema.ts",
+      "occurrences": {
+        "1.224116": 1,
+        "1442.023132": 1
+      }
+    },
+    {
+      "commit": "1f0b211a656cea7330af9d4e376a3d9a4fc3eac7",
+      "path": "scripts/research/longitudinal/consolidate_unified_results.py",
+      "occurrences": {
+        "1.224116": 1,
+        "1442.023132": 1
+      }
+    },
+    {
+      "commit": "36f3848ec1e7fc4a80362127e94897b08e148ff6",
+      "path": "apps/api/artifacts/sop_evaluation_summary.json",
+      "occurrences": {
+        "1.224116": 1,
+        "1442.023132": 1
+      }
+    },
+    {
+      "commit": "36f3848ec1e7fc4a80362127e94897b08e148ff6",
+      "path": "apps/api/src/services/currentFrontendIntegration.validation.ts",
+      "occurrences": {
+        "1.224116": 1,
+        "1442.023132": 1
+      }
+    },
+    {
+      "commit": "36f3848ec1e7fc4a80362127e94897b08e148ff6",
+      "path": "docs/UNIFIED_RESULTS_AUDIT.md",
+      "occurrences": {
+        "1.224116": 1,
+        "1442.023132": 1
+      }
+    },
+    {
+      "commit": "36f3848ec1e7fc4a80362127e94897b08e148ff6",
+      "path": "packages/shared/src/schema.ts",
+      "occurrences": {
+        "1.224116": 1,
+        "1442.023132": 1
+      }
+    },
+    {
+      "commit": "36f3848ec1e7fc4a80362127e94897b08e148ff6",
+      "path": "scripts/research/longitudinal/consolidate_unified_results.py",
+      "occurrences": {
+        "1.224116": 1,
+        "1442.023132": 1
+      }
+    },
+    {
+      "commit": "dd6366fb68a5267e15aa296e58aace36cd304721",
+      "path": "apps/api/artifacts/sop_evaluation_summary.json",
+      "occurrences": {
+        "1.224116": 1,
+        "1442.023132": 1
+      }
+    },
+    {
+      "commit": "dd6366fb68a5267e15aa296e58aace36cd304721",
+      "path": "apps/api/src/services/currentFrontendIntegration.validation.ts",
+      "occurrences": {
+        "1.224116": 1,
+        "1442.023132": 1
+      }
+    },
+    {
+      "commit": "dd6366fb68a5267e15aa296e58aace36cd304721",
+      "path": "docs/UNIFIED_RESULTS_AUDIT.md",
+      "occurrences": {
+        "1.224116": 1,
+        "1442.023132": 1
+      }
+    },
+    {
+      "commit": "dd6366fb68a5267e15aa296e58aace36cd304721",
+      "path": "packages/shared/src/schema.ts",
+      "occurrences": {
+        "1.224116": 1,
+        "1442.023132": 1
+      }
+    },
+    {
+      "commit": "dd6366fb68a5267e15aa296e58aace36cd304721",
+      "path": "scripts/research/longitudinal/consolidate_unified_results.py",
+      "occurrences": {
+        "1.224116": 1,
+        "1442.023132": 1
+      }
+    },
+    {
+      "commit": "7127d537fb95c97556d026f9b2d3a91a92b598a4",
+      "path": "apps/api/artifacts/sop_evaluation_summary.json",
+      "occurrences": {
+        "1.224116": 1,
+        "1442.023132": 1
+      }
+    },
+    {
+      "commit": "7127d537fb95c97556d026f9b2d3a91a92b598a4",
+      "path": "docs/UNIFIED_RESULTS_AUDIT.md",
+      "occurrences": {
+        "1.224116": 1,
+        "1442.023132": 1
+      }
+    },
+    {
+      "commit": "7127d537fb95c97556d026f9b2d3a91a92b598a4",
+      "path": "packages/shared/src/schema.ts",
+      "occurrences": {
+        "1.224116": 1,
+        "1442.023132": 1
+      }
+    },
+    {
+      "commit": "7127d537fb95c97556d026f9b2d3a91a92b598a4",
+      "path": "scripts/research/longitudinal/consolidate_unified_results.py",
+      "occurrences": {
+        "1.224116": 1,
+        "1442.023132": 1
+      }
+    },
+    {
+      "commit": "2772427369a8dbf1a41907553de275bb053f3ea3",
+      "path": "apps/api/artifacts/sop_evaluation_summary.json",
+      "occurrences": {
+        "1.224116": 1,
+        "1442.023132": 1
+      }
+    },
+    {
+      "commit": "2772427369a8dbf1a41907553de275bb053f3ea3",
+      "path": "docs/UNIFIED_RESULTS_AUDIT.md",
+      "occurrences": {
+        "1.224116": 1,
+        "1442.023132": 1
+      }
+    },
+    {
+      "commit": "2772427369a8dbf1a41907553de275bb053f3ea3",
+      "path": "packages/shared/src/schema.ts",
+      "occurrences": {
+        "1.224116": 1,
+        "1442.023132": 1
+      }
+    },
+    {
+      "commit": "2772427369a8dbf1a41907553de275bb053f3ea3",
+      "path": "scripts/research/longitudinal/consolidate_unified_results.py",
+      "occurrences": {
+        "1.224116": 1,
+        "1442.023132": 1
+      }
+    },
+    {
+      "commit": "f862ab870a5b53a622961b6b5e140ec2aed58d11",
+      "path": "apps/api/artifacts/sop_evaluation_summary.json",
+      "occurrences": {
+        "1.224116": 1,
+        "1442.023132": 1
+      }
+    },
+    {
+      "commit": "f862ab870a5b53a622961b6b5e140ec2aed58d11",
+      "path": "docs/UNIFIED_RESULTS_AUDIT.md",
+      "occurrences": {
+        "1.224116": 1,
+        "1442.023132": 1
+      }
+    },
+    {
+      "commit": "f862ab870a5b53a622961b6b5e140ec2aed58d11",
+      "path": "packages/shared/src/schema.ts",
+      "occurrences": {
+        "1.224116": 1,
+        "1442.023132": 1
+      }
+    },
+    {
+      "commit": "f862ab870a5b53a622961b6b5e140ec2aed58d11",
+      "path": "scripts/research/longitudinal/consolidate_unified_results.py",
+      "occurrences": {
+        "1.224116": 1,
+        "1442.023132": 1
+      }
+    },
+    {
+      "commit": "c9a03413d051ea77311c2f251357daae553bc82e",
+      "path": "apps/api/artifacts/sop_evaluation_summary.json",
+      "occurrences": {
+        "1.224116": 1,
+        "1442.023132": 1
+      }
+    },
+    {
+      "commit": "c9a03413d051ea77311c2f251357daae553bc82e",
+      "path": "docs/UNIFIED_RESULTS_AUDIT.md",
+      "occurrences": {
+        "1.224116": 1,
+        "1442.023132": 1
+      }
+    },
+    {
+      "commit": "c9a03413d051ea77311c2f251357daae553bc82e",
+      "path": "packages/shared/src/schema.ts",
+      "occurrences": {
+        "1.224116": 1,
+        "1442.023132": 1
+      }
+    },
+    {
+      "commit": "c9a03413d051ea77311c2f251357daae553bc82e",
+      "path": "scripts/research/longitudinal/consolidate_unified_results.py",
+      "occurrences": {
+        "1.224116": 1,
+        "1442.023132": 1
+      }
+    },
+    {
+      "commit": "fa4a11e865df2f5021fe7545cd606ef3d236d0f9",
+      "path": "apps/api/artifacts/sop_evaluation_summary.json",
+      "occurrences": {
+        "1.224116": 1,
+        "1442.023132": 1
+      }
+    },
+    {
+      "commit": "fa4a11e865df2f5021fe7545cd606ef3d236d0f9",
+      "path": "docs/UNIFIED_RESULTS_AUDIT.md",
+      "occurrences": {
+        "1.224116": 1,
+        "1442.023132": 1
+      }
+    },
+    {
+      "commit": "fa4a11e865df2f5021fe7545cd606ef3d236d0f9",
+      "path": "packages/shared/src/schema.ts",
+      "occurrences": {
+        "1.224116": 1,
+        "1442.023132": 1
+      }
+    },
+    {
+      "commit": "fa4a11e865df2f5021fe7545cd606ef3d236d0f9",
+      "path": "scripts/research/longitudinal/consolidate_unified_results.py",
+      "occurrences": {
+        "1.224116": 1,
+        "1442.023132": 1
+      }
+    },
+    {
+      "commit": "67c1574368af25c05291e0a5d5ac14028c7e1a6e",
+      "path": "apps/api/artifacts/sop_evaluation_summary.json",
+      "occurrences": {
+        "1.224116": 1,
+        "1442.023132": 1
+      }
+    },
+    {
+      "commit": "67c1574368af25c05291e0a5d5ac14028c7e1a6e",
+      "path": "docs/UNIFIED_RESULTS_AUDIT.md",
+      "occurrences": {
+        "1.224116": 1,
+        "1442.023132": 1
+      }
+    },
+    {
+      "commit": "67c1574368af25c05291e0a5d5ac14028c7e1a6e",
+      "path": "packages/shared/src/schema.ts",
+      "occurrences": {
+        "1.224116": 1,
+        "1442.023132": 1
+      }
+    },
+    {
+      "commit": "67c1574368af25c05291e0a5d5ac14028c7e1a6e",
+      "path": "scripts/research/longitudinal/consolidate_unified_results.py",
+      "occurrences": {
+        "1.224116": 1,
+        "1442.023132": 1
+      }
+    },
+    {
+      "commit": "6204d8d3d633dd0e139406819c116046e5ef00a8",
+      "path": "apps/api/artifacts/sop_evaluation_summary.json",
+      "occurrences": {
+        "1.224116": 1,
+        "1442.023132": 1
+      }
+    },
+    {
+      "commit": "6204d8d3d633dd0e139406819c116046e5ef00a8",
+      "path": "docs/UNIFIED_RESULTS_AUDIT.md",
+      "occurrences": {
+        "1.224116": 1,
+        "1442.023132": 1
+      }
+    },
+    {
+      "commit": "6204d8d3d633dd0e139406819c116046e5ef00a8",
+      "path": "packages/shared/src/schema.ts",
+      "occurrences": {
+        "1.224116": 1,
+        "1442.023132": 1
+      }
+    },
+    {
+      "commit": "6204d8d3d633dd0e139406819c116046e5ef00a8",
+      "path": "scripts/research/longitudinal/consolidate_unified_results.py",
+      "occurrences": {
+        "1.224116": 1,
+        "1442.023132": 1
+      }
+    },
+    {
+      "commit": "8fba684afb54a8f3625b32ebf1e7fec7e6c2e8c4",
+      "path": "apps/api/artifacts/sop_evaluation_summary.json",
+      "occurrences": {
+        "1.224116": 1,
+        "1442.023132": 1
+      }
+    },
+    {
+      "commit": "8fba684afb54a8f3625b32ebf1e7fec7e6c2e8c4",
+      "path": "docs/UNIFIED_RESULTS_AUDIT.md",
+      "occurrences": {
+        "1.224116": 1,
+        "1442.023132": 1
+      }
+    },
+    {
+      "commit": "8fba684afb54a8f3625b32ebf1e7fec7e6c2e8c4",
+      "path": "packages/shared/src/schema.ts",
+      "occurrences": {
+        "1.224116": 1,
+        "1442.023132": 1
+      }
+    },
+    {
+      "commit": "8fba684afb54a8f3625b32ebf1e7fec7e6c2e8c4",
+      "path": "scripts/research/longitudinal/consolidate_unified_results.py",
+      "occurrences": {
+        "1.224116": 1,
+        "1442.023132": 1
+      }
+    },
+    {
+      "commit": "6ea23b5e26dcc72c3660ca873d06fd57aa05d5ad",
+      "path": "apps/api/artifacts/sop_evaluation_summary.json",
+      "occurrences": {
+        "1.224116": 1,
+        "1442.023132": 1
+      }
+    },
+    {
+      "commit": "6ea23b5e26dcc72c3660ca873d06fd57aa05d5ad",
+      "path": "docs/UNIFIED_RESULTS_AUDIT.md",
+      "occurrences": {
+        "1.224116": 1,
+        "1442.023132": 1
+      }
+    },
+    {
+      "commit": "6ea23b5e26dcc72c3660ca873d06fd57aa05d5ad",
+      "path": "packages/shared/src/schema.ts",
+      "occurrences": {
+        "1.224116": 1,
+        "1442.023132": 1
+      }
+    },
+    {
+      "commit": "6ea23b5e26dcc72c3660ca873d06fd57aa05d5ad",
+      "path": "scripts/research/longitudinal/consolidate_unified_results.py",
+      "occurrences": {
+        "1.224116": 1,
+        "1442.023132": 1
+      }
+    },
+    {
+      "commit": "eb63c0019b10fc5322107c59c001c1e2905d2d13",
+      "path": "apps/api/artifacts/sop_evaluation_summary.json",
+      "occurrences": {
+        "1.224116": 1,
+        "1442.023132": 1
+      }
+    },
+    {
+      "commit": "eb63c0019b10fc5322107c59c001c1e2905d2d13",
+      "path": "docs/UNIFIED_RESULTS_AUDIT.md",
+      "occurrences": {
+        "1.224116": 1,
+        "1442.023132": 1
+      }
+    },
+    {
+      "commit": "eb63c0019b10fc5322107c59c001c1e2905d2d13",
+      "path": "packages/shared/src/schema.ts",
+      "occurrences": {
+        "1.224116": 1,
+        "1442.023132": 1
+      }
+    },
+    {
+      "commit": "eb63c0019b10fc5322107c59c001c1e2905d2d13",
+      "path": "scripts/research/longitudinal/consolidate_unified_results.py",
+      "occurrences": {
+        "1.224116": 1,
+        "1442.023132": 1
+      }
+    },
+    {
+      "commit": "4c1b275fc33fd8ec5a14154c809aa20070821396",
+      "path": "apps/api/artifacts/sop_evaluation_summary.json",
+      "occurrences": {
+        "1.224116": 1,
+        "1442.023132": 1
+      }
+    },
+    {
+      "commit": "4c1b275fc33fd8ec5a14154c809aa20070821396",
+      "path": "docs/UNIFIED_RESULTS_AUDIT.md",
+      "occurrences": {
+        "1.224116": 1,
+        "1442.023132": 1
+      }
+    },
+    {
+      "commit": "4c1b275fc33fd8ec5a14154c809aa20070821396",
+      "path": "packages/shared/src/schema.ts",
+      "occurrences": {
+        "1.224116": 1,
+        "1442.023132": 1
+      }
+    },
+    {
+      "commit": "4c1b275fc33fd8ec5a14154c809aa20070821396",
+      "path": "scripts/research/longitudinal/consolidate_unified_results.py",
+      "occurrences": {
+        "1.224116": 1,
+        "1442.023132": 1
+      }
+    },
+    {
+      "commit": "0c674b295bb8e040554d2ac3ad6e335e5d5444ae",
+      "path": "apps/api/artifacts/sop_evaluation_summary.json",
+      "occurrences": {
+        "1.224116": 1,
+        "1442.023132": 1
+      }
+    },
+    {
+      "commit": "0c674b295bb8e040554d2ac3ad6e335e5d5444ae",
+      "path": "docs/UNIFIED_RESULTS_AUDIT.md",
+      "occurrences": {
+        "1.224116": 1,
+        "1442.023132": 1
+      }
+    },
+    {
+      "commit": "0c674b295bb8e040554d2ac3ad6e335e5d5444ae",
+      "path": "packages/shared/src/schema.ts",
+      "occurrences": {
+        "1.224116": 1,
+        "1442.023132": 1
+      }
+    },
+    {
+      "commit": "0c674b295bb8e040554d2ac3ad6e335e5d5444ae",
+      "path": "scripts/research/longitudinal/consolidate_unified_results.py",
+      "occurrences": {
+        "1.224116": 1,
+        "1442.023132": 1
+      }
+    },
+    {
+      "commit": "205d7dd7a98b6057cdc57e830c22c84383b1eb9c",
+      "path": "apps/api/artifacts/sop_evaluation_summary.json",
+      "occurrences": {
+        "1.224116": 1,
+        "1442.023132": 1
+      }
+    },
+    {
+      "commit": "205d7dd7a98b6057cdc57e830c22c84383b1eb9c",
+      "path": "docs/UNIFIED_RESULTS_AUDIT.md",
+      "occurrences": {
+        "1.224116": 1,
+        "1442.023132": 1
+      }
+    },
+    {
+      "commit": "205d7dd7a98b6057cdc57e830c22c84383b1eb9c",
+      "path": "packages/shared/src/schema.ts",
+      "occurrences": {
+        "1.224116": 1,
+        "1442.023132": 1
+      }
+    },
+    {
+      "commit": "205d7dd7a98b6057cdc57e830c22c84383b1eb9c",
+      "path": "scripts/research/longitudinal/consolidate_unified_results.py",
+      "occurrences": {
+        "1.224116": 1,
+        "1442.023132": 1
+      }
+    },
+    {
+      "commit": "787cec1fe29043ff3a929106cd62037ddc70f14c",
+      "path": "apps/api/artifacts/sop_evaluation_summary.json",
+      "occurrences": {
+        "1.224116": 1,
+        "1442.023132": 1
+      }
+    },
+    {
+      "commit": "787cec1fe29043ff3a929106cd62037ddc70f14c",
+      "path": "docs/UNIFIED_RESULTS_AUDIT.md",
+      "occurrences": {
+        "1.224116": 1,
+        "1442.023132": 1
+      }
+    },
+    {
+      "commit": "787cec1fe29043ff3a929106cd62037ddc70f14c",
+      "path": "packages/shared/src/schema.ts",
+      "occurrences": {
+        "1.224116": 1,
+        "1442.023132": 1
+      }
+    },
+    {
+      "commit": "787cec1fe29043ff3a929106cd62037ddc70f14c",
+      "path": "scripts/research/longitudinal/consolidate_unified_results.py",
+      "occurrences": {
+        "1.224116": 1,
+        "1442.023132": 1
+      }
+    },
+    {
+      "commit": "73ddf8f55b3ebb71dcbffb06709717894fb9d3f9",
+      "path": "apps/api/artifacts/sop_evaluation_summary.json",
+      "occurrences": {
+        "1.224116": 1,
+        "1442.023132": 1
+      }
+    },
+    {
+      "commit": "73ddf8f55b3ebb71dcbffb06709717894fb9d3f9",
+      "path": "docs/UNIFIED_RESULTS_AUDIT.md",
+      "occurrences": {
+        "1.224116": 1,
+        "1442.023132": 1
+      }
+    },
+    {
+      "commit": "73ddf8f55b3ebb71dcbffb06709717894fb9d3f9",
+      "path": "packages/shared/src/schema.ts",
+      "occurrences": {
+        "1.224116": 1,
+        "1442.023132": 1
+      }
+    },
+    {
+      "commit": "73ddf8f55b3ebb71dcbffb06709717894fb9d3f9",
+      "path": "scripts/research/longitudinal/consolidate_unified_results.py",
+      "occurrences": {
+        "1.224116": 1,
+        "1442.023132": 1
+      }
+    },
+    {
+      "commit": "865fa64f554523466bee180c50909c9ccf7ccfe9",
+      "path": "apps/api/artifacts/sop_evaluation_summary.json",
+      "occurrences": {
+        "1.224116": 1,
+        "1442.023132": 1
+      }
+    },
+    {
+      "commit": "865fa64f554523466bee180c50909c9ccf7ccfe9",
+      "path": "docs/UNIFIED_RESULTS_AUDIT.md",
+      "occurrences": {
+        "1.224116": 1,
+        "1442.023132": 1
+      }
+    },
+    {
+      "commit": "865fa64f554523466bee180c50909c9ccf7ccfe9",
+      "path": "packages/shared/src/schema.ts",
+      "occurrences": {
+        "1.224116": 1,
+        "1442.023132": 1
+      }
+    },
+    {
+      "commit": "865fa64f554523466bee180c50909c9ccf7ccfe9",
+      "path": "scripts/research/longitudinal/consolidate_unified_results.py",
+      "occurrences": {
+        "1.224116": 1,
+        "1442.023132": 1
+      }
+    },
+    {
+      "commit": "45f04caadc5183de034a25c090dce0e846b11cfd",
+      "path": "apps/api/artifacts/sop_evaluation_summary.json",
+      "occurrences": {
+        "1.224116": 1,
+        "1442.023132": 1
+      }
+    },
+    {
+      "commit": "45f04caadc5183de034a25c090dce0e846b11cfd",
+      "path": "docs/UNIFIED_RESULTS_AUDIT.md",
+      "occurrences": {
+        "1.224116": 1,
+        "1442.023132": 1
+      }
+    },
+    {
+      "commit": "45f04caadc5183de034a25c090dce0e846b11cfd",
+      "path": "packages/shared/src/schema.ts",
+      "occurrences": {
+        "1.224116": 1,
+        "1442.023132": 1
+      }
+    },
+    {
+      "commit": "45f04caadc5183de034a25c090dce0e846b11cfd",
+      "path": "scripts/research/longitudinal/consolidate_unified_results.py",
+      "occurrences": {
+        "1.224116": 1,
+        "1442.023132": 1
+      }
+    },
+    {
+      "commit": "75894e8ad1b2186281d247dcc14c1c78d25ae637",
+      "path": "apps/api/artifacts/sop_evaluation_summary.json",
+      "occurrences": {
+        "1.224116": 1,
+        "1442.023132": 1
+      }
+    },
+    {
+      "commit": "75894e8ad1b2186281d247dcc14c1c78d25ae637",
+      "path": "docs/UNIFIED_RESULTS_AUDIT.md",
+      "occurrences": {
+        "1.224116": 1,
+        "1442.023132": 1
+      }
+    },
+    {
+      "commit": "75894e8ad1b2186281d247dcc14c1c78d25ae637",
+      "path": "packages/shared/src/schema.ts",
+      "occurrences": {
+        "1.224116": 1,
+        "1442.023132": 1
+      }
+    },
+    {
+      "commit": "75894e8ad1b2186281d247dcc14c1c78d25ae637",
+      "path": "scripts/research/longitudinal/consolidate_unified_results.py",
+      "occurrences": {
+        "1.224116": 1,
+        "1442.023132": 1
+      }
+    },
+    {
+      "commit": "17d76c90e15aec2632894340fcfd617705f7d091",
+      "path": "apps/api/artifacts/sop_evaluation_summary.json",
+      "occurrences": {
+        "1.224116": 1,
+        "1442.023132": 1
+      }
+    },
+    {
+      "commit": "17d76c90e15aec2632894340fcfd617705f7d091",
+      "path": "docs/UNIFIED_RESULTS_AUDIT.md",
+      "occurrences": {
+        "1.224116": 1,
+        "1442.023132": 1
+      }
+    },
+    {
+      "commit": "17d76c90e15aec2632894340fcfd617705f7d091",
+      "path": "packages/shared/src/schema.ts",
+      "occurrences": {
+        "1.224116": 1,
+        "1442.023132": 1
+      }
+    },
+    {
+      "commit": "17d76c90e15aec2632894340fcfd617705f7d091",
+      "path": "scripts/research/longitudinal/consolidate_unified_results.py",
+      "occurrences": {
+        "1.224116": 1,
+        "1442.023132": 1
+      }
+    },
+    {
+      "commit": "42f575b60b864c1bb8c146c77e587fff0fb48c11",
+      "path": "apps/api/artifacts/sop_evaluation_summary.json",
+      "occurrences": {
+        "1.224116": 1,
+        "1442.023132": 1
+      }
+    },
+    {
+      "commit": "42f575b60b864c1bb8c146c77e587fff0fb48c11",
+      "path": "docs/UNIFIED_RESULTS_AUDIT.md",
+      "occurrences": {
+        "1.224116": 1,
+        "1442.023132": 1
+      }
+    },
+    {
+      "commit": "42f575b60b864c1bb8c146c77e587fff0fb48c11",
+      "path": "packages/shared/src/schema.ts",
+      "occurrences": {
+        "1.224116": 1,
+        "1442.023132": 1
+      }
+    },
+    {
+      "commit": "42f575b60b864c1bb8c146c77e587fff0fb48c11",
+      "path": "scripts/research/longitudinal/consolidate_unified_results.py",
+      "occurrences": {
+        "1.224116": 1,
+        "1442.023132": 1
+      }
+    },
+    {
+      "commit": "0746bab70908c15bbfa785d470b238bc4007ff76",
+      "path": "apps/api/artifacts/sop_evaluation_summary.json",
+      "occurrences": {
+        "1.224116": 1,
+        "1442.023132": 1
+      }
+    },
+    {
+      "commit": "0746bab70908c15bbfa785d470b238bc4007ff76",
+      "path": "docs/UNIFIED_RESULTS_AUDIT.md",
+      "occurrences": {
+        "1.224116": 1,
+        "1442.023132": 1
+      }
+    },
+    {
+      "commit": "0746bab70908c15bbfa785d470b238bc4007ff76",
+      "path": "packages/shared/src/schema.ts",
+      "occurrences": {
+        "1.224116": 1,
+        "1442.023132": 1
+      }
+    },
+    {
+      "commit": "0746bab70908c15bbfa785d470b238bc4007ff76",
+      "path": "scripts/research/longitudinal/consolidate_unified_results.py",
+      "occurrences": {
+        "1.224116": 1,
+        "1442.023132": 1
+      }
+    },
+    {
+      "commit": "16356c5c4d8325b01772748a8dd4ec339e5af999",
+      "path": "apps/api/artifacts/sop_evaluation_summary.json",
+      "occurrences": {
+        "1.224116": 1,
+        "1442.023132": 1
+      }
+    },
+    {
+      "commit": "16356c5c4d8325b01772748a8dd4ec339e5af999",
+      "path": "docs/UNIFIED_RESULTS_AUDIT.md",
+      "occurrences": {
+        "1.224116": 1,
+        "1442.023132": 1
+      }
+    },
+    {
+      "commit": "16356c5c4d8325b01772748a8dd4ec339e5af999",
+      "path": "packages/shared/src/schema.ts",
+      "occurrences": {
+        "1.224116": 1,
+        "1442.023132": 1
+      }
+    },
+    {
+      "commit": "16356c5c4d8325b01772748a8dd4ec339e5af999",
+      "path": "scripts/research/longitudinal/consolidate_unified_results.py",
+      "occurrences": {
+        "1.224116": 1,
+        "1442.023132": 1
+      }
+    },
+    {
+      "commit": "3dc5d1b2cdbb4b8e4dca75b634f3ae4cbbc9b7ff",
+      "path": "apps/api/artifacts/sop_evaluation_summary.json",
+      "occurrences": {
+        "1.224116": 1,
+        "1442.023132": 1
+      }
+    },
+    {
+      "commit": "3dc5d1b2cdbb4b8e4dca75b634f3ae4cbbc9b7ff",
+      "path": "docs/UNIFIED_RESULTS_AUDIT.md",
+      "occurrences": {
+        "1.224116": 1,
+        "1442.023132": 1
+      }
+    },
+    {
+      "commit": "3dc5d1b2cdbb4b8e4dca75b634f3ae4cbbc9b7ff",
+      "path": "packages/shared/src/schema.ts",
+      "occurrences": {
+        "1.224116": 1,
+        "1442.023132": 1
+      }
+    },
+    {
+      "commit": "3dc5d1b2cdbb4b8e4dca75b634f3ae4cbbc9b7ff",
+      "path": "scripts/research/longitudinal/consolidate_unified_results.py",
+      "occurrences": {
+        "1.224116": 1,
+        "1442.023132": 1
+      }
+    },
+    {
+      "commit": "24a580101883a899a3f1c020baf9ac5531b4d01a",
+      "path": "apps/api/artifacts/sop_evaluation_summary.json",
+      "occurrences": {
+        "1.224116": 1,
+        "1442.023132": 1
+      }
+    },
+    {
+      "commit": "24a580101883a899a3f1c020baf9ac5531b4d01a",
+      "path": "docs/UNIFIED_RESULTS_AUDIT.md",
+      "occurrences": {
+        "1.224116": 1,
+        "1442.023132": 1
+      }
+    },
+    {
+      "commit": "24a580101883a899a3f1c020baf9ac5531b4d01a",
+      "path": "packages/shared/src/schema.ts",
+      "occurrences": {
+        "1.224116": 1,
+        "1442.023132": 1
+      }
+    },
+    {
+      "commit": "24a580101883a899a3f1c020baf9ac5531b4d01a",
+      "path": "scripts/research/longitudinal/consolidate_unified_results.py",
+      "occurrences": {
+        "1.224116": 1,
+        "1442.023132": 1
+      }
+    },
+    {
+      "commit": "ee2c4be06a167482e135c196d5324c986b86c4a4",
+      "path": "apps/api/artifacts/sop_evaluation_summary.json",
+      "occurrences": {
+        "1.224116": 1,
+        "1442.023132": 1
+      }
+    },
+    {
+      "commit": "ee2c4be06a167482e135c196d5324c986b86c4a4",
+      "path": "docs/UNIFIED_RESULTS_AUDIT.md",
+      "occurrences": {
+        "1.224116": 1,
+        "1442.023132": 1
+      }
+    },
+    {
+      "commit": "ee2c4be06a167482e135c196d5324c986b86c4a4",
+      "path": "packages/shared/src/schema.ts",
+      "occurrences": {
+        "1.224116": 1,
+        "1442.023132": 1
+      }
+    },
+    {
+      "commit": "ee2c4be06a167482e135c196d5324c986b86c4a4",
+      "path": "scripts/research/longitudinal/consolidate_unified_results.py",
+      "occurrences": {
+        "1.224116": 1,
+        "1442.023132": 1
+      }
+    },
+    {
+      "commit": "d2c298b8d4da8b0fe74656b9afcc176df8fd657c",
+      "path": "apps/api/artifacts/sop_evaluation_summary.json",
+      "occurrences": {
+        "1.224116": 1,
+        "1442.023132": 1
+      }
+    },
+    {
+      "commit": "d2c298b8d4da8b0fe74656b9afcc176df8fd657c",
+      "path": "docs/UNIFIED_RESULTS_AUDIT.md",
+      "occurrences": {
+        "1.224116": 1,
+        "1442.023132": 1
+      }
+    },
+    {
+      "commit": "d2c298b8d4da8b0fe74656b9afcc176df8fd657c",
+      "path": "packages/shared/src/schema.ts",
+      "occurrences": {
+        "1.224116": 1,
+        "1442.023132": 1
+      }
+    },
+    {
+      "commit": "d2c298b8d4da8b0fe74656b9afcc176df8fd657c",
+      "path": "scripts/research/longitudinal/consolidate_unified_results.py",
+      "occurrences": {
+        "1.224116": 1,
+        "1442.023132": 1
+      }
+    },
+    {
+      "commit": "dcf3cf374dc34654386df8a3ca857c5675cca5d2",
+      "path": "apps/api/artifacts/sop_evaluation_summary.json",
+      "occurrences": {
+        "1.224116": 1,
+        "1442.023132": 1
+      }
+    },
+    {
+      "commit": "dcf3cf374dc34654386df8a3ca857c5675cca5d2",
+      "path": "docs/UNIFIED_RESULTS_AUDIT.md",
+      "occurrences": {
+        "1.224116": 1,
+        "1442.023132": 1
+      }
+    },
+    {
+      "commit": "dcf3cf374dc34654386df8a3ca857c5675cca5d2",
+      "path": "packages/shared/src/schema.ts",
+      "occurrences": {
+        "1.224116": 1,
+        "1442.023132": 1
+      }
+    },
+    {
+      "commit": "dcf3cf374dc34654386df8a3ca857c5675cca5d2",
+      "path": "scripts/research/longitudinal/consolidate_unified_results.py",
+      "occurrences": {
+        "1.224116": 1,
+        "1442.023132": 1
+      }
+    },
+    {
+      "commit": "09471a8fc5b44164e4ecfd62f347abd7dee567c1",
+      "path": "apps/api/artifacts/sop_evaluation_summary.json",
+      "occurrences": {
+        "1.224116": 1,
+        "1442.023132": 1
+      }
+    },
+    {
+      "commit": "09471a8fc5b44164e4ecfd62f347abd7dee567c1",
+      "path": "docs/UNIFIED_RESULTS_AUDIT.md",
+      "occurrences": {
+        "1.224116": 1,
+        "1442.023132": 1
+      }
+    },
+    {
+      "commit": "09471a8fc5b44164e4ecfd62f347abd7dee567c1",
+      "path": "packages/shared/src/schema.ts",
+      "occurrences": {
+        "1.224116": 1,
+        "1442.023132": 1
+      }
+    },
+    {
+      "commit": "09471a8fc5b44164e4ecfd62f347abd7dee567c1",
+      "path": "scripts/research/longitudinal/consolidate_unified_results.py",
+      "occurrences": {
+        "1.224116": 1,
+        "1442.023132": 1
+      }
+    },
+    {
+      "commit": "f7a2abf7bd2c5d067cb003ce9d44e3e80f199835",
+      "path": "apps/api/artifacts/sop_evaluation_summary.json",
+      "occurrences": {
+        "1.224116": 3,
+        "1442.023132": 3
+      }
+    },
+    {
+      "commit": "f7a2abf7bd2c5d067cb003ce9d44e3e80f199835",
+      "path": "docs/UNIFIED_RESULTS_AUDIT.md",
+      "occurrences": {
+        "1.224116": 1,
+        "1442.023132": 1
+      }
+    },
+    {
+      "commit": "f7a2abf7bd2c5d067cb003ce9d44e3e80f199835",
+      "path": "packages/shared/src/schema.ts",
+      "occurrences": {
+        "1.224116": 1,
+        "1442.023132": 1
+      }
+    },
+    {
+      "commit": "f7a2abf7bd2c5d067cb003ce9d44e3e80f199835",
+      "path": "scripts/research/longitudinal/consolidate_unified_results.py",
+      "occurrences": {
+        "1.224116": 1,
+        "1442.023132": 1
+      }
+    },
+    {
+      "commit": "cf3359df5b8325979fdc75f971fe1ffa857a527d",
+      "path": "apps/api/artifacts/sop_evaluation_summary.json",
+      "occurrences": {
+        "1.224116": 3,
+        "1442.023132": 3
+      }
+    },
+    {
+      "commit": "cf3359df5b8325979fdc75f971fe1ffa857a527d",
+      "path": "docs/UNIFIED_RESULTS_AUDIT.md",
+      "occurrences": {
+        "1.224116": 1,
+        "1442.023132": 1
+      }
+    },
+    {
+      "commit": "cf3359df5b8325979fdc75f971fe1ffa857a527d",
+      "path": "packages/shared/src/schema.ts",
+      "occurrences": {
+        "1.224116": 1,
+        "1442.023132": 1
+      }
+    },
+    {
+      "commit": "cf3359df5b8325979fdc75f971fe1ffa857a527d",
+      "path": "scripts/research/longitudinal/consolidate_unified_results.py",
+      "occurrences": {
+        "1.224116": 1,
+        "1442.023132": 1
+      }
+    },
+    {
+      "commit": "d3fafe28fa135ed0b74cade8c2c94e289bcd65a5",
+      "path": "apps/api/artifacts/sop_evaluation_summary.json",
+      "occurrences": {
+        "1.224116": 3,
+        "1442.023132": 3
+      }
+    },
+    {
+      "commit": "d3fafe28fa135ed0b74cade8c2c94e289bcd65a5",
+      "path": "docs/UNIFIED_RESULTS_AUDIT.md",
+      "occurrences": {
+        "1.224116": 1,
+        "1442.023132": 1
+      }
+    },
+    {
+      "commit": "d3fafe28fa135ed0b74cade8c2c94e289bcd65a5",
+      "path": "packages/shared/src/schema.ts",
+      "occurrences": {
+        "1.224116": 1,
+        "1442.023132": 1
+      }
+    },
+    {
+      "commit": "d3fafe28fa135ed0b74cade8c2c94e289bcd65a5",
+      "path": "scripts/research/longitudinal/consolidate_unified_results.py",
+      "occurrences": {
+        "1.224116": 1,
+        "1442.023132": 1
+      }
+    },
+    {
+      "commit": "8c0916f6d3353a942c481d5601587a744ab68304",
+      "path": "apps/api/artifacts/sop_evaluation_summary.json",
+      "occurrences": {
+        "1.224116": 3,
+        "1442.023132": 3
+      }
+    },
+    {
+      "commit": "8c0916f6d3353a942c481d5601587a744ab68304",
+      "path": "docs/UNIFIED_RESULTS_AUDIT.md",
+      "occurrences": {
+        "1.224116": 1,
+        "1442.023132": 1
+      }
+    },
+    {
+      "commit": "8c0916f6d3353a942c481d5601587a744ab68304",
+      "path": "packages/shared/src/schema.ts",
+      "occurrences": {
+        "1.224116": 1,
+        "1442.023132": 1
+      }
+    },
+    {
+      "commit": "8c0916f6d3353a942c481d5601587a744ab68304",
+      "path": "scripts/research/longitudinal/consolidate_unified_results.py",
+      "occurrences": {
+        "1.224116": 1,
+        "1442.023132": 1
+      }
+    },
+    {
+      "commit": "974afad109f046768ea6cbea1210f631a8e39d7e",
+      "path": "apps/api/artifacts/sop_evaluation_summary.json",
+      "occurrences": {
+        "1.224116": 3,
+        "1442.023132": 3
+      }
+    },
+    {
+      "commit": "974afad109f046768ea6cbea1210f631a8e39d7e",
+      "path": "docs/UNIFIED_RESULTS_AUDIT.md",
+      "occurrences": {
+        "1.224116": 1,
+        "1442.023132": 1
+      }
+    },
+    {
+      "commit": "974afad109f046768ea6cbea1210f631a8e39d7e",
+      "path": "packages/shared/src/schema.ts",
+      "occurrences": {
+        "1.224116": 1,
+        "1442.023132": 1
+      }
+    },
+    {
+      "commit": "974afad109f046768ea6cbea1210f631a8e39d7e",
+      "path": "scripts/research/longitudinal/consolidate_unified_results.py",
+      "occurrences": {
+        "1.224116": 1,
+        "1442.023132": 1
+      }
+    },
+    {
+      "commit": "e82be40e5c827ccf6d159471298fe0d588af71cd",
+      "path": "apps/api/artifacts/sop_evaluation_summary.json",
+      "occurrences": {
+        "1.224116": 3,
+        "1442.023132": 3
+      }
+    },
+    {
+      "commit": "e82be40e5c827ccf6d159471298fe0d588af71cd",
+      "path": "docs/UNIFIED_RESULTS_AUDIT.md",
+      "occurrences": {
+        "1.224116": 1,
+        "1442.023132": 1
+      }
+    },
+    {
+      "commit": "e82be40e5c827ccf6d159471298fe0d588af71cd",
+      "path": "packages/shared/src/schema.ts",
+      "occurrences": {
+        "1.224116": 1,
+        "1442.023132": 1
+      }
+    },
+    {
+      "commit": "e82be40e5c827ccf6d159471298fe0d588af71cd",
+      "path": "scripts/research/longitudinal/consolidate_unified_results.py",
+      "occurrences": {
+        "1.224116": 1,
+        "1442.023132": 1
+      }
+    },
+    {
+      "commit": "aa0f0ec0004c61a8074fafc5ed134bdece0683b2",
+      "path": "apps/api/artifacts/sop_evaluation_summary.json",
+      "occurrences": {
+        "1.224116": 3,
+        "1442.023132": 3
+      }
+    },
+    {
+      "commit": "aa0f0ec0004c61a8074fafc5ed134bdece0683b2",
+      "path": "docs/UNIFIED_RESULTS_AUDIT.md",
+      "occurrences": {
+        "1.224116": 1,
+        "1442.023132": 1
+      }
+    },
+    {
+      "commit": "aa0f0ec0004c61a8074fafc5ed134bdece0683b2",
+      "path": "packages/shared/src/schema.ts",
+      "occurrences": {
+        "1.224116": 1,
+        "1442.023132": 1
+      }
+    },
+    {
+      "commit": "aa0f0ec0004c61a8074fafc5ed134bdece0683b2",
+      "path": "scripts/research/longitudinal/consolidate_unified_results.py",
+      "occurrences": {
+        "1.224116": 1,
+        "1442.023132": 1
+      }
+    },
+    {
+      "commit": "754dcebbd3132118c8b055ca942d1e2c9f419d4e",
+      "path": "apps/api/artifacts/sop_evaluation_summary.json",
+      "occurrences": {
+        "1.224116": 1,
+        "1442.023132": 1
+      }
+    },
+    {
+      "commit": "754dcebbd3132118c8b055ca942d1e2c9f419d4e",
+      "path": "docs/UNIFIED_RESULTS_AUDIT.md",
+      "occurrences": {
+        "1.224116": 1,
+        "1442.023132": 1
+      }
+    },
+    {
+      "commit": "754dcebbd3132118c8b055ca942d1e2c9f419d4e",
+      "path": "packages/shared/src/schema.ts",
+      "occurrences": {
+        "1.224116": 1,
+        "1442.023132": 1
+      }
+    },
+    {
+      "commit": "754dcebbd3132118c8b055ca942d1e2c9f419d4e",
+      "path": "scripts/research/longitudinal/consolidate_unified_results.py",
+      "occurrences": {
+        "1.224116": 1,
+        "1442.023132": 1
+      }
+    },
+    {
+      "commit": "6fd46cf8dd4efaa3a4602b7c97809dacdf8ca4f4",
+      "path": "apps/api/artifacts/sop_evaluation_summary.json",
+      "occurrences": {
+        "1.224116": 1,
+        "1442.023132": 1
+      }
+    },
+    {
+      "commit": "6fd46cf8dd4efaa3a4602b7c97809dacdf8ca4f4",
+      "path": "docs/UNIFIED_RESULTS_AUDIT.md",
+      "occurrences": {
+        "1.224116": 1,
+        "1442.023132": 1
+      }
+    },
+    {
+      "commit": "6fd46cf8dd4efaa3a4602b7c97809dacdf8ca4f4",
+      "path": "packages/shared/src/schema.ts",
+      "occurrences": {
+        "1.224116": 1,
+        "1442.023132": 1
+      }
+    },
+    {
+      "commit": "6fd46cf8dd4efaa3a4602b7c97809dacdf8ca4f4",
+      "path": "scripts/research/longitudinal/consolidate_unified_results.py",
+      "occurrences": {
+        "1.224116": 1,
+        "1442.023132": 1
+      }
+    },
+    {
+      "commit": "6b8b0533ced2ab24a94f0f8b124492acad72a9ab",
+      "path": "apps/api/artifacts/sop_evaluation_summary.json",
+      "occurrences": {
+        "1.224116": 1,
+        "1442.023132": 1
+      }
+    },
+    {
+      "commit": "6b8b0533ced2ab24a94f0f8b124492acad72a9ab",
+      "path": "docs/UNIFIED_RESULTS_AUDIT.md",
+      "occurrences": {
+        "1.224116": 1,
+        "1442.023132": 1
+      }
+    },
+    {
+      "commit": "6b8b0533ced2ab24a94f0f8b124492acad72a9ab",
+      "path": "packages/shared/src/schema.ts",
+      "occurrences": {
+        "1.224116": 1,
+        "1442.023132": 1
+      }
+    },
+    {
+      "commit": "6b8b0533ced2ab24a94f0f8b124492acad72a9ab",
+      "path": "scripts/research/longitudinal/consolidate_unified_results.py",
+      "occurrences": {
+        "1.224116": 1,
+        "1442.023132": 1
+      }
+    },
+    {
+      "commit": "5fe32b887b9dd2744d49c6dce9ca745e228b2e2f",
+      "path": "apps/api/artifacts/sop_evaluation_summary.json",
+      "occurrences": {
+        "1.224116": 1,
+        "1442.023132": 1
+      }
+    },
+    {
+      "commit": "5fe32b887b9dd2744d49c6dce9ca745e228b2e2f",
+      "path": "docs/UNIFIED_RESULTS_AUDIT.md",
+      "occurrences": {
+        "1.224116": 1,
+        "1442.023132": 1
+      }
+    },
+    {
+      "commit": "5fe32b887b9dd2744d49c6dce9ca745e228b2e2f",
+      "path": "packages/shared/src/schema.ts",
+      "occurrences": {
+        "1.224116": 1,
+        "1442.023132": 1
+      }
+    },
+    {
+      "commit": "5fe32b887b9dd2744d49c6dce9ca745e228b2e2f",
+      "path": "scripts/research/longitudinal/consolidate_unified_results.py",
+      "occurrences": {
+        "1.224116": 1,
+        "1442.023132": 1
+      }
+    },
+    {
+      "commit": "028b9f3b8b45eae79bc967b16f4b652577d37076",
+      "path": "docs/UNIFIED_RESULTS_AUDIT.md",
+      "occurrences": {
+        "1.224116": 1,
+        "1442.023132": 1
+      }
+    },
+    {
+      "commit": "028b9f3b8b45eae79bc967b16f4b652577d37076",
+      "path": "packages/shared/src/schema.ts",
+      "occurrences": {
+        "1.224116": 1,
+        "1442.023132": 1
+      }
+    },
+    {
+      "commit": "028b9f3b8b45eae79bc967b16f4b652577d37076",
+      "path": "scripts/research/longitudinal/consolidate_unified_results.py",
+      "occurrences": {
+        "1.224116": 1,
+        "1442.023132": 1
+      }
+    },
+    {
+      "commit": "2eca0cb32cd445b1803e80e1ce01e7e68c60c305",
+      "path": "docs/UNIFIED_RESULTS_AUDIT.md",
+      "occurrences": {
+        "1.224116": 1,
+        "1442.023132": 1
+      }
+    },
+    {
+      "commit": "2eca0cb32cd445b1803e80e1ce01e7e68c60c305",
+      "path": "packages/shared/src/schema.ts",
+      "occurrences": {
+        "1.224116": 1,
+        "1442.023132": 1
+      }
+    },
+    {
+      "commit": "2eca0cb32cd445b1803e80e1ce01e7e68c60c305",
+      "path": "scripts/research/longitudinal/consolidate_unified_results.py",
+      "occurrences": {
+        "1.224116": 1,
+        "1442.023132": 1
+      }
+    },
+    {
+      "commit": "719a9eb7b8be9e562dbf7a02d854b74d7a7ef415",
+      "path": "docs/UNIFIED_RESULTS_AUDIT.md",
+      "occurrences": {
+        "1.224116": 1,
+        "1442.023132": 1
+      }
+    },
+    {
+      "commit": "719a9eb7b8be9e562dbf7a02d854b74d7a7ef415",
+      "path": "packages/shared/src/schema.ts",
+      "occurrences": {
+        "1.224116": 1,
+        "1442.023132": 1
+      }
+    },
+    {
+      "commit": "719a9eb7b8be9e562dbf7a02d854b74d7a7ef415",
+      "path": "scripts/research/longitudinal/consolidate_unified_results.py",
+      "occurrences": {
+        "1.224116": 1,
+        "1442.023132": 1
+      }
+    },
+    {
+      "commit": "53e90b6ee0191dbb8b1c66850ff62754e140b625",
+      "path": "docs/UNIFIED_RESULTS_AUDIT.md",
+      "occurrences": {
+        "1.224116": 1,
+        "1442.023132": 1
+      }
+    },
+    {
+      "commit": "53e90b6ee0191dbb8b1c66850ff62754e140b625",
+      "path": "packages/shared/src/schema.ts",
+      "occurrences": {
+        "1.224116": 1,
+        "1442.023132": 1
+      }
+    },
+    {
+      "commit": "53e90b6ee0191dbb8b1c66850ff62754e140b625",
+      "path": "scripts/research/longitudinal/consolidate_unified_results.py",
+      "occurrences": {
+        "1.224116": 1,
+        "1442.023132": 1
+      }
+    }
+  ],
+  "localMatches": [
+    {
+      "path": "docs/UNIFIED_RESULTS_AUDIT.md",
+      "occurrences": {
+        "1.224116": 1,
+        "1442.023132": 1
+      }
+    },
+    {
+      "path": "scripts/research/longitudinal/consolidate_unified_results.py",
+      "occurrences": {
+        "1.224116": 1,
+        "1442.023132": 1
+      }
+    },
+    {
+      "path": "apps/web/src/data/verifiedStudyPresentation.json",
+      "occurrences": {
+        "1.224116": 1,
+        "1442.023132": 1
+      }
+    },
+    {
+      "path": "apps/api/artifacts/sop_evaluation_summary.json",
+      "occurrences": {
+        "1.224116": 1,
+        "1442.023132": 1
+      }
+    },
+    {
+      "path": "apps/api/src/services/currentFrontendIntegration.validation.ts",
+      "occurrences": {
+        "1.224116": 1,
+        "1442.023132": 1
+      }
+    },
+    {
+      "path": "apps/api/private/methodology-diagnostics/common-space-implementation-validation.json",
+      "occurrences": {
+        "1.224116": 2,
+        "1442.023132": 2
+      }
+    },
+    {
+      "path": "apps/api/private/simulation-runs/runtime-v2-1-159f9bbd88b96215443a3dcb4519cb789d39f20b25474feeeec764f04ed906e9.json",
+      "occurrences": {
+        "1.22567": 3
+      }
+    },
+    {
+      "path": "apps/api/private/simulation-runs/simulation-1-00229fed-bc14-41e7-a357-b6698fec96b3/public-result.json",
+      "occurrences": {
+        "1.22567": 3
+      }
+    },
+    {
+      "path": "apps/api/private/simulation-runs/simulation-1-00229fed-bc14-41e7-a357-b6698fec96b3/result.json",
+      "occurrences": {
+        "1.22567": 2
+      }
+    },
+    {
+      "path": "apps/api/private/simulation-runs/simulation-2-1cbb4dce-d9ff-4ce4-a199-4accffd06129/scripts/research/longitudinal/consolidate_unified_results.py",
+      "occurrences": {
+        "1.224116": 1,
+        "1442.023132": 1
+      }
+    },
+    {
+      "path": "apps/api/private/simulation-runs/simulation-1-fee518c8-b5c4-43b2-891e-58f5003b812b/scripts/research/longitudinal/consolidate_unified_results.py",
+      "occurrences": {
+        "1.224116": 1,
+        "1442.023132": 1
+      }
+    },
+    {
+      "path": "apps/api/private/simulation-runs/simulation-1-ee8362dd-9f5e-480c-a0cd-174ac6c2594d/scripts/research/longitudinal/consolidate_unified_results.py",
+      "occurrences": {
+        "1.224116": 1,
+        "1442.023132": 1
+      }
+    },
+    {
+      "path": "apps/api/private/simulation-runs/simulation-1-e8ab98db-13d9-4eb8-9659-a3059859943a/scripts/research/longitudinal/consolidate_unified_results.py",
+      "occurrences": {
+        "1.224116": 1,
+        "1442.023132": 1
+      }
+    },
+    {
+      "path": "apps/api/private/simulation-runs/simulation-1-e3952f0e-5504-4f30-a023-f792e26a2ae9/scripts/research/longitudinal/consolidate_unified_results.py",
+      "occurrences": {
+        "1.224116": 1,
+        "1442.023132": 1
+      }
+    },
+    {
+      "path": "apps/api/private/simulation-runs/simulation-1-d26563fb-34ed-44b9-93a1-c5221403288c/scripts/research/longitudinal/consolidate_unified_results.py",
+      "occurrences": {
+        "1.224116": 1,
+        "1442.023132": 1
+      }
+    },
+    {
+      "path": "apps/api/private/simulation-runs/simulation-1-bafe48c3-ed7a-4bd2-9ac1-f61f34ce7eb1/scripts/research/longitudinal/consolidate_unified_results.py",
+      "occurrences": {
+        "1.224116": 1,
+        "1442.023132": 1
+      }
+    },
+    {
+      "path": "apps/api/private/simulation-runs/simulation-1-9de91955-09f0-4975-8214-2ce6516c4a59/scripts/research/longitudinal/consolidate_unified_results.py",
+      "occurrences": {
+        "1.224116": 1,
+        "1442.023132": 1
+      }
+    },
+    {
+      "path": "apps/api/private/simulation-runs/simulation-1-8ed96bf8-4faf-4ac7-ab27-e202db079d5d/scripts/research/longitudinal/consolidate_unified_results.py",
+      "occurrences": {
+        "1.224116": 1,
+        "1442.023132": 1
+      }
+    },
+    {
+      "path": "apps/api/private/simulation-runs/simulation-1-8dc473fd-36d4-4fb3-8127-cbea76ae8d05/scripts/research/longitudinal/consolidate_unified_results.py",
+      "occurrences": {
+        "1.224116": 1,
+        "1442.023132": 1
+      }
+    },
+    {
+      "path": "apps/api/private/simulation-runs/simulation-1-69b7fb85-105f-4689-95de-6274ae4d837d/scripts/research/longitudinal/consolidate_unified_results.py",
+      "occurrences": {
+        "1.224116": 1,
+        "1442.023132": 1
+      }
+    },
+    {
+      "path": "apps/api/private/simulation-runs/simulation-1-59a4de45-c9e8-4883-b1a8-be377eaefaf7/scripts/research/longitudinal/consolidate_unified_results.py",
+      "occurrences": {
+        "1.224116": 1,
+        "1442.023132": 1
+      }
+    },
+    {
+      "path": "apps/api/private/simulation-runs/simulation-1-524cb19a-cf04-4fc8-ae1e-abfec780c318/scripts/research/longitudinal/consolidate_unified_results.py",
+      "occurrences": {
+        "1.224116": 1,
+        "1442.023132": 1
+      }
+    },
+    {
+      "path": "apps/api/private/simulation-runs/simulation-1-3cb8e15a-aed6-41f4-a04e-8b8aca0e9630/scripts/research/longitudinal/consolidate_unified_results.py",
+      "occurrences": {
+        "1.224116": 1,
+        "1442.023132": 1
+      }
+    },
+    {
+      "path": "apps/api/private/simulation-runs/simulation-1-37c73f7c-0e4a-48df-8cda-fed86b8e3aed/scripts/research/longitudinal/consolidate_unified_results.py",
+      "occurrences": {
+        "1.224116": 1,
+        "1442.023132": 1
+      }
+    },
+    {
+      "path": "apps/api/private/simulation-runs/simulation-1-318d3da7-234c-4ddb-808b-48f82e5f0dd2/scripts/research/longitudinal/consolidate_unified_results.py",
+      "occurrences": {
+        "1.224116": 1,
+        "1442.023132": 1
+      }
+    },
+    {
+      "path": "apps/api/private/simulation-runs/simulation-1-1f4c0d09-f774-495d-9d55-a7108baae5f4/scripts/research/longitudinal/consolidate_unified_results.py",
+      "occurrences": {
+        "1.224116": 1,
+        "1442.023132": 1
+      }
+    },
+    {
+      "path": "apps/api/private/simulation-runs/simulation-1-0929c838-ac17-418f-8f8f-a233ea6a7e1c/scripts/research/longitudinal/consolidate_unified_results.py",
+      "occurrences": {
+        "1.224116": 1,
+        "1442.023132": 1
+      }
+    },
+    {
+      "path": "apps/api/private/simulation-runs/simulation-1-030f729e-7092-408b-87bc-37069afb832e/scripts/research/longitudinal/consolidate_unified_results.py",
+      "occurrences": {
+        "1.224116": 1,
+        "1442.023132": 1
+      }
+    },
+    {
+      "path": "apps/api/private/simulation-runs/simulation-1-00229fed-bc14-41e7-a357-b6698fec96b3/scripts/research/longitudinal/consolidate_unified_results.py",
+      "occurrences": {
+        "1.224116": 1,
+        "1442.023132": 1
+      }
+    },
+    {
+      "path": "apps/api/private/simulation-runs/simulation-1-00229fed-bc14-41e7-a357-b6698fec96b3/data/interim/baseline_kmeans_cumulative_qc.csv",
+      "occurrences": {
+        "1.22567": 1
+      }
+    },
+    {
+      "path": "apps/api/private/simulation-runs/simulation-1-00229fed-bc14-41e7-a357-b6698fec96b3/data/interim/baseline_kmeans_summary.csv",
+      "occurrences": {
+        "1.22567": 1
+      }
+    },
+    {
+      "path": "apps/api/private/simulation-runs/simulation-1-00229fed-bc14-41e7-a357-b6698fec96b3/data/interim/baseline_vs_enhanced_metrics.csv",
+      "occurrences": {
+        "1.22567": 1
+      }
+    },
+    {
+      "path": "apps/api/private/methodology-diagnostics/2026-10-11-common-space-8d47434d/provenance-review.json",
+      "occurrences": {
+        "1.224116": 1,
+        "1442.023132": 1
+      }
+    },
+    {
+      "path": "apps/api/private/methodology-diagnostics/2026-10-11-common-space-8d47434d/report.json",
+      "occurrences": {
+        "1.224116": 2,
+        "1442.023132": 2
+      }
+    },
+    {
+      "path": "apps/api/private/method-runs/07b8c0b6-9789-4249-a27f-7dea49baa30f/job.json",
+      "occurrences": {
+        "1.224116": 4,
+        "1442.023132": 4
+      }
+    },
+    {
+      "path": "apps/api/private/method-runs/07b8c0b6-9789-4249-a27f-7dea49baa30f/result.json",
+      "occurrences": {
+        "1.224116": 4,
+        "1442.023132": 4
+      }
+    },
+    {
+      "path": "apps/api/private/method-runs/1667c343-313f-4555-80be-655824db686a/job.json",
+      "occurrences": {
+        "1.224116": 1,
+        "1442.023132": 1
+      }
+    },
+    {
+      "path": "apps/api/private/method-runs/1667c343-313f-4555-80be-655824db686a/result.json",
+      "occurrences": {
+        "1.224116": 1,
+        "1442.023132": 1
+      }
+    },
+    {
+      "path": "apps/api/private/method-runs/397eb3a1-faac-42f6-8438-d70bdcb370eb/job.json",
+      "occurrences": {
+        "1.224116": 4,
+        "1442.023132": 4
+      }
+    },
+    {
+      "path": "apps/api/private/method-runs/397eb3a1-faac-42f6-8438-d70bdcb370eb/result.json",
+      "occurrences": {
+        "1.224116": 4,
+        "1442.023132": 4
+      }
+    },
+    {
+      "path": "apps/api/private/method-runs/399ce11f-b786-4f0d-9f3a-c97328f84bb3/job.json",
+      "occurrences": {
+        "1.224116": 1,
+        "1442.023132": 1
+      }
+    },
+    {
+      "path": "apps/api/private/method-runs/399ce11f-b786-4f0d-9f3a-c97328f84bb3/result.json",
+      "occurrences": {
+        "1.224116": 1,
+        "1442.023132": 1
+      }
+    },
+    {
+      "path": "apps/api/private/method-runs/458c5543-d850-4a6b-a40e-2f5c20ea3efd/job.json",
+      "occurrences": {
+        "1.224116": 4,
+        "1442.023132": 4
+      }
+    },
+    {
+      "path": "apps/api/private/method-runs/458c5543-d850-4a6b-a40e-2f5c20ea3efd/result.json",
+      "occurrences": {
+        "1.224116": 4,
+        "1442.023132": 4
+      }
+    },
+    {
+      "path": "apps/api/private/method-runs/8709b274-e2c1-4aaa-9f2b-c1d568316686/job.json",
+      "occurrences": {
+        "1.224116": 2,
+        "1442.023132": 2
+      }
+    },
+    {
+      "path": "apps/api/private/method-runs/8709b274-e2c1-4aaa-9f2b-c1d568316686/result.json",
+      "occurrences": {
+        "1.224116": 2,
+        "1442.023132": 2
+      }
+    },
+    {
+      "path": "apps/api/private/method-runs/a21710b2-cabb-435e-b943-ee752bb8ee7a/job.json",
+      "occurrences": {
+        "1.224116": 1,
+        "1442.023132": 1
+      }
+    },
+    {
+      "path": "apps/api/private/method-runs/a21710b2-cabb-435e-b943-ee752bb8ee7a/result.json",
+      "occurrences": {
+        "1.224116": 1,
+        "1442.023132": 1
+      }
+    },
+    {
+      "path": "apps/api/private/method-runs/eb728b68-dd53-4940-9242-510f0d51eace/job.json",
+      "occurrences": {
+        "1.224116": 1,
+        "1442.023132": 1
+      }
+    },
+    {
+      "path": "apps/api/private/method-runs/eb728b68-dd53-4940-9242-510f0d51eace/result.json",
+      "occurrences": {
+        "1.224116": 1,
+        "1442.023132": 1
+      }
+    },
+    {
+      "path": "apps/api/private/method-runs/f199a5f5-426b-40b9-b0fc-5e221b4c8694/job.json",
+      "occurrences": {
+        "1.224116": 4,
+        "1442.023132": 4
+      }
+    },
+    {
+      "path": "apps/api/private/method-runs/f199a5f5-426b-40b9-b0fc-5e221b4c8694/result.json",
+      "occurrences": {
+        "1.224116": 4,
+        "1442.023132": 4
+      }
+    },
+    {
+      "path": "apps/api/private/method-runs/f6e67c3b-901f-4a89-a867-91b4777d222b/job.json",
+      "occurrences": {
+        "1.224116": 1,
+        "1442.023132": 1
+      }
+    },
+    {
+      "path": "apps/api/private/method-runs/f6e67c3b-901f-4a89-a867-91b4777d222b/result.json",
+      "occurrences": {
+        "1.224116": 1,
+        "1442.023132": 1
+      }
+    },
+    {
+      "path": "apps/api/private/method-runs/fbb96dda-1518-4b97-9af4-21c4a1ab21ad/job.json",
+      "occurrences": {
+        "1.224116": 1,
+        "1442.023132": 1
+      }
+    },
+    {
+      "path": "apps/api/private/method-runs/fbb96dda-1518-4b97-9af4-21c4a1ab21ad/result.json",
+      "occurrences": {
+        "1.224116": 1,
+        "1442.023132": 1
+      }
+    },
+    {
+      "path": "apps/api/private/method-runs/cohorts/d6ecb8777e041e648fd66d8f7b1cf6d8d3c83778681aeac95942e4f448e0ac75/scripts/research/longitudinal/consolidate_unified_results.py",
+      "occurrences": {
+        "1.224116": 1,
+        "1442.023132": 1
+      }
+    },
+    {
+      "path": "apps/api/private/method-runs/cohorts/c1e3539f157f4ef594af7c5b11726ae32cc3d441ef8d1c28059b023e2c6ddf86/scripts/research/longitudinal/consolidate_unified_results.py",
+      "occurrences": {
+        "1.224116": 1,
+        "1442.023132": 1
+      }
+    },
+    {
+      "path": "apps/api/private/method-runs/cohorts/14f4950d10c1e04387a615e722d2745b803b163337eaaa0518b808ef7d34d41a/scripts/research/longitudinal/consolidate_unified_results.py",
+      "occurrences": {
+        "1.224116": 1,
+        "1442.023132": 1
+      }
+    },
+    {
+      "path": "apps/api/private/method-benchmarks/integration-5c2b0e88-b115-4976-9fcc-2415cbe053ac/56fca79b-1cb5-4015-8776-e241439d79a7/job.json",
+      "occurrences": {
+        "1.224116": 1,
+        "1442.023132": 1
+      }
+    },
+    {
+      "path": "apps/api/private/method-benchmarks/integration-5c2b0e88-b115-4976-9fcc-2415cbe053ac/56fca79b-1cb5-4015-8776-e241439d79a7/result.json",
+      "occurrences": {
+        "1.224116": 1,
+        "1442.023132": 1
+      }
+    },
+    {
+      "path": "apps/api/private/method-benchmarks/integration-5c2b0e88-b115-4976-9fcc-2415cbe053ac/f2b201f5-d7f1-4e71-bb00-29c68991fa80/job.json",
+      "occurrences": {
+        "1.224116": 1,
+        "1442.023132": 1
+      }
+    },
+    {
+      "path": "apps/api/private/method-benchmarks/integration-5c2b0e88-b115-4976-9fcc-2415cbe053ac/f2b201f5-d7f1-4e71-bb00-29c68991fa80/result.json",
+      "occurrences": {
+        "1.224116": 1,
+        "1442.023132": 1
+      }
+    },
+    {
+      "path": "apps/api/private/method-benchmarks/integration-5c2b0e88-b115-4976-9fcc-2415cbe053ac/cohorts/d6ecb8777e041e648fd66d8f7b1cf6d8d3c83778681aeac95942e4f448e0ac75/scripts/research/longitudinal/consolidate_unified_results.py",
+      "occurrences": {
+        "1.224116": 1,
+        "1442.023132": 1
+      }
+    },
+    {
+      "path": "apps/api/private/method-benchmarks/integration-45955331-9a07-4fa0-8d5b-421570be8653/42abd0c6-ca01-4aa1-9464-715d9217fa5b/job.json",
+      "occurrences": {
+        "1.224116": 1,
+        "1442.023132": 1
+      }
+    },
+    {
+      "path": "apps/api/private/method-benchmarks/integration-45955331-9a07-4fa0-8d5b-421570be8653/42abd0c6-ca01-4aa1-9464-715d9217fa5b/result.json",
+      "occurrences": {
+        "1.224116": 1,
+        "1442.023132": 1
+      }
+    },
+    {
+      "path": "apps/api/private/method-benchmarks/integration-45955331-9a07-4fa0-8d5b-421570be8653/87cefc48-dbe6-474b-a92c-0378a53d7777/job.json",
+      "occurrences": {
+        "1.224116": 1,
+        "1442.023132": 1
+      }
+    },
+    {
+      "path": "apps/api/private/method-benchmarks/integration-45955331-9a07-4fa0-8d5b-421570be8653/87cefc48-dbe6-474b-a92c-0378a53d7777/result.json",
+      "occurrences": {
+        "1.224116": 1,
+        "1442.023132": 1
+      }
+    },
+    {
+      "path": "apps/api/private/method-benchmarks/integration-45955331-9a07-4fa0-8d5b-421570be8653/cohorts/5c0c45bfbd5fe4bb8a4d4fd639297d083cb0a4012262c0f67a9474bc784a9966/scripts/research/longitudinal/consolidate_unified_results.py",
+      "occurrences": {
+        "1.224116": 1,
+        "1442.023132": 1
+      }
+    },
+    {
+      "path": "apps/api/private/method-benchmarks/integration-30c68fd5-7729-4a21-8bdd-94185180f525/6212ee47-e70a-4818-b814-143ba4610756/job.json",
+      "occurrences": {
+        "1.224116": 1,
+        "1442.023132": 1
+      }
+    },
+    {
+      "path": "apps/api/private/method-benchmarks/integration-30c68fd5-7729-4a21-8bdd-94185180f525/6212ee47-e70a-4818-b814-143ba4610756/result.json",
+      "occurrences": {
+        "1.224116": 1,
+        "1442.023132": 1
+      }
+    },
+    {
+      "path": "apps/api/private/method-benchmarks/integration-30c68fd5-7729-4a21-8bdd-94185180f525/cohorts/cd87948773af758a524a5fe4fdb8e92a6bfa6a4f93924edf7404aef163df354a/scripts/research/longitudinal/consolidate_unified_results.py",
+      "occurrences": {
+        "1.224116": 1,
+        "1442.023132": 1
+      }
+    },
+    {
+      "path": "apps/api/private/longitudinal-refresh/4b3dca3d-b435-4485-ac2b-18a0e442a624/scripts/research/longitudinal/consolidate_unified_results.py",
+      "occurrences": {
+        "1.224116": 1,
+        "1442.023132": 1
+      }
+    },
+    {
+      "path": "packages/shared/src/schema.ts",
+      "occurrences": {
+        "1.224116": 1,
+        "1442.023132": 1
+      }
+    },
+    {
+      "path": "data/processed/run-history/0150d957cc0a166617271f0fb6601f94c0b785932da982d7d1967844f7ef1ae1.json",
+      "occurrences": {
+        "1.224116": 1,
+        "1442.023132": 1
+      }
+    },
+    {
+      "path": "data/processed/run-history/112011e57a71055e8d9182c23fcb82a5b8904595aa4dc8b22f299a2f76b8c200.json",
+      "occurrences": {
+        "1.224116": 1,
+        "1442.023132": 1
+      }
+    },
+    {
+      "path": "data/processed/run-history/247a3efcdca66a105f29799f171626231a252f818f9d465771e3a58621bd3f50.json",
+      "occurrences": {
+        "1.224116": 1,
+        "1442.023132": 1
+      }
+    },
+    {
+      "path": "data/processed/run-history/348ce7efab8626ea342b4b74b013b3fb68c3674f2f09947f3a3ceb0c157acf71.json",
+      "occurrences": {
+        "1.224116": 1,
+        "1442.023132": 1
+      }
+    },
+    {
+      "path": "data/processed/run-history/353f01750ff0d764acc6ba4b9c395115a527a583f26701c8b60f60cfb0ed5a2b.json",
+      "occurrences": {
+        "1.224116": 1,
+        "1442.023132": 1
+      }
+    },
+    {
+      "path": "data/processed/run-history/43a5adb0e802f875cc4eb485cabf06a2a14e42b2cfbaa203acec803c40fa10af.json",
+      "occurrences": {
+        "1.224116": 1,
+        "1442.023132": 1
+      }
+    },
+    {
+      "path": "data/processed/run-history/4476f99dd950d4d3401a1d05854130aca2062c4b2c038168d833e6f71d3fcefc.json",
+      "occurrences": {
+        "1.224116": 1,
+        "1442.023132": 1
+      }
+    },
+    {
+      "path": "data/processed/run-history/50d17a1c74f02020a46f2c3ddd25c3f2f85861e2132afee2a3bd4bbcc3fb3b81.json",
+      "occurrences": {
+        "1.224116": 1,
+        "1442.023132": 1
+      }
+    },
+    {
+      "path": "data/processed/run-history/647910dc017164f44a90a05b31dcc90b1dcacba8c8edf41107af6180979d7a86.json",
+      "occurrences": {
+        "1.224116": 1,
+        "1442.023132": 1
+      }
+    },
+    {
+      "path": "data/processed/run-history/7896a1467a65acf5c1df10ff53fb2ecc9c3b3e04461e5d7ba94c47f82ccbce4f.json",
+      "occurrences": {
+        "1.224116": 1,
+        "1442.023132": 1
+      }
+    },
+    {
+      "path": "data/processed/run-history/85d162496d26ec9ff8bd80393f3e6fff6d3bbfff83207a4ee771ae891f54004b.json",
+      "occurrences": {
+        "1.224116": 1,
+        "1442.023132": 1
+      }
+    },
+    {
+      "path": "data/processed/run-history/9d44d8705faed06cc530bafd067b1a08b664091600c35f5560da978000b55949.json",
+      "occurrences": {
+        "1.224116": 1,
+        "1442.023132": 1
+      }
+    },
+    {
+      "path": "data/processed/run-history/aeb51d3272f1c47206126810e1d1c2d61b4029ff8d7f32ea1375acb8feea9299.json",
+      "occurrences": {
+        "1.224116": 1,
+        "1442.023132": 1
+      }
+    },
+    {
+      "path": "data/processed/run-history/b1305cbc48989f20507831c91769dd994e066b6f087dba405731e20493db158b.json",
+      "occurrences": {
+        "1.224116": 1,
+        "1442.023132": 1
+      }
+    },
+    {
+      "path": "data/processed/run-history/c22b0e9da7d7a2121d83c177072a1454e29441a5b693827627ea943a6b6d4a97.json",
+      "occurrences": {
+        "1.224116": 1,
+        "1442.023132": 1
+      }
+    },
+    {
+      "path": "data/processed/run-history/d15b2231abc33ef078fea54c0deb66f70ccc58e3a093f0386ded0d5ac10c1235.json",
+      "occurrences": {
+        "1.224116": 1,
+        "1442.023132": 1
+      }
+    },
+    {
+      "path": "data/processed/run-history/e98d3cde8c172edaed63c153929535599b909df795ff3dafaa1b3900827781c6.json",
+      "occurrences": {
+        "1.224116": 1,
+        "1442.023132": 1
+      }
+    }
+  ],
+  "scope": "All commits reachable from local refs, plus local docs/tests/source/artifacts. No remote fetch; unreachable/deleted history and external thesis drafts not available."
+}

@@ -1,0 +1,865 @@
+{
+  "unchanged": true,
+  "before": {
+    "branch": "integration/final-mariel-backend-oct11",
+    "head": "7f1cc6edd1f0cc306da8f6ced61d314fe88be170",
+    "indexSha256": "bf3382ea5130b33418756a4898799d3ed7e2d9dfc2f63ae8d8f4d4de14ce2a78",
+    "existingChanges": {
+      "apps/api/src/app.ts": {
+        "status": " M",
+        "sha256": "b1e67567389215d9e7f34aed9de960d075c05a429f5ee97e3359ac52a0bdcf88"
+      },
+      "apps/api/src/routes/cluster.ts": {
+        "status": " M",
+        "sha256": "96b1bc44d7bb91986af89f5a275122acb11d7740113f272ed2f057f618dc7300"
+      },
+      "apps/api/src/services/frontendContract.validation.ts": {
+        "status": " M",
+        "sha256": "6c2f928f6a7821e166c667bdb0877518c4f7288acf13492ad6614fc77a730a93"
+      },
+      "apps/api/src/services/mixedEffectsModel.validation.ts": {
+        "status": " M",
+        "sha256": "ceca6a7026a25d9e3b9bacb59bedaa7905e1c9c4efb9ace89e002729209b3dfa"
+      },
+      "apps/api/src/services/researchPipelineOrchestrator.ts": {
+        "status": " M",
+        "sha256": "b4907f326158fe0385c6c83be794a6f1d2fa96097ad890b5445851deb877486c"
+      },
+      "apps/api/src/services/simulationExecution.ts": {
+        "status": " M",
+        "sha256": "a6859c49f0b30f364cb0484e6afc3b71a2735d73262cf08782ff3a6bb2f5c6d0"
+      },
+      "apps/api/src/services/simulationExecution.validation.ts": {
+        "status": " M",
+        "sha256": "59616a1bb1479dd18fdeb840b9783d05f5ee9777dc8ed2368babc411ddb791ce"
+      },
+      "apps/api/src/services/simulationMetadata.validation.ts": {
+        "status": " M",
+        "sha256": "6ec4696cd7094a0a28baf95cb067ffaf6b8162d6b09d987c1b119f751705d1a7"
+      },
+      "apps/api/src/services/studyEvidenceArtifact.ts": {
+        "status": " M",
+        "sha256": "3dc506fe492c49020124fce3603a8c57ce6e76e448cec85ec34037c40495f018"
+      },
+      "apps/web/src/App.tsx": {
+        "status": " M",
+        "sha256": "e898b24a56e81188873b116a786f10cb4746c76aabab8fef9e004e7d17196419"
+      },
+      "apps/web/src/components/FeatureRepresentationComparison.tsx": {
+        "status": " M",
+        "sha256": "f809ccbddf59ee0e4d7f525eb84e4e3b6130d8c31dbe1f73db8341bff8d3c8d2"
+      },
+      "apps/web/src/components/InitializationComparison.tsx": {
+        "status": " M",
+        "sha256": "f2eae9633b3581decc78b3075326959bb503c924d9fdd96bece5c605d3c2557b"
+      },
+      "apps/web/src/components/InternalValidationCalculationDetails.css": {
+        "status": " M",
+        "sha256": "d68986379cff05034715e224a33681a27714c554de0fd22dbed7c86c4ee117ce"
+      },
+      "apps/web/src/components/InternalValidationCalculationDetails.tsx": {
+        "status": " M",
+        "sha256": "a6a6f3df619d53a13503b1b73a79c422e92f6fa2884b27d85578d7919ced30bc"
+      },
+      "apps/web/src/components/MetricComparisonTable.css": {
+        "status": " M",
+        "sha256": "d83b96b45e31a882861e0218f5478b9e417ffa1b2a300452ffb87463562cb614"
+      },
+      "apps/web/src/components/MetricComparisonTable.tsx": {
+        "status": " M",
+        "sha256": "854ad5bc2357457c0d091bde75b01b4004a0e4c54808cd6e354efd172d6e7232"
+      },
+      "apps/web/src/components/NbClustComparison.tsx": {
+        "status": " M",
+        "sha256": "70103e083af74316f5d88d355d3294000e5e2dee980626e2776186ee8ecd6cb3"
+      },
+      "apps/web/src/components/PcaCalculationDetails.tsx": {
+        "status": " M",
+        "sha256": "5ebc256e82d54a0b359cb1a1bb0c79a360b9559fad7dbb6415e53f2dbfba1dac"
+      },
+      "apps/web/src/components/PcaLoadingMatrix.css": {
+        "status": " M",
+        "sha256": "c678d9fafd9715c6b288a59c099ad4977430a46c7e76e355beb9908d55422b36"
+      },
+      "apps/web/src/components/PcaLoadingMatrix.tsx": {
+        "status": " M",
+        "sha256": "d6f6a5ce110369f2eb9b6eeb5dc0538ff07257dffdfd83265007898de157a7fe"
+      },
+      "apps/web/src/components/RunProgress.css": {
+        "status": " M",
+        "sha256": "365e6c8dc7c6fe79fb2b8dc1c9d6312b17a6113e740fcef67232f2fefe77481c"
+      },
+      "apps/web/src/components/SilhouetteCalculationCard.css": {
+        "status": " M",
+        "sha256": "44be8aeb40f09a93285e96c4e70437c5c996b8d1d0f2cde0d5aab39a6671eb5a"
+      },
+      "apps/web/src/components/SopComparison.css": {
+        "status": " M",
+        "sha256": "1ea90f6b436c3986a753b1130a0cd4157a8f271f09fd7dbd66a898af5da49e3b"
+      },
+      "apps/web/src/components/SopComparison.tsx": {
+        "status": " M",
+        "sha256": "b974798726d3f067b436b4ef82715ee153e77ca8a91ce4bcfd89374e85080f93"
+      },
+      "apps/web/src/components/SopFigures.css": {
+        "status": " M",
+        "sha256": "bb5dd41296780d582d01e1a0250311a7e8c3242697dec315d65050a6b45a43a8"
+      },
+      "apps/web/src/components/SopFigures.tsx": {
+        "status": " M",
+        "sha256": "020b30811cc007750b3b20908067d3f9e2373eb40e54ec3f0b4ceafcdede694b"
+      },
+      "apps/web/src/components/StudyEntrySummary.tsx": {
+        "status": " M",
+        "sha256": "d18ce680eef89102d2f0b8a29f13448059025ef5ea60fa6448179c1208151bb2"
+      },
+      "apps/web/src/components/charts/DefenseScatter.tsx": {
+        "status": " M",
+        "sha256": "9b2e5499c5b630d7b1875f23a52620dd6188ea41e088618afe870df239742dc2"
+      },
+      "apps/web/src/components/charts/FinalFindingsCharts.tsx": {
+        "status": " M",
+        "sha256": "5720b4394a4bd78597f4e610d99590ef88b6f91e9e9ff9367b057b90719106c7"
+      },
+      "apps/web/src/components/charts/PartitionProjection.css": {
+        "status": " M",
+        "sha256": "6f3a153a5bae41436cd1d41330e9ae2829b14e21582353f21407be4ff474ab21"
+      },
+      "apps/web/src/components/charts/PartitionProjection.tsx": {
+        "status": " M",
+        "sha256": "f25f77898522618a26335c16e36f662ff0bc4bc5fae4cde84cda35d6e7e756ee"
+      },
+      "apps/web/src/components/charts/chartPalette.ts": {
+        "status": " M",
+        "sha256": "f7a180030b74af9fd79a49a016c641612433ce55678f48f1845bc12f163f3459"
+      },
+      "apps/web/src/components/layout/AppShell.tsx": {
+        "status": " M",
+        "sha256": "6607d2a6c15867b405f64fa0e945371932e241402c4645d6fe3db2acf3fce680"
+      },
+      "apps/web/src/components/run/RunSelector.tsx": {
+        "status": " M",
+        "sha256": "0ba3ba332f8aca5c515bf3750810ab98cec629361f26815a315024c15d9923f8"
+      },
+      "apps/web/src/components/ui/Panel.tsx": {
+        "status": " M",
+        "sha256": "0ef93ab8ce01a27ffa2dd325b99b82eae197fb0ead50468993596fe9a534e341"
+      },
+      "apps/web/src/components/ui/StatCard.tsx": {
+        "status": " M",
+        "sha256": "54dbab2d91c098dfd81ea346e140e13e8411658e6c30371ebf5ecf9bce5430d8"
+      },
+      "apps/web/src/pages/BaselineVsEnhancedPage.tsx": {
+        "status": " M",
+        "sha256": "e1fc7ebecf64f9ae736820be1be9914ad99b56c655571dbf339dc67bc28c8896"
+      },
+      "apps/web/src/pages/ClustersPage.tsx": {
+        "status": " M",
+        "sha256": "4563e7af26d751bfcb9c1a76cce105ab45b5da0fb0e72789e9d42812a49c1b95"
+      },
+      "apps/web/src/pages/DatasetSetup.css": {
+        "status": " M",
+        "sha256": "644d0cad525c7bc0151f632e6dfe21bc34d7928193bb64be23a93c2c58607175"
+      },
+      "apps/web/src/pages/EnhancedKMeansPage.tsx": {
+        "status": " M",
+        "sha256": "c29456cfac5fcd0f580ce2eb9d6f58c30e74f030229a5107dad7cfc055f060f0"
+      },
+      "apps/web/src/pages/LongitudinalProgressionPage.tsx": {
+        "status": " M",
+        "sha256": "8255f59c0f9dea28e8f237ab9078229e48526b11a6d91ba3b9cad255bc8eb789"
+      },
+      "apps/web/src/pages/RunHistoryPage.tsx": {
+        "status": " M",
+        "sha256": "7a7ed9dcb0c75a73e18c061670682123533b62ea2fbf0fa58b6a8efc67cdbc4f"
+      },
+      "apps/web/src/pages/SimulationRunsPage.css": {
+        "status": " M",
+        "sha256": "55832f9a5250e787adb547d275cba08b5e26ecbfab819fa083c68bd25b4a2d46"
+      },
+      "apps/web/src/pages/SimulationRunsPage.tsx": {
+        "status": " M",
+        "sha256": "bce504fae085f82f31309cd4c6b0d50e4304369783a85540dcfad4561bd66b63"
+      },
+      "apps/web/src/pages/StudyFindingsPage.css": {
+        "status": " M",
+        "sha256": "5b51e88cccf6e5b1188d241243c6344325782855e59102a7cef99c469ede4ee0"
+      },
+      "apps/web/src/pages/StudyFindingsPage.tsx": {
+        "status": " M",
+        "sha256": "b93d6fbea96b8fee881ee14ba05b7947dd4797d0701adacfef2164ed7a28b2e2"
+      },
+      "apps/web/src/pages/UploadAndCluster.tsx": {
+        "status": " M",
+        "sha256": "2b8324be55a96b5354113a30a59c1a8d5432c658f85a10b91a7b40b85b025c38"
+      },
+      "apps/web/src/styles.css": {
+        "status": " M",
+        "sha256": "c964825fa28bea928f12d407864a3493f01422c3c58f001adcaf9cd4b584292f"
+      },
+      "apps/web/src/typography.css": {
+        "status": " M",
+        "sha256": "682ae3d1190fb36d458dcd0d34f16ae73dc89476ab500e953059cab3fc7d8214"
+      },
+      "apps/web/src/utils/validatedDataset.ts": {
+        "status": " M",
+        "sha256": "f456589826a721e0113271e138eee3f53812784fd30f033f47795ea3d87b8125"
+      },
+      "apps/web/tailwind.config.ts": {
+        "status": " M",
+        "sha256": "a43be6f33b9b1e5a30284c671d00d0472441d56a2948ba9a35538f63b58976a2"
+      },
+      "apps/web/tests/datasetSetup.test.mjs": {
+        "status": " M",
+        "sha256": "7c753059dd3e9435a95cab92b0116123c3af1580db83bd75f7e7b0050683bcc2"
+      },
+      "apps/web/tests/initializationComparison.test.mjs": {
+        "status": " M",
+        "sha256": "e2f80aba24fba199974bbf5334552de554f72792e2e2e7ce57747d24bf63957e"
+      },
+      "apps/web/tests/lmeCard.test.mjs": {
+        "status": " M",
+        "sha256": "e40653db316832df3f594fa3b13b0ed64714feed164b9aecf7cf8088e25fd0a1"
+      },
+      "apps/web/tests/metricComparison.test.mjs": {
+        "status": " M",
+        "sha256": "903f1edc1ace855d1a00ff6331d0faaf3d43423cfefa0b76230bfcf833cc77a6"
+      },
+      "apps/web/tests/partitionProjection.test.mjs": {
+        "status": " M",
+        "sha256": "b26a40d386aeb194431ae8a87dd7f997f1a54cdd6ad5bafc8569fc27403046cb"
+      },
+      "apps/web/tests/pcaLoadingMatrix.test.mjs": {
+        "status": " M",
+        "sha256": "8ca21d645b7da42f4889648b5764d683ef4da95493e60be8883ffc6d2f83b4f1"
+      },
+      "apps/web/tests/studyFindings.test.mjs": {
+        "status": " M",
+        "sha256": "5b08f3a9ea32d1c7f6eafd4133aaf7a71a7513985211a23dd70a936d85db0ade"
+      },
+      "apps/web/tests/varianceSummary.test.mjs": {
+        "status": " M",
+        "sha256": "9de98417ad808348f74897d7fe3e6d9875915fe0fb43200b37636595728c5dee"
+      },
+      "packages/shared/src/schema.ts": {
+        "status": " M",
+        "sha256": "5d35321d7d0e04ba595b8c140ecb1be46da1be0a277d90d0320d152cad43c213"
+      },
+      "scripts/research/comparison/run_baseline_kmeans_comparison.py": {
+        "status": " M",
+        "sha256": "e58380d8538cf1b43c4ac15a35da6fc6311d3a408d60305670d714f1bf1ec113"
+      },
+      "scripts/research/study_entry/construct_study_entry_cohort.py": {
+        "status": " M",
+        "sha256": "8c4af70d6672ecb9607a86c12179a7b37e02e1810801860347e7e6dd78d0865d"
+      },
+      "scripts/research/study_entry/run_enhanced_kmeans.py": {
+        "status": " M",
+        "sha256": "3b3f86045cd86d8cef0df66658515b521720db7a8103e2aae10234fe251591a0"
+      },
+      "apps/api/src/routes/methodRuns.ts": {
+        "status": "??",
+        "sha256": "9a5b6df3554371949b5720712f180983f05975b0355e41519a30983ac44f561b"
+      },
+      "apps/api/src/routes/studyPreparations.ts": {
+        "status": "??",
+        "sha256": "0ce79a6ec66c3c5f2e79894f86a709936dbec6be13cb0509b00539f9a4cb32b7"
+      },
+      "apps/api/src/services/cohortReuse.ts": {
+        "status": "??",
+        "sha256": "81c656864087a77d0ba7bc2130bb45fb417c7b9de2328c259ab21e0e7c1424e5"
+      },
+      "apps/api/src/services/commonSpace.validation.ts": {
+        "status": "??",
+        "sha256": "2675537a76f9f70080b59e4857e4ebd598d2310af07cba494f6476104337e23b"
+      },
+      "apps/api/src/services/methodExecution.fixture.ts": {
+        "status": "??",
+        "sha256": "1d0e644b0a586213107e27eb207464f7aee51c1bc263034c7fc3cb4f8bac1acc"
+      },
+      "apps/api/src/services/methodExecution.real.validation.ts": {
+        "status": "??",
+        "sha256": "d6b9e783f93cf5a8963db84ab815af05d26b9492165f3ec50f0973bc85b365bf"
+      },
+      "apps/api/src/services/methodExecution.ts": {
+        "status": "??",
+        "sha256": "b798c60d75acf86e37d2393809bb208c580853027765d8b85e37eb95301ad213"
+      },
+      "apps/api/src/services/methodExecution.validation.ts": {
+        "status": "??",
+        "sha256": "e8cc87ad092dd74047657bce3bce7ed50ebaa8ff754e4bea9d3637d3b787aa53"
+      },
+      "apps/api/src/services/partitionEvidence.ts": {
+        "status": "??",
+        "sha256": "649b808dd0e73b20fba73570a3468a5c1e2ebe2322ad02988cd404b1648df4a5"
+      },
+      "apps/api/src/services/partitionEvidence.validation.ts": {
+        "status": "??",
+        "sha256": "5c7b7a0a26f245bac0de25072b25db97cfa13408e980f8edf9dd46e38c0f5af5"
+      },
+      "apps/api/src/services/researchExecutionCapacity.ts": {
+        "status": "??",
+        "sha256": "d38a400da41d8c38a3be6f44ffac6839cdd77daa2f003fa298d55043e5e67509"
+      },
+      "apps/api/src/services/studyPreparation.ts": {
+        "status": "??",
+        "sha256": "6591b19ae3a4002f3330261a816e9c3d085c2126ffd9a2b6970155fc8ab18a33"
+      },
+      "apps/api/src/services/studyPreparation.validation.ts": {
+        "status": "??",
+        "sha256": "2aaed6cd691261f09edb6728348375006a0fb8d9d6b7df825fa9cd8ca457b069"
+      },
+      "apps/web/docs/UI_CONTINUATION_AUDIT.md": {
+        "status": "??",
+        "sha256": "a29600408efa5cc7adad741b35a04bf98f5090910e6901a8b8921d73f455a05c"
+      },
+      "apps/web/src/components/CommonSpaceValidation.tsx": {
+        "status": "??",
+        "sha256": "f76818af1294646f1ad5a90abe320475f2ebc5225ef19d9ff05f334ac7db22d7"
+      },
+      "apps/web/src/components/ControlledSopEvidence.tsx": {
+        "status": "??",
+        "sha256": "fe1ffa52523c793f70760b53aa81acc858cb8094044db07729dbd95f14e5bc82"
+      },
+      "apps/web/src/components/FreshStudyResults.tsx": {
+        "status": "??",
+        "sha256": "b42fff6be55d96d685ce5ecfbee4da4f9c5b81c60a563a50bbfd40438f470b19"
+      },
+      "apps/web/src/components/MethodDecisionGraph.tsx": {
+        "status": "??",
+        "sha256": "37e9963b288d059bdf587d54f315535b3ca521014f4c971603969ee126b79ca7"
+      },
+      "apps/web/src/components/MethodExecutionControls.tsx": {
+        "status": "??",
+        "sha256": "d0b3aff710a922d2bff0d199917fded20c61be488cf337cfa1da16365ae92453"
+      },
+      "apps/web/src/components/VerifiedStudyMetrics.tsx": {
+        "status": "??",
+        "sha256": "ccfbfa8f23bb4d562026fad647e6131f3c3764aa727ceccafd268b0a9ca8594a"
+      },
+      "apps/web/src/data/verifiedStudyPresentation.json": {
+        "status": "??",
+        "sha256": "c09a7a7ba80e1b73d17643d4ce40090614817f6dad09730a925df7be7221f706"
+      },
+      "apps/web/src/hooks/useMethodJobs.ts": {
+        "status": "??",
+        "sha256": "29d2edcee82e2a21cb30cc1460d18045de5014ecc37203638149f8e56627699f"
+      },
+      "apps/web/src/utils/methodPresentation.ts": {
+        "status": "??",
+        "sha256": "1ed93286f64f3679dc0f55743b6d32d91ee60a3deba55012a2c42e4827199c6c"
+      },
+      "apps/web/tests/finalPresentation.test.mjs": {
+        "status": "??",
+        "sha256": "058b9d7abaf6003d908a0eda22541c271b731249c2085f8c2f13765ce3f05af8"
+      },
+      "apps/web/tests/independentJobs.test.mjs": {
+        "status": "??",
+        "sha256": "23c1c5c41492763ecaf312dc0d0362d8f02aea5f0558bf5b87535e6f33691c9e"
+      },
+      "apps/web/tests/marielBackendIntegration.test.mjs": {
+        "status": "??",
+        "sha256": "46b03297d426727be7ae7bfbfd18d300098129bd6271611d3d3ee0f15c05cb8e"
+      },
+      "docs/MARIEL_BACKEND_INTEGRATION_OCT11.md": {
+        "status": "??",
+        "sha256": "a650ee77bb72bac497ffdbed5face375188941108f901a2746af4e35f2f54c26"
+      },
+      "docs/SCIENTIFIC_EVIDENCE_REPAIR_OCT11.md": {
+        "status": "??",
+        "sha256": "bce18a3b8236f6ced97f63458f52fe8f13e1b4f287dcec1c58cacb8de0fc05b5"
+      },
+      "packages/shared/src/methodExecution.ts": {
+        "status": "??",
+        "sha256": "61e94d88d8e039c6bef9db4e404520e8155e3f8061c559f8a3d8c51e20dc5be0"
+      },
+      "packages/shared/src/partitionEvidence.ts": {
+        "status": "??",
+        "sha256": "49435c3a59acc1bb1546ecaa92db5fc33c8464453a8caf26b5fd93383fdb8945"
+      },
+      "packages/shared/src/studyPreparation.ts": {
+        "status": "??",
+        "sha256": "5419a35a408cd73343357c46a12f04c43c606ddf066eb0d6d6b01dff8e5aebba"
+      },
+      "scripts/research/simulation/common_space.py": {
+        "status": "??",
+        "sha256": "3735d50d934f7f2863b739831f1417d00e4ca91703c2ff1a0c3045545cbdfcda"
+      },
+      "scripts/research/simulation/exact_runtime.py": {
+        "status": "??",
+        "sha256": "93019ff3601282c54cdc9115c8982a48ab04d1580dc930386e5499d9a83eef14"
+      },
+      "scripts/research/simulation/prepare_method_data.py": {
+        "status": "??",
+        "sha256": "2cd7bf78568395abfc7d84f9991d9c217879e11bc4696ed834f4a1465a3990bd"
+      },
+      "scripts/research/simulation/run_method.py": {
+        "status": "??",
+        "sha256": "b86d37e593f2fcdfd5fa16acbc46a7b72fd715f646efd823f1bf855ea06fe16e"
+      },
+      "scripts/research/validation/benchmark_independent_methods.py": {
+        "status": "??",
+        "sha256": "69a850131b702b17bed661b05cbf492e24e8afa1f5f8c962b251b01abae4e430"
+      },
+      "scripts/research/validation/derive_partition_evidence.py": {
+        "status": "??",
+        "sha256": "0649a050dcf3e92663376acc8158634e4cad5967d5815297841492b0d7974714"
+      },
+      "scripts/research/validation/profile_cohort_preparation.py": {
+        "status": "??",
+        "sha256": "2dd08dd9142aeed2032d0689f8d2298ebd6e9e66482bac5a6b62c677ea75f926"
+      },
+      "scripts/research/validation/test_cohort_preparation.py": {
+        "status": "??",
+        "sha256": "2f52da67386a8cb2053a7af4dcf9192cdc9c37388e381a8dfd5ce27ca127e31c"
+      },
+      "scripts/research/validation/test_common_space.py": {
+        "status": "??",
+        "sha256": "a234286904bb7e7491c3aceec44573b6a189787825b044eba3d2b23febb3abeb"
+      },
+      "scripts/research/validation/test_exact_runtime.py": {
+        "status": "??",
+        "sha256": "e07b2fb832ae43413aaeaef7651305530b266ce096d0933b5c1eb44e71e929e7"
+      },
+      "scripts/research/validation/test_partition_evidence.py": {
+        "status": "??",
+        "sha256": "6e01d22042d6b54eb4b1ad78b12f3a3ca01f08b16002191c7a5d540bddf8a4b4"
+      },
+      "scripts/research/validation/validate_longitudinal_refresh.py": {
+        "status": "??",
+        "sha256": "66f89f5afdf7e9ccd5c35901ee7b81c742cdf9c2e2a97b6cc0fc55f4990ab285"
+      }
+    }
+  },
+  "after": {
+    "branch": "integration/final-mariel-backend-oct11",
+    "head": "7f1cc6edd1f0cc306da8f6ced61d314fe88be170",
+    "indexSha256": "bf3382ea5130b33418756a4898799d3ed7e2d9dfc2f63ae8d8f4d4de14ce2a78",
+    "existingChanges": {
+      "apps/api/src/app.ts": {
+        "status": " M",
+        "sha256": "b1e67567389215d9e7f34aed9de960d075c05a429f5ee97e3359ac52a0bdcf88"
+      },
+      "apps/api/src/routes/cluster.ts": {
+        "status": " M",
+        "sha256": "96b1bc44d7bb91986af89f5a275122acb11d7740113f272ed2f057f618dc7300"
+      },
+      "apps/api/src/services/frontendContract.validation.ts": {
+        "status": " M",
+        "sha256": "6c2f928f6a7821e166c667bdb0877518c4f7288acf13492ad6614fc77a730a93"
+      },
+      "apps/api/src/services/mixedEffectsModel.validation.ts": {
+        "status": " M",
+        "sha256": "ceca6a7026a25d9e3b9bacb59bedaa7905e1c9c4efb9ace89e002729209b3dfa"
+      },
+      "apps/api/src/services/researchPipelineOrchestrator.ts": {
+        "status": " M",
+        "sha256": "b4907f326158fe0385c6c83be794a6f1d2fa96097ad890b5445851deb877486c"
+      },
+      "apps/api/src/services/simulationExecution.ts": {
+        "status": " M",
+        "sha256": "a6859c49f0b30f364cb0484e6afc3b71a2735d73262cf08782ff3a6bb2f5c6d0"
+      },
+      "apps/api/src/services/simulationExecution.validation.ts": {
+        "status": " M",
+        "sha256": "59616a1bb1479dd18fdeb840b9783d05f5ee9777dc8ed2368babc411ddb791ce"
+      },
+      "apps/api/src/services/simulationMetadata.validation.ts": {
+        "status": " M",
+        "sha256": "6ec4696cd7094a0a28baf95cb067ffaf6b8162d6b09d987c1b119f751705d1a7"
+      },
+      "apps/api/src/services/studyEvidenceArtifact.ts": {
+        "status": " M",
+        "sha256": "3dc506fe492c49020124fce3603a8c57ce6e76e448cec85ec34037c40495f018"
+      },
+      "apps/web/src/App.tsx": {
+        "status": " M",
+        "sha256": "e898b24a56e81188873b116a786f10cb4746c76aabab8fef9e004e7d17196419"
+      },
+      "apps/web/src/components/FeatureRepresentationComparison.tsx": {
+        "status": " M",
+        "sha256": "f809ccbddf59ee0e4d7f525eb84e4e3b6130d8c31dbe1f73db8341bff8d3c8d2"
+      },
+      "apps/web/src/components/InitializationComparison.tsx": {
+        "status": " M",
+        "sha256": "f2eae9633b3581decc78b3075326959bb503c924d9fdd96bece5c605d3c2557b"
+      },
+      "apps/web/src/components/InternalValidationCalculationDetails.css": {
+        "status": " M",
+        "sha256": "d68986379cff05034715e224a33681a27714c554de0fd22dbed7c86c4ee117ce"
+      },
+      "apps/web/src/components/InternalValidationCalculationDetails.tsx": {
+        "status": " M",
+        "sha256": "a6a6f3df619d53a13503b1b73a79c422e92f6fa2884b27d85578d7919ced30bc"
+      },
+      "apps/web/src/components/MetricComparisonTable.css": {
+        "status": " M",
+        "sha256": "d83b96b45e31a882861e0218f5478b9e417ffa1b2a300452ffb87463562cb614"
+      },
+      "apps/web/src/components/MetricComparisonTable.tsx": {
+        "status": " M",
+        "sha256": "854ad5bc2357457c0d091bde75b01b4004a0e4c54808cd6e354efd172d6e7232"
+      },
+      "apps/web/src/components/NbClustComparison.tsx": {
+        "status": " M",
+        "sha256": "70103e083af74316f5d88d355d3294000e5e2dee980626e2776186ee8ecd6cb3"
+      },
+      "apps/web/src/components/PcaCalculationDetails.tsx": {
+        "status": " M",
+        "sha256": "5ebc256e82d54a0b359cb1a1bb0c79a360b9559fad7dbb6415e53f2dbfba1dac"
+      },
+      "apps/web/src/components/PcaLoadingMatrix.css": {
+        "status": " M",
+        "sha256": "c678d9fafd9715c6b288a59c099ad4977430a46c7e76e355beb9908d55422b36"
+      },
+      "apps/web/src/components/PcaLoadingMatrix.tsx": {
+        "status": " M",
+        "sha256": "d6f6a5ce110369f2eb9b6eeb5dc0538ff07257dffdfd83265007898de157a7fe"
+      },
+      "apps/web/src/components/RunProgress.css": {
+        "status": " M",
+        "sha256": "365e6c8dc7c6fe79fb2b8dc1c9d6312b17a6113e740fcef67232f2fefe77481c"
+      },
+      "apps/web/src/components/SilhouetteCalculationCard.css": {
+        "status": " M",
+        "sha256": "44be8aeb40f09a93285e96c4e70437c5c996b8d1d0f2cde0d5aab39a6671eb5a"
+      },
+      "apps/web/src/components/SopComparison.css": {
+        "status": " M",
+        "sha256": "1ea90f6b436c3986a753b1130a0cd4157a8f271f09fd7dbd66a898af5da49e3b"
+      },
+      "apps/web/src/components/SopComparison.tsx": {
+        "status": " M",
+        "sha256": "b974798726d3f067b436b4ef82715ee153e77ca8a91ce4bcfd89374e85080f93"
+      },
+      "apps/web/src/components/SopFigures.css": {
+        "status": " M",
+        "sha256": "bb5dd41296780d582d01e1a0250311a7e8c3242697dec315d65050a6b45a43a8"
+      },
+      "apps/web/src/components/SopFigures.tsx": {
+        "status": " M",
+        "sha256": "020b30811cc007750b3b20908067d3f9e2373eb40e54ec3f0b4ceafcdede694b"
+      },
+      "apps/web/src/components/StudyEntrySummary.tsx": {
+        "status": " M",
+        "sha256": "d18ce680eef89102d2f0b8a29f13448059025ef5ea60fa6448179c1208151bb2"
+      },
+      "apps/web/src/components/charts/DefenseScatter.tsx": {
+        "status": " M",
+        "sha256": "9b2e5499c5b630d7b1875f23a52620dd6188ea41e088618afe870df239742dc2"
+      },
+      "apps/web/src/components/charts/FinalFindingsCharts.tsx": {
+        "status": " M",
+        "sha256": "5720b4394a4bd78597f4e610d99590ef88b6f91e9e9ff9367b057b90719106c7"
+      },
+      "apps/web/src/components/charts/PartitionProjection.css": {
+        "status": " M",
+        "sha256": "6f3a153a5bae41436cd1d41330e9ae2829b14e21582353f21407be4ff474ab21"
+      },
+      "apps/web/src/components/charts/PartitionProjection.tsx": {
+        "status": " M",
+        "sha256": "f25f77898522618a26335c16e36f662ff0bc4bc5fae4cde84cda35d6e7e756ee"
+      },
+      "apps/web/src/components/charts/chartPalette.ts": {
+        "status": " M",
+        "sha256": "f7a180030b74af9fd79a49a016c641612433ce55678f48f1845bc12f163f3459"
+      },
+      "apps/web/src/components/layout/AppShell.tsx": {
+        "status": " M",
+        "sha256": "6607d2a6c15867b405f64fa0e945371932e241402c4645d6fe3db2acf3fce680"
+      },
+      "apps/web/src/components/run/RunSelector.tsx": {
+        "status": " M",
+        "sha256": "0ba3ba332f8aca5c515bf3750810ab98cec629361f26815a315024c15d9923f8"
+      },
+      "apps/web/src/components/ui/Panel.tsx": {
+        "status": " M",
+        "sha256": "0ef93ab8ce01a27ffa2dd325b99b82eae197fb0ead50468993596fe9a534e341"
+      },
+      "apps/web/src/components/ui/StatCard.tsx": {
+        "status": " M",
+        "sha256": "54dbab2d91c098dfd81ea346e140e13e8411658e6c30371ebf5ecf9bce5430d8"
+      },
+      "apps/web/src/pages/BaselineVsEnhancedPage.tsx": {
+        "status": " M",
+        "sha256": "e1fc7ebecf64f9ae736820be1be9914ad99b56c655571dbf339dc67bc28c8896"
+      },
+      "apps/web/src/pages/ClustersPage.tsx": {
+        "status": " M",
+        "sha256": "4563e7af26d751bfcb9c1a76cce105ab45b5da0fb0e72789e9d42812a49c1b95"
+      },
+      "apps/web/src/pages/DatasetSetup.css": {
+        "status": " M",
+        "sha256": "644d0cad525c7bc0151f632e6dfe21bc34d7928193bb64be23a93c2c58607175"
+      },
+      "apps/web/src/pages/EnhancedKMeansPage.tsx": {
+        "status": " M",
+        "sha256": "c29456cfac5fcd0f580ce2eb9d6f58c30e74f030229a5107dad7cfc055f060f0"
+      },
+      "apps/web/src/pages/LongitudinalProgressionPage.tsx": {
+        "status": " M",
+        "sha256": "8255f59c0f9dea28e8f237ab9078229e48526b11a6d91ba3b9cad255bc8eb789"
+      },
+      "apps/web/src/pages/RunHistoryPage.tsx": {
+        "status": " M",
+        "sha256": "7a7ed9dcb0c75a73e18c061670682123533b62ea2fbf0fa58b6a8efc67cdbc4f"
+      },
+      "apps/web/src/pages/SimulationRunsPage.css": {
+        "status": " M",
+        "sha256": "55832f9a5250e787adb547d275cba08b5e26ecbfab819fa083c68bd25b4a2d46"
+      },
+      "apps/web/src/pages/SimulationRunsPage.tsx": {
+        "status": " M",
+        "sha256": "bce504fae085f82f31309cd4c6b0d50e4304369783a85540dcfad4561bd66b63"
+      },
+      "apps/web/src/pages/StudyFindingsPage.css": {
+        "status": " M",
+        "sha256": "5b51e88cccf6e5b1188d241243c6344325782855e59102a7cef99c469ede4ee0"
+      },
+      "apps/web/src/pages/StudyFindingsPage.tsx": {
+        "status": " M",
+        "sha256": "b93d6fbea96b8fee881ee14ba05b7947dd4797d0701adacfef2164ed7a28b2e2"
+      },
+      "apps/web/src/pages/UploadAndCluster.tsx": {
+        "status": " M",
+        "sha256": "2b8324be55a96b5354113a30a59c1a8d5432c658f85a10b91a7b40b85b025c38"
+      },
+      "apps/web/src/styles.css": {
+        "status": " M",
+        "sha256": "c964825fa28bea928f12d407864a3493f01422c3c58f001adcaf9cd4b584292f"
+      },
+      "apps/web/src/typography.css": {
+        "status": " M",
+        "sha256": "682ae3d1190fb36d458dcd0d34f16ae73dc89476ab500e953059cab3fc7d8214"
+      },
+      "apps/web/src/utils/validatedDataset.ts": {
+        "status": " M",
+        "sha256": "f456589826a721e0113271e138eee3f53812784fd30f033f47795ea3d87b8125"
+      },
+      "apps/web/tailwind.config.ts": {
+        "status": " M",
+        "sha256": "a43be6f33b9b1e5a30284c671d00d0472441d56a2948ba9a35538f63b58976a2"
+      },
+      "apps/web/tests/datasetSetup.test.mjs": {
+        "status": " M",
+        "sha256": "7c753059dd3e9435a95cab92b0116123c3af1580db83bd75f7e7b0050683bcc2"
+      },
+      "apps/web/tests/initializationComparison.test.mjs": {
+        "status": " M",
+        "sha256": "e2f80aba24fba199974bbf5334552de554f72792e2e2e7ce57747d24bf63957e"
+      },
+      "apps/web/tests/lmeCard.test.mjs": {
+        "status": " M",
+        "sha256": "e40653db316832df3f594fa3b13b0ed64714feed164b9aecf7cf8088e25fd0a1"
+      },
+      "apps/web/tests/metricComparison.test.mjs": {
+        "status": " M",
+        "sha256": "903f1edc1ace855d1a00ff6331d0faaf3d43423cfefa0b76230bfcf833cc77a6"
+      },
+      "apps/web/tests/partitionProjection.test.mjs": {
+        "status": " M",
+        "sha256": "b26a40d386aeb194431ae8a87dd7f997f1a54cdd6ad5bafc8569fc27403046cb"
+      },
+      "apps/web/tests/pcaLoadingMatrix.test.mjs": {
+        "status": " M",
+        "sha256": "8ca21d645b7da42f4889648b5764d683ef4da95493e60be8883ffc6d2f83b4f1"
+      },
+      "apps/web/tests/studyFindings.test.mjs": {
+        "status": " M",
+        "sha256": "5b08f3a9ea32d1c7f6eafd4133aaf7a71a7513985211a23dd70a936d85db0ade"
+      },
+      "apps/web/tests/varianceSummary.test.mjs": {
+        "status": " M",
+        "sha256": "9de98417ad808348f74897d7fe3e6d9875915fe0fb43200b37636595728c5dee"
+      },
+      "packages/shared/src/schema.ts": {
+        "status": " M",
+        "sha256": "5d35321d7d0e04ba595b8c140ecb1be46da1be0a277d90d0320d152cad43c213"
+      },
+      "scripts/research/comparison/run_baseline_kmeans_comparison.py": {
+        "status": " M",
+        "sha256": "e58380d8538cf1b43c4ac15a35da6fc6311d3a408d60305670d714f1bf1ec113"
+      },
+      "scripts/research/study_entry/construct_study_entry_cohort.py": {
+        "status": " M",
+        "sha256": "8c4af70d6672ecb9607a86c12179a7b37e02e1810801860347e7e6dd78d0865d"
+      },
+      "scripts/research/study_entry/run_enhanced_kmeans.py": {
+        "status": " M",
+        "sha256": "3b3f86045cd86d8cef0df66658515b521720db7a8103e2aae10234fe251591a0"
+      },
+      "apps/api/src/routes/methodRuns.ts": {
+        "status": "??",
+        "sha256": "9a5b6df3554371949b5720712f180983f05975b0355e41519a30983ac44f561b"
+      },
+      "apps/api/src/routes/studyPreparations.ts": {
+        "status": "??",
+        "sha256": "0ce79a6ec66c3c5f2e79894f86a709936dbec6be13cb0509b00539f9a4cb32b7"
+      },
+      "apps/api/src/services/cohortReuse.ts": {
+        "status": "??",
+        "sha256": "81c656864087a77d0ba7bc2130bb45fb417c7b9de2328c259ab21e0e7c1424e5"
+      },
+      "apps/api/src/services/commonSpace.validation.ts": {
+        "status": "??",
+        "sha256": "2675537a76f9f70080b59e4857e4ebd598d2310af07cba494f6476104337e23b"
+      },
+      "apps/api/src/services/methodExecution.fixture.ts": {
+        "status": "??",
+        "sha256": "1d0e644b0a586213107e27eb207464f7aee51c1bc263034c7fc3cb4f8bac1acc"
+      },
+      "apps/api/src/services/methodExecution.real.validation.ts": {
+        "status": "??",
+        "sha256": "d6b9e783f93cf5a8963db84ab815af05d26b9492165f3ec50f0973bc85b365bf"
+      },
+      "apps/api/src/services/methodExecution.ts": {
+        "status": "??",
+        "sha256": "b798c60d75acf86e37d2393809bb208c580853027765d8b85e37eb95301ad213"
+      },
+      "apps/api/src/services/methodExecution.validation.ts": {
+        "status": "??",
+        "sha256": "e8cc87ad092dd74047657bce3bce7ed50ebaa8ff754e4bea9d3637d3b787aa53"
+      },
+      "apps/api/src/services/partitionEvidence.ts": {
+        "status": "??",
+        "sha256": "649b808dd0e73b20fba73570a3468a5c1e2ebe2322ad02988cd404b1648df4a5"
+      },
+      "apps/api/src/services/partitionEvidence.validation.ts": {
+        "status": "??",
+        "sha256": "5c7b7a0a26f245bac0de25072b25db97cfa13408e980f8edf9dd46e38c0f5af5"
+      },
+      "apps/api/src/services/researchExecutionCapacity.ts": {
+        "status": "??",
+        "sha256": "d38a400da41d8c38a3be6f44ffac6839cdd77daa2f003fa298d55043e5e67509"
+      },
+      "apps/api/src/services/studyPreparation.ts": {
+        "status": "??",
+        "sha256": "6591b19ae3a4002f3330261a816e9c3d085c2126ffd9a2b6970155fc8ab18a33"
+      },
+      "apps/api/src/services/studyPreparation.validation.ts": {
+        "status": "??",
+        "sha256": "2aaed6cd691261f09edb6728348375006a0fb8d9d6b7df825fa9cd8ca457b069"
+      },
+      "apps/web/docs/UI_CONTINUATION_AUDIT.md": {
+        "status": "??",
+        "sha256": "a29600408efa5cc7adad741b35a04bf98f5090910e6901a8b8921d73f455a05c"
+      },
+      "apps/web/src/components/CommonSpaceValidation.tsx": {
+        "status": "??",
+        "sha256": "f76818af1294646f1ad5a90abe320475f2ebc5225ef19d9ff05f334ac7db22d7"
+      },
+      "apps/web/src/components/ControlledSopEvidence.tsx": {
+        "status": "??",
+        "sha256": "fe1ffa52523c793f70760b53aa81acc858cb8094044db07729dbd95f14e5bc82"
+      },
+      "apps/web/src/components/FreshStudyResults.tsx": {
+        "status": "??",
+        "sha256": "b42fff6be55d96d685ce5ecfbee4da4f9c5b81c60a563a50bbfd40438f470b19"
+      },
+      "apps/web/src/components/MethodDecisionGraph.tsx": {
+        "status": "??",
+        "sha256": "37e9963b288d059bdf587d54f315535b3ca521014f4c971603969ee126b79ca7"
+      },
+      "apps/web/src/components/MethodExecutionControls.tsx": {
+        "status": "??",
+        "sha256": "d0b3aff710a922d2bff0d199917fded20c61be488cf337cfa1da16365ae92453"
+      },
+      "apps/web/src/components/VerifiedStudyMetrics.tsx": {
+        "status": "??",
+        "sha256": "ccfbfa8f23bb4d562026fad647e6131f3c3764aa727ceccafd268b0a9ca8594a"
+      },
+      "apps/web/src/data/verifiedStudyPresentation.json": {
+        "status": "??",
+        "sha256": "c09a7a7ba80e1b73d17643d4ce40090614817f6dad09730a925df7be7221f706"
+      },
+      "apps/web/src/hooks/useMethodJobs.ts": {
+        "status": "??",
+        "sha256": "29d2edcee82e2a21cb30cc1460d18045de5014ecc37203638149f8e56627699f"
+      },
+      "apps/web/src/utils/methodPresentation.ts": {
+        "status": "??",
+        "sha256": "1ed93286f64f3679dc0f55743b6d32d91ee60a3deba55012a2c42e4827199c6c"
+      },
+      "apps/web/tests/finalPresentation.test.mjs": {
+        "status": "??",
+        "sha256": "058b9d7abaf6003d908a0eda22541c271b731249c2085f8c2f13765ce3f05af8"
+      },
+      "apps/web/tests/independentJobs.test.mjs": {
+        "status": "??",
+        "sha256": "23c1c5c41492763ecaf312dc0d0362d8f02aea5f0558bf5b87535e6f33691c9e"
+      },
+      "apps/web/tests/marielBackendIntegration.test.mjs": {
+        "status": "??",
+        "sha256": "46b03297d426727be7ae7bfbfd18d300098129bd6271611d3d3ee0f15c05cb8e"
+      },
+      "docs/MARIEL_BACKEND_INTEGRATION_OCT11.md": {
+        "status": "??",
+        "sha256": "a650ee77bb72bac497ffdbed5face375188941108f901a2746af4e35f2f54c26"
+      },
+      "docs/SCIENTIFIC_EVIDENCE_REPAIR_OCT11.md": {
+        "status": "??",
+        "sha256": "bce18a3b8236f6ced97f63458f52fe8f13e1b4f287dcec1c58cacb8de0fc05b5"
+      },
+      "packages/shared/src/methodExecution.ts": {
+        "status": "??",
+        "sha256": "61e94d88d8e039c6bef9db4e404520e8155e3f8061c559f8a3d8c51e20dc5be0"
+      },
+      "packages/shared/src/partitionEvidence.ts": {
+        "status": "??",
+        "sha256": "49435c3a59acc1bb1546ecaa92db5fc33c8464453a8caf26b5fd93383fdb8945"
+      },
+      "packages/shared/src/studyPreparation.ts": {
+        "status": "??",
+        "sha256": "5419a35a408cd73343357c46a12f04c43c606ddf066eb0d6d6b01dff8e5aebba"
+      },
+      "scripts/research/simulation/common_space.py": {
+        "status": "??",
+        "sha256": "3735d50d934f7f2863b739831f1417d00e4ca91703c2ff1a0c3045545cbdfcda"
+      },
+      "scripts/research/simulation/exact_runtime.py": {
+        "status": "??",
+        "sha256": "93019ff3601282c54cdc9115c8982a48ab04d1580dc930386e5499d9a83eef14"
+      },
+      "scripts/research/simulation/prepare_method_data.py": {
+        "status": "??",
+        "sha256": "2cd7bf78568395abfc7d84f9991d9c217879e11bc4696ed834f4a1465a3990bd"
+      },
+      "scripts/research/simulation/run_method.py": {
+        "status": "??",
+        "sha256": "b86d37e593f2fcdfd5fa16acbc46a7b72fd715f646efd823f1bf855ea06fe16e"
+      },
+      "scripts/research/validation/benchmark_independent_methods.py": {
+        "status": "??",
+        "sha256": "69a850131b702b17bed661b05cbf492e24e8afa1f5f8c962b251b01abae4e430"
+      },
+      "scripts/research/validation/derive_partition_evidence.py": {
+        "status": "??",
+        "sha256": "0649a050dcf3e92663376acc8158634e4cad5967d5815297841492b0d7974714"
+      },
+      "scripts/research/validation/profile_cohort_preparation.py": {
+        "status": "??",
+        "sha256": "2dd08dd9142aeed2032d0689f8d2298ebd6e9e66482bac5a6b62c677ea75f926"
+      },
+      "scripts/research/validation/test_cohort_preparation.py": {
+        "status": "??",
+        "sha256": "2f52da67386a8cb2053a7af4dcf9192cdc9c37388e381a8dfd5ce27ca127e31c"
+      },
+      "scripts/research/validation/test_common_space.py": {
+        "status": "??",
+        "sha256": "a234286904bb7e7491c3aceec44573b6a189787825b044eba3d2b23febb3abeb"
+      },
+      "scripts/research/validation/test_exact_runtime.py": {
+        "status": "??",
+        "sha256": "e07b2fb832ae43413aaeaef7651305530b266ce096d0933b5c1eb44e71e929e7"
+      },
+      "scripts/research/validation/test_partition_evidence.py": {
+        "status": "??",
+        "sha256": "6e01d22042d6b54eb4b1ad78b12f3a3ca01f08b16002191c7a5d540bddf8a4b4"
+      },
+      "scripts/research/validation/validate_longitudinal_refresh.py": {
+        "status": "??",
+        "sha256": "66f89f5afdf7e9ccd5c35901ee7b81c742cdf9c2e2a97b6cc0fc55f4990ab285"
+      }
+    }
+  }
+}

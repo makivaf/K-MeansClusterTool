@@ -5,7 +5,7 @@ import { getMeasureLabel } from "../utils/measureLabels";
 
 type EnhancedKMeansPageProps = { run: UnifiedResearchRun | null };
 
-const clusterColors = ["#0f7977", "#d88a00"];
+const clusterColors = ["var(--research-primary)", "var(--research-comparison)"];
 
 const enhancedSteps = [
   {
@@ -243,7 +243,7 @@ export const EnhancedKMeansPage = ({ run }: EnhancedKMeansPageProps) => {
                       background: "none",
                       backgroundColor: "transparent",
                       color: "red",
-                      fontSize: "14px",
+                      fontSize: "var(--research-body-size)",
                       lineHeight: 1,
                     }}
                   >

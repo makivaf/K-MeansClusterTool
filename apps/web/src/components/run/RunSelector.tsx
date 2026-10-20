@@ -11,7 +11,7 @@ export const RunSelector = ({ runs, selectedRunId, onRunChange }: RunSelectorPro
 
   return (
     <label className="grid min-w-0 gap-1 text-sm font-medium">
-      <span className="text-[11px] font-semibold uppercase tracking-[0.08em] text-muted">Research run</span>
+      <span className="text-xs font-semibold uppercase tracking-[0.08em] text-muted">Research run</span>
       <select
         aria-label="Research run"
         value={selectedRunId}

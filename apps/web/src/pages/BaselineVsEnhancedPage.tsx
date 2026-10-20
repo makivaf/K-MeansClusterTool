@@ -49,7 +49,7 @@ const ClusterComposition = ({ sizes, total }: { sizes: number[]; total: number }
         />
       ))}
     </div>
-    <div className="mt-1.5 text-[11px] tabular-nums text-muted">{sizes.map((size) => size.toLocaleString()).join(" / ")}</div>
+    <div className="mt-2 text-xs tabular-nums text-muted">{sizes.map((size) => size.toLocaleString()).join(" / ")}</div>
   </div>
 );
 
@@ -61,7 +61,7 @@ const Sop1View = ({ evaluation }: { evaluation: SopEvaluation }) => {
     <div className="sop-flow">
       <Stage number={1} title="Problem Demonstration">
         <div className="grid gap-5 lg:grid-cols-[1fr_1.35fr]">
-          <div><div className="sop-big-number">13</div><div className="text-sm font-semibold">standardized features</div><p className="mt-2 text-sm leading-6 text-muted">The original feature space contains overlapping cognitive and functional signals.</p></div>
+          <div><div className="sop-big-number">15</div><div className="text-sm font-semibold">standardized features</div><p className="mt-2 text-sm leading-6 text-muted">The original feature space contains overlapping cognitive and functional signals.</p></div>
           <div className="grid grid-cols-3 gap-3">
             <div className="sop-mini-stat"><span>{redundancy.pairCount}</span><small>feature pairs</small></div>
             <div className="sop-mini-stat"><span>{redundancy.pairsAtOrAbove070}</span><small>|r| ≥ 0.70</small></div>
@@ -71,7 +71,7 @@ const Sop1View = ({ evaluation }: { evaluation: SopEvaluation }) => {
       </Stage>
       <Stage number={2} title="Enhancement Applied">
         <div className="flex flex-wrap items-center gap-4">
-          <div className="sop-dimension-block"><strong>13D</strong><span>standardized</span></div>
+          <div className="sop-dimension-block"><strong>15D</strong><span>standardized</span></div>
           <ArrowRight className="text-slate-400" aria-hidden="true" />
           <div className="sop-dimension-block sop-dimension-block-active"><strong>6D</strong><span>PC1–PC6</span></div>
           <div className="min-w-[180px] flex-1 border-l border-line pl-4"><div className="text-2xl font-semibold tabular-nums text-teal-800">{(pca.varianceRetained * 100).toFixed(2)}%</div><div className="text-xs text-muted">variance retained</div></div>
@@ -87,16 +87,16 @@ const Sop1View = ({ evaluation }: { evaluation: SopEvaluation }) => {
             const DirectionIcon = metric === "davies_bouldin" ? ArrowDownRight : ArrowUpRight;
             return <div key={metric} className="grid gap-2 py-3 sm:grid-cols-[1.25fr_1fr_auto_1fr_1fr] sm:items-center">
               <div className="text-sm font-semibold">{labels[metric]}</div>
-              <div className="text-sm tabular-nums"><span className="mr-2 text-xs text-muted">13D</span>{formatMetric(metric, before)}</div>
+              <div className="text-sm tabular-nums"><span className="mr-2 text-xs text-muted">15D</span>{formatMetric(metric, before)}</div>
               <ArrowRight className="hidden text-slate-400 sm:block" size={15} aria-hidden="true" />
               <div className="text-sm font-semibold tabular-nums text-teal-800"><span className="mr-2 text-xs font-normal text-muted">6D</span>{formatMetric(metric, after)}</div>
-              <div className="flex items-center gap-1 text-sm font-semibold text-teal-800"><DirectionIcon size={15} />{Math.abs(change).toFixed(2)}%</div>
+              <div className="text-xs text-muted">Different evaluation spaces</div>
             </div>;
           })}
         </div>
       </Stage>
       <Stage number={4} title="Finding">
-        <Conclusion>PCA reduced 13 correlated dimensions to 6 while retaining 87.48% of variance, and the matched random-seed ablation improved all three mean internal-validity metrics.</Conclusion>
+        <Conclusion>PCA retained {(pca.varianceRetained * 100).toFixed(2)}% of variance. Common-space evaluation is required to compare clustering metrics.</Conclusion>
       </Stage>
       <details className="research-disclosure"><summary>Correlation, distance, and ablation details</summary><div className="grid gap-6 py-5 xl:grid-cols-2">
         <div><h3 className="text-sm font-semibold">Strongest absolute correlations</h3><div className="mt-3 overflow-x-auto"><table className="research-table"><thead><tr><th>Feature pair</th><th className="text-right">r</th></tr></thead><tbody>{redundancy.topCorrelatedPairs.map((pair) => <tr key={`${pair.featureA}-${pair.featureB}`}><td>{pair.featureA} × {pair.featureB}</td><td className="text-right tabular-nums">{pair.correlation.toFixed(4)}</td></tr>)}</tbody></table></div></div>
@@ -165,8 +165,8 @@ const Sop3View = ({ evaluation }: { evaluation: SopEvaluation }) => {
 const OverallView = ({ run }: { run: UnifiedResearchRun }) => {
   const comparison = run.baselineComparison;
   return <div className="pt-6">
-    <Panel title="Primary finding" variant="result"><p className="max-w-4xl text-base leading-7 text-ink">The complete enhanced pipeline produced better internal clustering validity values than the defined baseline under all three selected metrics.</p></Panel>
-    <div className="mt-8 grid gap-x-6 gap-y-5 xl:grid-cols-3">{comparison.metrics.map((metric) => { const isLower = metric.direction === "lower"; const DirectionIcon = isLower ? ArrowDownRight : ArrowUpRight; return <article key={metric.metric} className="border-y border-line py-4"><div><h2 className="font-semibold">{labels[metric.metric]}</h2><p className="mt-1 text-[11px] font-semibold uppercase tracking-[0.08em] text-muted">{isLower ? "Lower is better" : "Higher is better"}</p></div><div className="mt-4 grid grid-cols-[1fr_auto_1fr] items-end gap-3 text-sm"><div><div className="text-xs text-muted">Standard</div><div className="mt-1 font-semibold tabular-nums">{formatMetric(metric.metric, metric.baselineValue)}</div></div><ArrowRight className="mb-0.5 text-slate-400" size={16} /><div className="text-right"><div className="text-xs text-teal-800">Complete enhanced</div><div className="mt-1 font-semibold text-teal-800 tabular-nums">{formatMetric(metric.metric, metric.enhancedValue)}</div></div></div><div className="mt-4 flex items-center gap-2 border-t border-line pt-3 text-sm font-semibold text-teal-800"><DirectionIcon size={17} />{Math.abs(metric.signedRelativeChangePercent).toFixed(2)}% {isLower ? "lower" : "higher"}</div></article>; })}</div>
+    <Panel title="Primary finding" variant="result"><p className="max-w-4xl text-base leading-7 text-ink">Clustering quality is statistically equivalent between Standard and Enhanced K-Means in common feature space. The enhancement's contribution is reproducibility and deterministic output, not clustering-quality improvement.</p></Panel>
+    <div className="mt-8 grid gap-x-6 gap-y-5 xl:grid-cols-3">{comparison.metrics.map((metric) => { const isLower = metric.direction === "lower"; const DirectionIcon = isLower ? ArrowDownRight : ArrowUpRight; return <article key={metric.metric} className="border-y border-line py-4"><div><h2 className="font-semibold">{labels[metric.metric]}</h2><p className="mt-1 text-xs font-semibold uppercase tracking-[0.08em] text-muted">{isLower ? "Lower is better" : "Higher is better"}</p></div><div className="mt-4 grid grid-cols-[1fr_auto_1fr] items-end gap-3 text-sm"><div><div className="text-xs text-muted">Standard</div><div className="mt-1 font-semibold tabular-nums">{formatMetric(metric.metric, metric.baselineValue)}</div></div><ArrowRight className="mb-1 text-slate-400" size={16} /><div className="text-right"><div className="text-xs text-teal-800">Complete enhanced</div><div className="mt-1 font-semibold text-teal-800 tabular-nums">{formatMetric(metric.metric, metric.enhancedValue)}</div></div></div><div className="mt-4 flex items-center gap-2 border-t border-line pt-3 text-sm font-semibold text-teal-800"><DirectionIcon size={17} />Common-space comparison required {isLower ? "lower" : "higher"}</div></article>; })}</div>
     <Panel title="Simple interpretation" className="mt-8" variant="section"><ul className="space-y-3 text-sm leading-6">{comparison.metrics.map((metric) => <li key={metric.metric}><span className="font-semibold">{labels[metric.metric]}:</span> <span className="text-muted">{metricInterpretations[metric.metric]}</span></li>)}</ul><p className="mt-4 text-xs leading-5 text-muted">These internal validity metrics characterize clustering geometry; they do not establish clinical validity.</p></Panel>
     <div className="mt-6 border-l-2 border-amber-500 bg-amber-50/60 px-4 py-3 text-sm leading-6 text-amber-950"><div className="font-semibold">Complete-pipeline attribution limitation</div><p className="mt-1">{comparison.caution}</p></div>
     <details className="research-disclosure"><summary>Controlled DPC comparison retained from the original evaluation</summary><div className="py-5"><p className="text-sm leading-6 text-muted">{comparison.controlledDpcInitializationComparison.purpose}</p><div className="mt-4 overflow-x-auto"><table className="research-table min-w-[560px]"><thead><tr><th>Metric</th><th className="text-right">Random mean</th><th className="text-right">DPC</th><th className="text-right">Assessment</th></tr></thead><tbody>{comparison.controlledDpcInitializationComparison.metrics.map((metric) => <tr key={metric.metric}><td className="font-medium">{labels[metric.metric]}</td><td className="text-right tabular-nums">{formatMetric(metric.metric, metric.randomMean)}</td><td className="text-right tabular-nums">{formatMetric(metric.metric, metric.dpcValue)}</td><td className="text-right capitalize text-muted">{metric.dpcAssessment}</td></tr>)}</tbody></table></div></div></details>

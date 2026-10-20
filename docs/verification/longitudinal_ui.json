@@ -1,0 +1,363 @@
+{
+  "observedMeans": [
+    {
+      "clusterId": 0,
+      "yearStart": 0,
+      "yearEnd": 1,
+      "participantCount": 1239,
+      "observationCount": 2564,
+      "meanElapsedYears": 0.3424566551450559,
+      "meanAdas13": 10.551856473342118
+    },
+    {
+      "clusterId": 0,
+      "yearStart": 1,
+      "yearEnd": 2,
+      "participantCount": 846,
+      "observationCount": 1080,
+      "meanElapsedYears": 1.4439653205566962,
+      "meanAdas13": 11.109120370368162
+    },
+    {
+      "clusterId": 0,
+      "yearStart": 2,
+      "yearEnd": 3,
+      "participantCount": 795,
+      "observationCount": 866,
+      "meanElapsedYears": 2.290591562297961,
+      "meanAdas13": 11.110923790096136
+    },
+    {
+      "clusterId": 0,
+      "yearStart": 3,
+      "yearEnd": 4,
+      "participantCount": 602,
+      "observationCount": 661,
+      "meanElapsedYears": 3.346945960582819,
+      "meanAdas13": 11.889062043029856
+    },
+    {
+      "clusterId": 0,
+      "yearStart": 4,
+      "yearEnd": 5,
+      "participantCount": 609,
+      "observationCount": 656,
+      "meanElapsedYears": 4.265600741223018,
+      "meanAdas13": 11.885868897332651
+    },
+    {
+      "clusterId": 0,
+      "yearStart": 5,
+      "yearEnd": 6,
+      "participantCount": 453,
+      "observationCount": 495,
+      "meanElapsedYears": 5.458256763390234,
+      "meanAdas13": 12.571757587278732
+    },
+    {
+      "clusterId": 0,
+      "yearStart": 6,
+      "yearEnd": 7,
+      "participantCount": 445,
+      "observationCount": 461,
+      "meanElapsedYears": 6.43735236169325,
+      "meanAdas13": 12.90973968626103
+    },
+    {
+      "clusterId": 0,
+      "yearStart": 7,
+      "yearEnd": 8,
+      "participantCount": 326,
+      "observationCount": 340,
+      "meanElapsedYears": 7.444111607682086,
+      "meanAdas13": 13.684441207086339
+    },
+    {
+      "clusterId": 0,
+      "yearStart": 8,
+      "yearEnd": 9,
+      "participantCount": 224,
+      "observationCount": 229,
+      "meanElapsedYears": 8.3532544856218,
+      "meanAdas13": 13.742139758241228
+    },
+    {
+      "clusterId": 0,
+      "yearStart": 9,
+      "yearEnd": 10,
+      "participantCount": 159,
+      "observationCount": 164,
+      "meanElapsedYears": 9.412413816129948,
+      "meanAdas13": 14.513902396690554
+    },
+    {
+      "clusterId": 0,
+      "yearStart": 10,
+      "yearEnd": 11,
+      "participantCount": 120,
+      "observationCount": 121,
+      "meanElapsedYears": 10.347288452944603,
+      "meanAdas13": 14.333471031967273
+    },
+    {
+      "clusterId": 0,
+      "yearStart": 11,
+      "yearEnd": 12,
+      "participantCount": 102,
+      "observationCount": 103,
+      "meanElapsedYears": 11.396556421655603,
+      "meanAdas13": 14.584951400756836
+    },
+    {
+      "clusterId": 0,
+      "yearStart": 12,
+      "yearEnd": 13,
+      "participantCount": 96,
+      "observationCount": 97,
+      "meanElapsedYears": 12.472857878730142,
+      "meanAdas13": 14.628969073295593
+    },
+    {
+      "clusterId": 0,
+      "yearStart": 13,
+      "yearEnd": 14,
+      "participantCount": 75,
+      "observationCount": 76,
+      "meanElapsedYears": 13.381966209157389,
+      "meanAdas13": 14.323552658683376
+    },
+    {
+      "clusterId": 0,
+      "yearStart": 14,
+      "yearEnd": 15,
+      "participantCount": 37,
+      "observationCount": 37,
+      "meanElapsedYears": 14.400503172577094,
+      "meanAdas13": 14.351891801163957
+    },
+    {
+      "clusterId": 0,
+      "yearStart": 15,
+      "yearEnd": 16,
+      "participantCount": 21,
+      "observationCount": 21,
+      "meanElapsedYears": 15.31957889247417,
+      "meanAdas13": 12.506666637602306
+    },
+    {
+      "clusterId": 0,
+      "yearStart": 16,
+      "yearEnd": 17,
+      "participantCount": 4,
+      "observationCount": 4,
+      "meanElapsedYears": 16.537303216974674,
+      "meanAdas13": 15.747500441968441
+    },
+    {
+      "clusterId": 0,
+      "yearStart": 17,
+      "yearEnd": 18,
+      "participantCount": 8,
+      "observationCount": 8,
+      "meanElapsedYears": 17.635523613963038,
+      "meanAdas13": 10.75
+    },
+    {
+      "clusterId": 0,
+      "yearStart": 18,
+      "yearEnd": 19,
+      "participantCount": 11,
+      "observationCount": 11,
+      "meanElapsedYears": 18.40582415531081,
+      "meanAdas13": 17.636363636363637
+    },
+    {
+      "clusterId": 0,
+      "yearStart": 19,
+      "yearEnd": 20,
+      "participantCount": 11,
+      "observationCount": 11,
+      "meanElapsedYears": 19.462883454669903,
+      "meanAdas13": 20.637272574684836
+    },
+    {
+      "clusterId": 0,
+      "yearStart": 20,
+      "yearEnd": 21,
+      "participantCount": 1,
+      "observationCount": 1,
+      "meanElapsedYears": 20.216290212183434,
+      "meanAdas13": 19.0
+    },
+    {
+      "clusterId": 1,
+      "yearStart": 0,
+      "yearEnd": 1,
+      "participantCount": 606,
+      "observationCount": 1381,
+      "meanElapsedYears": 0.3716914951668805,
+      "meanAdas13": 25.28906589897537
+    },
+    {
+      "clusterId": 1,
+      "yearStart": 1,
+      "yearEnd": 2,
+      "participantCount": 524,
+      "observationCount": 712,
+      "meanElapsedYears": 1.4143114228364442,
+      "meanAdas13": 28.10400283116973
+    },
+    {
+      "clusterId": 1,
+      "yearStart": 2,
+      "yearEnd": 3,
+      "participantCount": 342,
+      "observationCount": 377,
+      "meanElapsedYears": 2.273520008278912,
+      "meanAdas13": 30.94175065624935
+    },
+    {
+      "clusterId": 1,
+      "yearStart": 3,
+      "yearEnd": 4,
+      "participantCount": 193,
+      "observationCount": 214,
+      "meanElapsedYears": 3.2675353585752944,
+      "meanAdas13": 30.140467334283848
+    },
+    {
+      "clusterId": 1,
+      "yearStart": 4,
+      "yearEnd": 5,
+      "participantCount": 142,
+      "observationCount": 157,
+      "meanElapsedYears": 4.3675172314573825,
+      "meanAdas13": 32.18286622405812
+    },
+    {
+      "clusterId": 1,
+      "yearStart": 5,
+      "yearEnd": 6,
+      "participantCount": 85,
+      "observationCount": 95,
+      "meanElapsedYears": 5.434259159191614,
+      "meanAdas13": 30.898420936182927
+    },
+    {
+      "clusterId": 1,
+      "yearStart": 6,
+      "yearEnd": 7,
+      "participantCount": 54,
+      "observationCount": 56,
+      "meanElapsedYears": 6.408135328053193,
+      "meanAdas13": 34.571428707667756
+    },
+    {
+      "clusterId": 1,
+      "yearStart": 7,
+      "yearEnd": 8,
+      "participantCount": 41,
+      "observationCount": 46,
+      "meanElapsedYears": 7.418028152248312,
+      "meanAdas13": 30.3695650100708
+    },
+    {
+      "clusterId": 1,
+      "yearStart": 8,
+      "yearEnd": 9,
+      "participantCount": 20,
+      "observationCount": 22,
+      "meanElapsedYears": 8.360525169560077,
+      "meanAdas13": 30.334090753035113
+    },
+    {
+      "clusterId": 1,
+      "yearStart": 9,
+      "yearEnd": 10,
+      "participantCount": 11,
+      "observationCount": 11,
+      "meanElapsedYears": 9.288283243108705,
+      "meanAdas13": 26.062726974487305
+    },
+    {
+      "clusterId": 1,
+      "yearStart": 10,
+      "yearEnd": 11,
+      "participantCount": 11,
+      "observationCount": 11,
+      "meanElapsedYears": 10.325928691431772,
+      "meanAdas13": 32.81818233836781
+    },
+    {
+      "clusterId": 1,
+      "yearStart": 11,
+      "yearEnd": 12,
+      "participantCount": 8,
+      "observationCount": 8,
+      "meanElapsedYears": 11.464065708418891,
+      "meanAdas13": 27.791250467300415
+    },
+    {
+      "clusterId": 1,
+      "yearStart": 12,
+      "yearEnd": 13,
+      "participantCount": 7,
+      "observationCount": 8,
+      "meanElapsedYears": 12.503422313483915,
+      "meanAdas13": 24.99874997138977
+    },
+    {
+      "clusterId": 1,
+      "yearStart": 13,
+      "yearEnd": 14,
+      "participantCount": 3,
+      "observationCount": 3,
+      "meanElapsedYears": 13.635409536846907,
+      "meanAdas13": 19.0
+    },
+    {
+      "clusterId": 1,
+      "yearStart": 14,
+      "yearEnd": 15,
+      "participantCount": 2,
+      "observationCount": 2,
+      "meanElapsedYears": 14.624229979466119,
+      "meanAdas13": 24.164999961853027
+    },
+    {
+      "clusterId": 1,
+      "yearStart": 17,
+      "yearEnd": 18,
+      "participantCount": 1,
+      "observationCount": 1,
+      "meanElapsedYears": 17.39082819986311,
+      "meanAdas13": 42.66999816894531
+    },
+    {
+      "clusterId": 1,
+      "yearStart": 18,
+      "yearEnd": 19,
+      "participantCount": 1,
+      "observationCount": 1,
+      "meanElapsedYears": 18.379192334017795,
+      "meanAdas13": 40.33000183105469
+    }
+  ],
+  "observedAnalysisSet": {
+    "participantCount": 1845,
+    "observationCount": 11111,
+    "countUnit": "observations",
+    "analysisSet": "LME analysis set"
+  },
+  "reconciliation": {
+    "storedChartMatchesLmeSet": true,
+    "binObservationTotal": 11111,
+    "participantCountsAcrossBinsAreNonAdditive": true
+  },
+  "sources": {
+    "data/interim/unified_longitudinal_cohort.csv": "333dabedb1bc948c3b403cdf828d343dc76f74c821a0fdb43db9133588aed8b8",
+    "data/interim/unified_cluster_assignments.csv": "22f28e1ea401fa44d1550159e888b2e553adf446c0642b7a6aa83bc97e27bc1e",
+    "data/interim/unified_longitudinal_mixed_model.json": "007c4ec9e3ecb35ad90de0c1585212ec3283af6204d25f19a7e6abc73fe35e5d",
+    "scripts/research/longitudinal/fit_longitudinal_mixed_model.py": "f54b9d6168238249f8d9418ef7e899b90aaf9606899bf1a488094b5480cecf0c"
+  }
+}

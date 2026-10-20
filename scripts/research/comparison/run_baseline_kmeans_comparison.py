@@ -49,14 +49,16 @@ FEATURES = (
     "TMT_A",
     "TMT_B",
     "CATEGORY_FLUENCY_ANIMALS",
+    "BNT",
     "RAVLT_IMMEDIATE",
     "RAVLT_DELAYED",
     "RAVLT_FORGETTING",
     "CDRSB",
     "FAQ",
+    "NPIQ",
     "GDS",
 )
-EXPECTED_SHAPE = (2437, 13)
+EXPECTED_SHAPE = (2437, 15)
 K_CANDIDATES = tuple(range(2, 11))
 K_SELECTION_SEED = 0
 BASELINE_SEEDS = tuple(range(30))
@@ -87,7 +89,7 @@ def _require_finite(name: str, values: np.ndarray) -> None:
 
 
 def load_baseline_input(*, expected_shape: tuple[int, int] = EXPECTED_SHAPE) -> tuple[list[str], list[str], np.ndarray]:
-    """Load the locked standardized 13-feature matrix without transforming it."""
+    """Load the standardized 15-feature matrix (Oct 2026 revision) without transforming it."""
     if not STANDARDIZED_PATH.is_file():
         raise FileNotFoundError(STANDARDIZED_PATH)
     ptids: list[str] = []
@@ -100,8 +102,6 @@ def load_baseline_input(*, expected_shape: tuple[int, int] = EXPECTED_SHAPE) -> 
             raise AssertionError(
                 f"Standardized columns are {reader.fieldnames}; expected {expected_columns}"
             )
-        if any(column in reader.fieldnames for column in ("BNT", "NPIQ")):
-            raise AssertionError("BNT or NPIQ entered the baseline input")
         if any(column.startswith("PC") for column in reader.fieldnames):
             raise AssertionError("PCA columns entered the baseline input")
         for csv_line, row in enumerate(reader, start=2):
@@ -134,7 +134,7 @@ def fit_random_kmeans(
     X: np.ndarray,
     k: int,
     seed: int,
-    run_number: int, *, expected_shape: tuple[int, int] = EXPECTED_SHAPE,
+    run_number: int, *, expected_shape: tuple[int, int] = EXPECTED_SHAPE, evaluate=None,
 ) -> BaselineRun:
     """Fit one retained baseline run with one random initialization."""
     model = KMeans(
@@ -155,9 +155,12 @@ def fit_random_kmeans(
     if sum(cluster_sizes) != expected_shape[0]:
         raise AssertionError(f"Seed {seed} cluster sizes do not sum to 2,437")
 
-    silhouette = float(silhouette_score(X, labels, metric="euclidean"))
-    davies_bouldin = float(davies_bouldin_score(X, labels))
-    calinski_harabasz = float(calinski_harabasz_score(X, labels))
+    if evaluate is None:
+        silhouette = float(silhouette_score(X, labels, metric="euclidean"))
+        davies_bouldin = float(davies_bouldin_score(X, labels))
+        calinski_harabasz = float(calinski_harabasz_score(X, labels))
+    else:
+        silhouette, davies_bouldin, calinski_harabasz = evaluate(labels)
     numeric = np.asarray(
         [model.inertia_, model.n_iter_, silhouette, davies_bouldin, calinski_harabasz],
         dtype=np.float64,

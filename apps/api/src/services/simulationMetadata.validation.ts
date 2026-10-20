@@ -3,6 +3,8 @@ import { once } from "node:events";
 import type { AddressInfo } from "node:net";
 import fs from "node:fs";
 import { createRequire } from "node:module";
+import { execFileSync } from "node:child_process";
+import { fileURLToPath } from "node:url";
 import express from "express";
 import ts from "typescript";
 import * as contract from "../../../../packages/shared/src/simulation";
@@ -93,5 +95,10 @@ try {
 
 // Page behavior is covered by the current shared contract suite, including
 // custom-only controls, real progress, cached results and the inclusive maximum.
-require("../../../web/src/pages/SimulationRunsPage.validation.cjs");
+// The active page now uses independent durable jobs; the former combined-run
+// page harness targets retired execution controls. Exercise their replacements.
+for (const test of ['independentJobs', 'marielBackendIntegration', 'runProgress']) {
+  const file = fileURLToPath(new URL('../../../web/tests/' + test + '.test.mjs', import.meta.url));
+  console.log(execFileSync(process.execPath, [file], { encoding: 'utf8' }).trim());
+}
 console.log("PASS aggregate metadata API, available cohort count, privacy contract, safe 503, and hook loading/retry/abort.");

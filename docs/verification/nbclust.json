@@ -1,0 +1,278 @@
+{
+  "indices": [
+    {
+      "index": "kl",
+      "status": "success",
+      "recommended_k": 4.0,
+      "criterion_value": 142.5161,
+      "reason": "",
+      "warnings": "",
+      "classification": "voted k"
+    },
+    {
+      "index": "ch",
+      "status": "success",
+      "recommended_k": 2.0,
+      "criterion_value": 1800.025,
+      "reason": "",
+      "warnings": "",
+      "classification": "voted k"
+    },
+    {
+      "index": "hartigan",
+      "status": "success",
+      "recommended_k": 3.0,
+      "criterion_value": 319.0658,
+      "reason": "",
+      "warnings": "",
+      "classification": "voted k"
+    },
+    {
+      "index": "ccc",
+      "status": "success",
+      "recommended_k": 8.0,
+      "criterion_value": 6.8705,
+      "reason": "",
+      "warnings": "",
+      "classification": "voted k"
+    },
+    {
+      "index": "scott",
+      "status": "success",
+      "recommended_k": 3.0,
+      "criterion_value": 2640.3469,
+      "reason": "",
+      "warnings": "",
+      "classification": "voted k"
+    },
+    {
+      "index": "marriot",
+      "status": "success",
+      "recommended_k": 4.0,
+      "criterion_value": 1.3276722161891862e+20,
+      "reason": "",
+      "warnings": "",
+      "classification": "voted k"
+    },
+    {
+      "index": "trcovw",
+      "status": "success",
+      "recommended_k": 3.0,
+      "criterion_value": 3809337.2325,
+      "reason": "",
+      "warnings": "",
+      "classification": "voted k"
+    },
+    {
+      "index": "tracew",
+      "status": "success",
+      "recommended_k": 3.0,
+      "criterion_value": 1862.0907,
+      "reason": "",
+      "warnings": "",
+      "classification": "voted k"
+    },
+    {
+      "index": "friedman",
+      "status": "success",
+      "recommended_k": 4.0,
+      "criterion_value": 3.3878,
+      "reason": "",
+      "warnings": "",
+      "classification": "voted k"
+    },
+    {
+      "index": "rubin",
+      "status": "success",
+      "recommended_k": 3.0,
+      "criterion_value": -0.1596,
+      "reason": "",
+      "warnings": "",
+      "classification": "voted k"
+    },
+    {
+      "index": "cindex",
+      "status": "success",
+      "recommended_k": 6.0,
+      "criterion_value": 0.2547,
+      "reason": "",
+      "warnings": "",
+      "classification": "voted k"
+    },
+    {
+      "index": "db",
+      "status": "success",
+      "recommended_k": 2.0,
+      "criterion_value": 1.1441,
+      "reason": "",
+      "warnings": "",
+      "classification": "voted k"
+    },
+    {
+      "index": "silhouette",
+      "status": "success",
+      "recommended_k": 2.0,
+      "criterion_value": 0.3727,
+      "reason": "",
+      "warnings": "",
+      "classification": "voted k"
+    },
+    {
+      "index": "duda",
+      "status": "success",
+      "recommended_k": 2.0,
+      "criterion_value": 1.1619,
+      "reason": "",
+      "warnings": "",
+      "classification": "voted k"
+    },
+    {
+      "index": "pseudot2",
+      "status": "success",
+      "recommended_k": 2.0,
+      "criterion_value": -205.2929,
+      "reason": "",
+      "warnings": "",
+      "classification": "voted k"
+    },
+    {
+      "index": "beale",
+      "status": "success",
+      "recommended_k": 2.0,
+      "criterion_value": -0.5356,
+      "reason": "",
+      "warnings": "",
+      "classification": "voted k"
+    },
+    {
+      "index": "ratkowsky",
+      "status": "success",
+      "recommended_k": 7.0,
+      "criterion_value": 0.2226,
+      "reason": "",
+      "warnings": "",
+      "classification": "voted k"
+    },
+    {
+      "index": "ball",
+      "status": "success",
+      "recommended_k": 3.0,
+      "criterion_value": 3798.2955,
+      "reason": "",
+      "warnings": "",
+      "classification": "voted k"
+    },
+    {
+      "index": "ptbiserial",
+      "status": "success",
+      "recommended_k": 2.0,
+      "criterion_value": 0.5755,
+      "reason": "",
+      "warnings": "",
+      "classification": "voted k"
+    },
+    {
+      "index": "frey",
+      "status": "success",
+      "recommended_k": 4.0,
+      "criterion_value": 1.359,
+      "reason": "",
+      "warnings": "",
+      "classification": "voted k"
+    },
+    {
+      "index": "mcclain",
+      "status": "success",
+      "recommended_k": 2.0,
+      "criterion_value": 0.5086,
+      "reason": "",
+      "warnings": "",
+      "classification": "voted k"
+    },
+    {
+      "index": "dunn",
+      "status": "success",
+      "recommended_k": 4.0,
+      "criterion_value": 0.0356,
+      "reason": "",
+      "warnings": "",
+      "classification": "voted k"
+    },
+    {
+      "index": "hubert",
+      "status": "unavailable",
+      "recommended_k": "",
+      "criterion_value": "",
+      "reason": "NbClust completed index 'hubert' but returned no Best.nc recommendation (graphical index).",
+      "warnings": "",
+      "classification": "graphical/no vote"
+    },
+    {
+      "index": "sdindex",
+      "status": "success",
+      "recommended_k": 2.0,
+      "criterion_value": 1.0109,
+      "reason": "",
+      "warnings": "",
+      "classification": "voted k"
+    },
+    {
+      "index": "dindex",
+      "status": "unavailable",
+      "recommended_k": "",
+      "criterion_value": "",
+      "reason": "NbClust completed index 'dindex' but returned no Best.nc recommendation (graphical index).",
+      "warnings": "",
+      "classification": "graphical/no vote"
+    },
+    {
+      "index": "sdbw",
+      "status": "success",
+      "recommended_k": 10.0,
+      "criterion_value": 0.2052,
+      "reason": "",
+      "warnings": "",
+      "classification": "voted k"
+    }
+  ],
+  "statusCounts": {
+    "success": 24,
+    "unavailable": 2
+  },
+  "voteCounts": {
+    "2": 9,
+    "3": 6,
+    "4": 5,
+    "5": 0,
+    "6": 1,
+    "7": 1,
+    "8": 1,
+    "9": 0,
+    "10": 1
+  },
+  "selectedArtifact": [
+    {
+      "selected_k": 2,
+      "selection_rule": "majority_rule",
+      "tie_occurred": false,
+      "tied_k": "",
+      "total_usable_indices": 24,
+      "reproducible": true,
+      "random_seed": 20260811,
+      "distance": "euclidean",
+      "method": "kmeans",
+      "candidate_k_min": 2,
+      "candidate_k_max": 10,
+      "input_rows": 2437,
+      "input_features": 6
+    }
+  ],
+  "source": "data/interim/clustering_nbclust_votes.csv",
+  "seedSource": "data/interim/clustering_selected_k.csv",
+  "classificationCounts": {
+    "voted k": 24,
+    "graphical/no vote": 2
+  },
+  "expectedLedgerConfirmed": true,
+  "storedVoteSummaryMatches": true
+}

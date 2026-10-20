@@ -1,4 +1,5 @@
 import { spawn, spawnSync } from "node:child_process";
+import { withResearchCapacity } from "./researchExecutionCapacity";
 import crypto from "node:crypto";
 import fs from "node:fs";
 import path from "node:path";
@@ -187,6 +188,13 @@ export const prepareWorkspace = (
     fs.mkdirSync(rawDirectory, { recursive: true });
     fs.mkdirSync(path.join(workspace, "data", "interim"), { recursive: true });
     fs.mkdirSync(path.join(workspace, "data", "processed"), { recursive: true });
+    // Oct 2026: preprocessing loads the verified finalized 15-variable median-imputed
+    // dataset (SHA-256 checked by the Python stage) instead of re-imputing.
+    const finalized = path.join(repositoryRoot, "data", "interim", "final_15var_median", "ADNI_15var_median_imputed_wide.csv");
+    if (fs.existsSync(finalized)) {
+      fs.mkdirSync(path.join(workspace, "data", "interim", "final_15var_median"), { recursive: true });
+      fs.copyFileSync(finalized, path.join(workspace, "data", "interim", "final_15var_median", path.basename(finalized)));
+    }
     for (const filename of fs.readdirSync(uploadDirectory)) {
       const source = path.join(uploadDirectory, filename);
       const destination = path.join(rawDirectory, filename);
@@ -216,7 +224,12 @@ export const prepareWorkspace = (
   return workspace;
 };
 
-export const runUnifiedResearchPipeline = async (
+export const runUnifiedResearchPipeline = (
+  uploadDirectory: string,
+  options: ResearchPipelineOptions = {}
+): Promise<ResearchExecution> => withResearchCapacity(() => executeUnifiedResearchPipeline(uploadDirectory, options));
+
+const executeUnifiedResearchPipeline = async (
   uploadDirectory: string,
   options: ResearchPipelineOptions = {}
 ): Promise<ResearchExecution> => {

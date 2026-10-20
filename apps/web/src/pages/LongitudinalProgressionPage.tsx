@@ -61,10 +61,10 @@ export const LongitudinalProgressionPage = ({ run }: LongitudinalProgressionPage
           {run.cohort.flow.map((stage, index) => (
             <li key={stage.stage} className="relative border-l-2 border-line pb-5 pl-8 last:pb-0 md:border-l-0 md:border-t-2 md:pb-0 md:pl-0 md:pt-5">
               <span className="absolute -left-[9px] top-0 h-4 w-4 rounded-full border-2 border-teal-600 bg-canvas md:-top-[9px] md:left-0" aria-hidden="true" />
-              <div className="text-[10px] font-semibold tabular-nums text-muted">{String(index + 1).padStart(2, "0")}</div>
+              <div className="text-xs font-semibold tabular-nums text-muted">{String(index + 1).padStart(2, "0")}</div>
               <div className="mt-1 text-xs font-semibold leading-5 text-muted">{flowLabels[stage.stage]}</div>
               <div className="mt-1 text-xl font-semibold tabular-nums">{stage.participantCount.toLocaleString()}</div>
-              {stage.observationCount !== undefined ? <div className="mt-0.5 text-xs tabular-nums text-muted">{stage.observationCount.toLocaleString()} records</div> : null}
+              {stage.observationCount !== undefined ? <div className="mt-1 text-xs tabular-nums text-muted">{stage.observationCount.toLocaleString()} records</div> : null}
             </li>
           ))}
         </ol>

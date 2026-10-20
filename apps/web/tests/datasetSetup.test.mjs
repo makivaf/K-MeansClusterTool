@@ -7,7 +7,7 @@ import React from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { StaticRouter } from 'react-router-dom/server.js';
 const root = fileURLToPath(new URL('../../../', import.meta.url));
-const bundle = await build({ absWorkingDir:root, stdin:{contents:'export { default as App } from "./apps/web/src/App"; export { UploadAndCluster } from "./apps/web/src/pages/UploadAndCluster"; export * from "./apps/web/src/utils/validatedDataset";',resolveDir:root}, bundle:true,write:false,platform:'node',format:'cjs',packages:'external',jsx:'automatic',loader:{'.css':'empty'},define:{'import.meta.env.VITE_API_URL':'undefined'},plugins:[{name:'analysis-boundary',setup(b){b.onLoad({filter:/useStudyFindings\.ts$/},()=>({contents:'export const useStudyFindings = () => ({ reset() {} });',loader:'ts'}));}}] });
+const bundle = await build({ absWorkingDir:root, stdin:{contents:'export { default as App } from "./apps/web/src/App"; export { UploadAndCluster } from "./apps/web/src/pages/UploadAndCluster"; export * from "./apps/web/src/utils/validatedDataset";',resolveDir:root}, bundle:true,write:false,platform:'node',format:'cjs',packages:'external',jsx:'automatic',loader:{'.css':'empty'},define:{'import.meta.env.VITE_API_URL':'undefined'},plugins:[{name:'analysis-boundary',setup(b){b.onLoad({filter:/useMethodJobs\.ts$/},()=>({contents:'export const useStudyExecution = () => ({ reset() {} }); export const useMethodJobs = () => ({ reset() {} });',loader:'ts'}));}}] });
 const storage = new Map();
 globalThis.sessionStorage = {getItem:k=>storage.get(k)??null,setItem:(k,v)=>storage.set(k,v),removeItem:k=>storage.delete(k)};
 globalThis.window = {location:{origin:'http://localhost:5173'}};
@@ -23,7 +23,8 @@ function page(){slots=pageSlots;cursor=0;return UploadAndCluster(propsForPage);}
 let propsForPage;
 function render(){propsForPage=props();const tree=page();return {tree,html:renderToStaticMarkup(React.createElement(StaticRouter,{location:pathname},tree))};}
 function choose(files,label='Select CSV files'){const {tree}=render();find(tree,n=>n.type==='input'&&n.props['aria-label']===label)[0].props.onChange({target:{files},currentTarget:{value:''}});}
-const names=DATASETS.map(([,name])=>name), dataset={upload_ref:'test-validated-upload',filenames:names,file_count:7};
+const names=DATASETS.map(([,name])=>name), dataset={upload_ref:'test-validated-upload',filenames:names,file_count:7,
+ preparation:{status:'ready',stage:'ready',error:null,key:'a'.repeat(64),sourceFilesHash:'b'.repeat(64),settingsHash:'c'.repeat(64),codeHash:'d'.repeat(64),dependenciesHash:'e'.repeat(64),sourceHash:'f'.repeat(64),preprocessingHash:'1'.repeat(64),pcaHash:'2'.repeat(64),participantCount:2437,retainedVariables:Array.from({length:13},(_,i)=>`variable${i}`)}};
 let uploads=0, fail=false;
 globalThis.fetch=async (_url,options)=>{uploads++;assert.equal(options.method,'POST');assert.equal([...options.body.entries()].length,7);return {ok:!fail,json:async()=>fail?{error:'ADAS.csv: invalid export'}:dataset};};
 const flush=async()=>{for(let i=0;i<20;i++)await Promise.resolve();};
@@ -37,7 +38,7 @@ function assertSelectionTable(html,status) {
 }
 assert.match(render().html,/0 of 7 files selected/);
 assertSelectionTable(render().html,'Missing');
-assert.doesNotMatch(render().html,/Analysis-Ready Study-Entry Dataset/,'unvalidated exports cannot show a ready result');
+assert.doesNotMatch(render().html,/Study-Entry Dataset/,'unvalidated exports cannot show a ready result');
 const files=names.map(name=>new File(['test-only'],`All_Subjects_${name.replace('.csv','')}_10Aug2026.csv`,{type:'text/csv'}));
 choose(files);
 assert.match(render().html,/7 of 7 files selected/);
@@ -59,11 +60,11 @@ assert.equal((audit.match(/<tr\b/g)??[]).length,15);
 assert.equal((audit.match(/>Retained<\/span>/g)??[]).length,13);
 assert.equal((audit.match(/>Excluded<\/span>/g)??[]).length,2);
 assert.doesNotMatch(audit,/&gt;20%/,'Decision badges show only the outcome');
-assert.match(audit,/Boston Naming Test<\/th><td>1,730<\/td><td>707<\/td><td>2,437<\/td><td>29.01%/);
-assert.match(audit,/NPI-Q<\/th><td>949<\/td><td>1,488<\/td><td>2,437<\/td><td>61.06%/);
+assert.match(audit,/Boston Naming Test<\/th><td>1,730<\/td><td>707<\/td><td>2,437<\/td><td>29.01108%/);
+assert.match(audit,/NPI-Q<\/th><td>949<\/td><td>1,488<\/td><td>2,437<\/td><td>61.05868%/);
 assert.ok(setupHtml.indexOf('Study-Entry Cohort')<setupHtml.indexOf('Missingness Screening'));
 assert.ok(setupHtml.indexOf('Missingness Screening')<setupHtml.indexOf('Candidate variables</dt>'));
-assert.ok(setupHtml.indexOf('Candidate variables</dt>')<setupHtml.indexOf('Analysis-Ready Study-Entry Dataset'));
+assert.ok(setupHtml.indexOf('Candidate variables</dt>')<setupHtml.indexOf('Study-Entry Dataset'));
 slots=appSlots;cursor=0;
 const appHtml=renderToStaticMarkup(React.createElement(StaticRouter,{location:pathname},App()));
 for(const section of appHtml.matchAll(/<nav[^>]*aria-label="Research sections"[^>]*>([\s\S]*?)<\/nav>/g)) {
@@ -105,4 +106,46 @@ assertSelectionTable(render().html);
 assert.equal(readValidatedDataset(),null,'replacement invalidates batch metadata');
 storage.set('ad-clustering.validated-dataset','not json');assert.equal(readValidatedDataset(),null);
 console.log('PASS missing/selected/pending/successful/failed validation table states, validated provenance and disclosure, navigation and remount restoration, metadata-only refresh, replacement isolation, and no duplicate uploads');
+
+// Execute the actual preparation effect with controlled HTTP responses/timers.
+let prepSlots=[], currentDataset={...dataset,preparation:{status:'preparing',stage:'waiting_capacity',error:null}};
+let effects=[], scheduled=[], serverState=currentDataset.preparation, preparationPosts=0;
+const realTimeout=globalThis.setTimeout, realClear=globalThis.clearTimeout;
+globalThis.setTimeout=fn=>{scheduled.push(fn);return scheduled.length;};
+globalThis.clearTimeout=()=>{};
+react.useEffect=(fn,deps)=>{
+ const i=cursor++, previous=slots[i];
+ if(!previous||deps.some((value,j)=>value!==previous.deps[j])){
+  previous?.cleanup?.();slots[i]={deps};const host=slots;effects.push(()=>{host[i].cleanup=fn();});
+ }
+};
+const prepProps={files:{},setFiles(){},invalidFiles:[],setInvalidFiles(){},validatedFiles:{},setValidatedFiles(){},
+ onValidated(value){currentDataset=value;}};
+function preparationPage(){slots=prepSlots;cursor=0;const tree=UploadAndCluster({...prepProps,dataset:currentDataset});effects.splice(0).forEach(fn=>fn());
+ return {tree,html:renderToStaticMarkup(React.createElement(StaticRouter,{location:'/dataset-setup'},tree))};}
+globalThis.fetch=async(url,options={})=>{
+ assert.match(url,/\/api\/study-preparations\//);
+ if(options.method==='POST'){preparationPosts++;serverState={status:'preparing',stage:'waiting_capacity',error:null};}
+ return {ok:true,json:async()=>serverState};
+};
+try {
+ assert.match(preparationPage().html,/Preparing study-entry dataset/);assert.doesNotMatch(preparationPage().html,/Continue to Study Findings/);
+ await flush();assert.equal(module.exports.isDatasetReady(currentDataset),false);
+ serverState=dataset.preparation;scheduled.shift()();await flush();
+ assert.equal(module.exports.isDatasetReady(currentDataset),true);assert.match(preparationPage().html,/Dataset ready/);await flush();
+ // Restored browser metadata is deliberately unready until an API recheck.
+ module.exports.saveValidatedDataset(dataset);assert.equal(module.exports.isDatasetReady(readValidatedDataset()),false);
+ prepSlots.forEach(slot=>slot?.cleanup?.());prepSlots=[];scheduled=[];
+ currentDataset={...dataset,preparation:{status:'preparing',stage:'waiting_capacity',error:null}};
+ serverState={status:'error',stage:'error',error:'Fixture preparation failed'};
+ preparationPage();await flush();
+ const failed=preparationPage();assert.match(failed.html,/Preparation error|Fixture preparation failed/);assert.doesNotMatch(failed.html,/Continue to Study Findings/);
+ await flush();find(failed.tree,n=>n.type==='button'&&n.props.children==='Retry preparation')[0].props.onClick();await flush();
+ assert.equal(preparationPosts,1);assert.equal(currentDataset.preparation.status,'preparing');
+ // Replacing the dataset while polling must not attach a late Ready response.
+ let resolvePoll;globalThis.fetch=()=>new Promise(resolve=>{resolvePoll=resolve;});
+ preparationPage();currentDataset=null;preparationPage();
+ resolvePoll({ok:true,json:async()=>dataset.preparation});await flush();assert.equal(currentDataset,null);
+ console.log('PASS actual preparation polling, Preparing/Ready/Error, retry, refresh verification, readiness gating and stale replacement isolation');
+} finally {prepSlots.forEach(slot=>slot?.cleanup?.());globalThis.setTimeout=realTimeout;globalThis.clearTimeout=realClear;}
 

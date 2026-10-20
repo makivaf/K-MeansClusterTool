@@ -18,9 +18,9 @@ const render = props => renderToStaticMarkup(React.createElement(ClusterDistribu
 let html = render({ title: 'Standard K-Means', participants: 100, sizes: [37, 63], metadata: 'Seed 4' });
 assert.match(html, /Seed 4/);
 assert.match(html, /class="sop-cluster-count">37/);
-assert.match(html, /participants · 37.00%/);
+assert.match(html, /participants · 37.00000%/);
 assert.match(html, /width:37%/);
-assert.match(html, /participants · 63.00%/);
+assert.match(html, /participants · 63.00000%/);
 assert.doesNotMatch(html, /impairment|distribution unavailable/,'no invented interpretations');
 html = render({ title: 'Enhanced K-Means', participants: 100, sizes: [37, 63], interpretations: ['Lower impairment', 'Higher impairment'] });
 assert.match(html, /Lower impairment/); assert.match(html, /Higher impairment/);
@@ -46,7 +46,7 @@ for (const [method, sizes, participants] of [
   assert.equal((panel.match(/class="sop-cluster"/g) ?? []).length, sizes.length);
   for (const size of sizes) {
     assert.ok(panel.includes(size.toLocaleString('en-US')));
-    assert.ok(panel.includes(`${(100 * size / participants).toFixed(2)}%`));
+    assert.ok(panel.includes(`${(100 * size / participants).toFixed(5)}%`));
     assert.ok(panel.includes(`width:${100 * size / participants}%`));
   }
   if (method === 'Standard') assert.ok(panel.includes(`Seed ${selected.seed}`));

@@ -1,0 +1,140 @@
+{
+    "rows":  [
+                 {
+                     "variable":  "MMSE",
+                     "missing":  0,
+                     "total":  2437,
+                     "threshold":  20,
+                     "percent":  0,
+                     "observed":  2437,
+                     "excluded":  false
+                 },
+                 {
+                     "variable":  "ADAS13",
+                     "missing":  26,
+                     "total":  2437,
+                     "threshold":  20,
+                     "percent":  1.0668855149774312,
+                     "observed":  2411,
+                     "excluded":  false
+                 },
+                 {
+                     "variable":  "LMI",
+                     "missing":  2,
+                     "total":  2437,
+                     "threshold":  20,
+                     "percent":  0.08206811653672548,
+                     "observed":  2435,
+                     "excluded":  false
+                 },
+                 {
+                     "variable":  "LMD",
+                     "missing":  1,
+                     "total":  2437,
+                     "threshold":  20,
+                     "percent":  0.04103405826836274,
+                     "observed":  2436,
+                     "excluded":  false
+                 },
+                 {
+                     "variable":  "TMT_A",
+                     "missing":  15,
+                     "total":  2437,
+                     "threshold":  20,
+                     "percent":  0.61551087402544113,
+                     "observed":  2422,
+                     "excluded":  false
+                 },
+                 {
+                     "variable":  "TMT_B",
+                     "missing":  61,
+                     "total":  2437,
+                     "threshold":  20,
+                     "percent":  2.5030775543701274,
+                     "observed":  2376,
+                     "excluded":  false
+                 },
+                 {
+                     "variable":  "CATEGORY_FLUENCY_ANIMALS",
+                     "missing":  6,
+                     "total":  2437,
+                     "threshold":  20,
+                     "percent":  0.24620434961017645,
+                     "observed":  2431,
+                     "excluded":  false
+                 },
+                 {
+                     "variable":  "BNT",
+                     "missing":  707,
+                     "total":  2437,
+                     "threshold":  20,
+                     "percent":  29.011079195732457,
+                     "observed":  1730,
+                     "excluded":  false
+                 },
+                 {
+                     "variable":  "RAVLT_IMMEDIATE",
+                     "missing":  11,
+                     "total":  2437,
+                     "threshold":  20,
+                     "percent":  0.45137464095199015,
+                     "observed":  2426,
+                     "excluded":  false
+                 },
+                 {
+                     "variable":  "RAVLT_DELAYED",
+                     "missing":  8,
+                     "total":  2437,
+                     "threshold":  20,
+                     "percent":  0.32827246614690192,
+                     "observed":  2429,
+                     "excluded":  false
+                 },
+                 {
+                     "variable":  "RAVLT_FORGETTING",
+                     "missing":  12,
+                     "total":  2437,
+                     "threshold":  20,
+                     "percent":  0.49240869922035291,
+                     "observed":  2425,
+                     "excluded":  false
+                 },
+                 {
+                     "variable":  "CDRSB",
+                     "missing":  0,
+                     "total":  2437,
+                     "threshold":  20,
+                     "percent":  0,
+                     "observed":  2437,
+                     "excluded":  false
+                 },
+                 {
+                     "variable":  "FAQ",
+                     "missing":  31,
+                     "total":  2437,
+                     "threshold":  20,
+                     "percent":  1.2720558063192449,
+                     "observed":  2406,
+                     "excluded":  false
+                 },
+                 {
+                     "variable":  "NPIQ",
+                     "missing":  1488,
+                     "total":  2437,
+                     "threshold":  20,
+                     "percent":  61.058678703323757,
+                     "observed":  949,
+                     "excluded":  false
+                 },
+                 {
+                     "variable":  "GDS",
+                     "missing":  1,
+                     "total":  2437,
+                     "threshold":  20,
+                     "percent":  0.04103405826836274,
+                     "observed":  2436,
+                     "excluded":  false
+                 }
+             ],
+    "source":  "data/interim/study_entry_scope_restricted_missingness.csv"
+}
